@@ -137,9 +137,7 @@ erDiagram
         decimal night_pay "야간 수당"
         decimal holiday_pay "휴일 수당"
         decimal total_gross_pay "총 지급액(세전)"
-        decimal national_pension "국민연금"
-        decimal health_insurance "건강보험"
-        decimal employment_insurance "고용보험"
+        decimal four_major_insurance "4대 보험 (국민연금+건강보험+고용보험+산재보험)"
         decimal income_tax "소득세"
         decimal local_income_tax "지방소득세"
         decimal total_deduction "총 공제액"
@@ -242,8 +240,9 @@ erDiagram
 ### 9. Salary (급여)
 - 월별 급여 정산 내역
 - 기본급, 각종 수당, 4대 보험 및 세금 공제 포함
-- **total_work_hours**: 총 근무 시간 추가
-- **local_income_tax**: 지방소득세 추가
+- **total_work_hours**: 총 근무 시간
+- **four_major_insurance**: 4대 보험 통합 (국민연금+건강보험+고용보험+산재보험)
+- **local_income_tax**: 지방소득세
 
 ### 10. Payment (송금)
 - 급여 송금 내역 및 상태 관리
