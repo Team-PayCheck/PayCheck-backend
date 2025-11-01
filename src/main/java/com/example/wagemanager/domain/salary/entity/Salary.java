@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "salary",
         indexes = {
-                @Index(name = "idx_contract_year_month", columnList = "contract_id,year,month")
+                @Index(name = "idx_contract_year_month", columnList = "contract_id,salary_year,salary_month")
         })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -27,10 +27,10 @@ public class Salary extends BaseEntity {
     @JoinColumn(name = "contract_id", nullable = false)
     private WorkerContract contract;
 
-    @Column(name = "year", nullable = false)
+    @Column(name = "salary_year", nullable = false)
     private Integer year;
 
-    @Column(name = "month", nullable = false)
+    @Column(name = "salary_month", nullable = false)
     private Integer month;
 
     @Column(name = "total_work_hours", precision = 10, scale = 2)
