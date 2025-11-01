@@ -12,7 +12,6 @@ erDiagram
     Workplace ||--o{ WorkerContract : "has"
     Worker ||--o{ WorkerContract : "works_under"
 
-    WorkerContract ||--o{ WorkSchedule : "has"
     WorkerContract ||--o{ WorkRecord : "has"
     WorkerContract ||--o{ Salary : "generates"
 
@@ -79,32 +78,20 @@ erDiagram
         datetime updated_at
     }
 
-    WorkSchedule {
+    WorkRecord {
         bigint id PK
         bigint contract_id FK "WorkerContract ID"
         date work_date "근무 날짜"
         time scheduled_start_time "예정 시작 시간"
         time scheduled_end_time "예정 종료 시간"
-        decimal scheduled_hours "예정 근무 시간"
-        enum status "STATUS(SCHEDULED, MODIFIED, COMPLETED)"
-        string memo "메모"
-        datetime created_at
-        datetime updated_at
-    }
-
-    WorkRecord {
-        bigint id PK
-        bigint contract_id FK "WorkerContract ID"
-        bigint schedule_id FK "WorkSchedule ID (nullable)"
-        date work_date "근무 날짜"
-        time actual_start_time "실제 시작 시간"
-        time actual_end_time "실제 종료 시간"
+        time actual_start_time "실제 시작 시간 (nullable)"
+        time actual_end_time "실제 종료 시간 (nullable)"
         decimal total_hours "총 근무 시간"
         decimal regular_hours "일반 근무 시간"
         decimal overtime_hours "연장 근무 시간"
         decimal night_hours "야간 근무 시간"
         decimal holiday_hours "휴일 근무 시간"
-        enum status "STATUS(CONFIRMED, PENDING, DISPUTED)"
+        enum status "STATUS(SCHEDULED, CONFIRMED, PENDING, DISPUTED)"
         string memo "메모"
         datetime created_at
         datetime updated_at
@@ -216,45 +203,45 @@ erDiagram
 - 사업장과 근로자 간의 근로 계약
 - 시급, 근무요일, 지급일 등 계약 조건
 - **work_days**: JSON 배열로 저장 (예: [1,2,3,4,5] = 월~금, 1=월요일~7=일요일)
-- 근무 시작/종료 시간은 삭제 (실제 근무는 WorkSchedule에서 관리)
 
-### 6. WorkSchedule (근무 일정)
-- 예정된 근무 스케줄
-- 계약 기반으로 자동 생성 또는 수동 등록
-- **scheduled_hours**: 예정 근무 시간
-- **memo**: 일정 메모
-- **status**: SCHEDULED(예정), MODIFIED(수정됨), COMPLETED(완료) - CANCELLED 제거
-
-### 7. WorkRecord (근무 기록)
-- 실제 출퇴근 기록
+### 6. WorkRecord (근무 기록 및 일정)
+- **WorkSchedule 통합**: 예정된 근무 일정과 실제 근무 기록을 하나의 엔티티로 관리
+- 고용주가 근무 일정을 등록하면 SCHEDULED 상태로 생성
+- 근무 완료 후 실제 시간을 입력하면 CONFIRMED 상태로 변경
+- **scheduled_start_time/scheduled_end_time**: 고용주가 등록한 예정 시간
+- **actual_start_time/actual_end_time**: 실제 근무 시간 (nullable, 근무 후 입력)
+- **total_hours**: 총 근무 시간 (실제 시간 기준으로 자동 계산)
 - 일반/연장/야간/휴일 근무 시간 자동 계산
-- **memo**: 근무 메모 추가
-- STATUS: CONFIRMED(확정), PENDING(대기), DISPUTED(분쟁)
+- **STATUS**:
+  - SCHEDULED: 근무 예정 (고용주가 등록, actual 시간 없음)
+  - CONFIRMED: 근무 확정 (실제 근무 완료, actual 시간 입력됨)
+  - PENDING: 검토 대기 (정정 요청 등)
+  - DISPUTED: 분쟁 (근로자-고용주 간 의견 불일치)
 
-### 8. CorrectionRequest (정정 요청)
+### 7. CorrectionRequest (정정 요청)
 - 근로자가 근무 기록 수정을 요청
 - 고용주가 승인/반려 처리
 - **requested_work_date**: 수정 요청 날짜 추가
 - 화면에서 보이는 "시작 시간", "종료 시간", "사유" 필드 포함
 
-### 9. Salary (급여)
+### 8. Salary (급여)
 - 월별 급여 정산 내역
 - 기본급, 각종 수당, 4대 보험 및 세금 공제 포함
 - **total_work_hours**: 총 근무 시간
 - **four_major_insurance**: 4대 보험 통합 (국민연금+건강보험+고용보험+산재보험)
 - **local_income_tax**: 지방소득세
 
-### 10. Payment (송금)
+### 9. Payment (송금)
 - 급여 송금 내역 및 상태 관리
 - 카카오페이, 계좌이체 등 다양한 방식 지원
 - **HOLD**: 보류 상태 추가 (화면의 "보류" 상태)
 
-### 11. Notification (알림)
+### 10. Notification (알림)
 - 사용자별 알림 내역
 - **CORRECTION_RESPONSE**: 정정 요청 응답 알림 타입 추가
 - 일정 변경, 정정 요청, 송금 등 다양한 이벤트
 
-### 12. UserSettings (사용자 설정) - 신규 추가
+### 11. UserSettings (사용자 설정)
 - 사용자별 알림 설정 관리
 - 푸시, 이메일, SMS 알림 개별 설정
 - 알림 유형별 활성화/비활성화 설정
@@ -265,20 +252,21 @@ erDiagram
 2. **User → UserSettings**: 1:1 (사용자 설정)
 3. **Employer → Workplace**: 1:N (한 고용주가 여러 사업장 운영)
 4. **Workplace ↔ Worker → WorkerContract**: N:M (다대다 관계를 계약으로 해소)
-5. **WorkerContract → WorkSchedule/WorkRecord/Salary**: 1:N
+5. **WorkerContract → WorkRecord/Salary**: 1:N
 6. **WorkRecord → CorrectionRequest**: 1:N
 7. **Salary ↔ Payment**: 1:1
 
 ## 화면 설계 반영 사항
 
 ### 고용주 화면 반영
-1. **주간/월간 캘린더**: WorkSchedule, WorkRecord 엔티티로 구현
+1. **주간/월간 캘린더**: WorkRecord 엔티티로 구현 (SCHEDULED 상태 = 예정, CONFIRMED = 완료)
 2. **근무지별 색상**: Workplace.color_code 필드 추가
-3. **월급 관리**: Salary 엔티티의 월별 데이터 조회
-4. **근무 통계**: Salary의 year, month 기반 집계 데이터
+3. **근무 일정 등록**: 고용주가 WorkRecord를 SCHEDULED 상태로 생성
+4. **월급 관리**: Salary 엔티티의 월별 데이터 조회
+5. **근무 통계**: Salary의 year, month 기반 집계 데이터
 
 ### 근로자 화면 반영
-1. **근무 일정 확인**: WorkSchedule 조회
+1. **근무 일정 확인**: WorkRecord 조회 (status별 필터링)
 2. **수정 요청**: CorrectionRequest 엔티티 (날짜, 시작/종료 시간, 사유)
 3. **월별 급여 통계**: Salary 데이터를 차트로 시각화
 4. **알림 설정**: UserSettings 엔티티로 관리
@@ -289,8 +277,7 @@ erDiagram
 - Worker: worker_code (UK), user_id
 - Workplace: business_number (UK), employer_id, is_active
 - WorkerContract: workplace_id, worker_id, is_active
-- WorkSchedule: contract_id, work_date, status
-- WorkRecord: contract_id, work_date, status
+- WorkRecord: contract_id, work_date, status (복합 인덱스: contract_id + work_date + status)
 - CorrectionRequest: work_record_id, requester_id, status
 - Salary: contract_id, (year, month) composite index
 - Payment: salary_id, status
@@ -314,15 +301,16 @@ erDiagram
 ### 고용주 API
 - `GET /api/employer/workplaces` - 근무지 목록 조회
 - `GET /api/employer/workplaces/{id}/workers` - 근무지별 근로자 조회
-- `GET /api/employer/schedules?workplace_id={id}&year={year}&month={month}` - 캘린더 조회
-- `PUT /api/employer/schedules/{id}` - 근무 일정 수정
+- `GET /api/employer/work-records?workplace_id={id}&year={year}&month={month}` - 캘린더 조회 (SCHEDULED + CONFIRMED)
+- `POST /api/employer/work-records` - 근무 일정 등록 (SCHEDULED 상태로 생성)
+- `PUT /api/employer/work-records/{id}` - 근무 일정/기록 수정
+- `PUT /api/employer/work-records/{id}/confirm` - 근무 확정 (actual 시간 입력, CONFIRMED 상태로 변경)
 - `GET /api/employer/salaries?workplace_id={id}&year={year}&month={month}` - 급여 관리
 - `GET /api/employer/correction-requests` - 정정 요청 목록
 - `PUT /api/employer/correction-requests/{id}` - 정정 요청 승인/반려
 
 ### 근로자 API
-- `GET /api/worker/schedules?year={year}&month={month}` - 근무 일정 조회
-- `GET /api/worker/work-records?year={year}&month={month}` - 근무 기록 조회
+- `GET /api/worker/work-records?year={year}&month={month}` - 근무 일정 및 기록 조회
 - `POST /api/worker/correction-requests` - 정정 요청 생성
 - `GET /api/worker/salaries?year={year}` - 월별 급여 통계
 - `GET /api/worker/payments` - 송금 내역 조회
