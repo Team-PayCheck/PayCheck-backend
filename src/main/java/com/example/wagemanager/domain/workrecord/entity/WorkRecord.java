@@ -38,6 +38,14 @@ public class WorkRecord extends BaseEntity {
     @Column(name = "end_time", nullable = false)
     private LocalTime endTime;
 
+    @Column(name = "break_minutes")
+    @Builder.Default
+    private Integer breakMinutes = 0;
+
+    @Column(name = "total_work_minutes")
+    @Builder.Default
+    private Integer totalWorkMinutes = 0;
+
     @Column(name = "total_hours", precision = 5, scale = 2)
     @Builder.Default
     private BigDecimal totalHours = BigDecimal.ZERO;
@@ -81,6 +89,17 @@ public class WorkRecord extends BaseEntity {
         if (this.status == WorkRecordStatus.COMPLETED) {
             calculateHours();
         }
+    }
+
+    // 근무 기록 수정
+    public void updateWorkRecord(LocalTime startTime, LocalTime endTime, Integer breakMinutes, Integer totalWorkMinutes, String memo) {
+        if (startTime != null) this.startTime = startTime;
+        if (endTime != null) this.endTime = endTime;
+        if (breakMinutes != null) this.breakMinutes = breakMinutes;
+        if (totalWorkMinutes != null) this.totalWorkMinutes = totalWorkMinutes;
+        if (memo != null) this.memo = memo;
+        this.isModified = true;
+        calculateHours();
     }
 
     // 근무 완료

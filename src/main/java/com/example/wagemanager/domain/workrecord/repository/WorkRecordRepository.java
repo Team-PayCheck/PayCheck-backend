@@ -13,6 +13,8 @@ import java.util.List;
 @Repository
 public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
 
+    List<WorkRecord> findByContractId(Long contractId);
+
     @Query("SELECT wr FROM WorkRecord wr " +
             "JOIN FETCH wr.contract c " +
             "JOIN FETCH c.workplace w " +

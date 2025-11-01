@@ -1,0 +1,44 @@
+package com.example.wagemanager.domain.worker.service;
+
+import com.example.wagemanager.domain.worker.dto.WorkerDto;
+import com.example.wagemanager.domain.worker.entity.Worker;
+import com.example.wagemanager.domain.worker.repository.WorkerRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class WorkerService {
+
+    private final WorkerRepository workerRepository;
+
+    public WorkerDto.Response getWorkerById(Long workerId) {
+        Worker worker = workerRepository.findById(workerId)
+                .orElseThrow(() -> new IllegalArgumentException("근로자를 찾을 수 없습니다."));
+        return WorkerDto.Response.from(worker);
+    }
+
+    public WorkerDto.Response getWorkerByUserId(Long userId) {
+        Worker worker = workerRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("근로자 정보를 찾을 수 없습니다."));
+        return WorkerDto.Response.from(worker);
+    }
+
+    public WorkerDto.Response getWorkerByWorkerCode(String workerCode) {
+        Worker worker = workerRepository.findByWorkerCode(workerCode)
+                .orElseThrow(() -> new IllegalArgumentException("근로자를 찾을 수 없습니다."));
+        return WorkerDto.Response.from(worker);
+    }
+
+    @Transactional
+    public WorkerDto.Response updateWorker(Long workerId, WorkerDto.UpdateRequest request) {
+        Worker worker = workerRepository.findById(workerId)
+                .orElseThrow(() -> new IllegalArgumentException("근로자를 찾을 수 없습니다."));
+
+        worker.updateAccount(request.getAccountNumber(), request.getBankName(), request.getKakaoPayLink());
+
+        return WorkerDto.Response.from(worker);
+    }
+}
