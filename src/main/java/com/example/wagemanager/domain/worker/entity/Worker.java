@@ -38,4 +38,10 @@ public class Worker extends BaseEntity {
         if (bankName != null) this.bankName = bankName;
         if (kakaoPayLink != null) this.kakaoPayLink = kakaoPayLink;
     }
+
+    public void updateKakaoPayLink(String kakaoPayLink) {
+        if (kakaoPayLink != null) {
+            this.kakaoPayLink = kakaoPayLink;
+        }
+    }
 }
