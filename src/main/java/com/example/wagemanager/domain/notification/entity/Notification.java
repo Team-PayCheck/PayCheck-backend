@@ -1,6 +1,7 @@
 package com.example.wagemanager.domain.notification.entity;
 
 import com.example.wagemanager.common.BaseEntity;
+import com.example.wagemanager.domain.notification.enums.NotificationActionType;
 import com.example.wagemanager.domain.notification.enums.NotificationType;
 import com.example.wagemanager.domain.user.entity.User;
 import jakarta.persistence.*;
@@ -34,11 +35,17 @@ public class Notification extends BaseEntity {
     @Column(name = "title", nullable = false)
     private String title;
 
-    @Column(name = "message", nullable = false, columnDefinition = "TEXT")
-    private String message;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "action_type", nullable = false)
+    @Builder.Default
+    private NotificationActionType actionType = NotificationActionType.NONE;
 
-    @Column(name = "link_url")
-    private String linkUrl;
+    /**
+     * 액션 수행에 필요한 데이터 (JSON 형식)
+     * 예: {"correctionRequestId": 123, "workRecordId": 456}
+     */
+    @Column(name = "action_data", columnDefinition = "TEXT")
+    private String actionData;
 
     @Column(name = "is_read", nullable = false)
     @Builder.Default

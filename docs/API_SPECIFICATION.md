@@ -57,9 +57,11 @@
 | 10.3 | 송금 내역 | GET | `/api/worker/payments` | 송금 내역 조회 | 대기 | 대기 | - | [링크](#103-송금-내역) |
 | **11. 공통 - 알림** ||||||||
 | 11.1 | 알림 목록 | GET | `/api/notifications` | 알림 목록 조회 | 대기 | 대기 | - | [링크](#111-알림-목록) |
-| 11.2 | 알림 읽음 | PUT | `/api/notifications/{id}/read` | 알림 읽음 처리 | 대기 | 대기 | - | [링크](#112-알림-읽음) |
-| 11.3 | 전체 읽음 | PUT | `/api/notifications/read-all` | 모든 알림 읽음 | 대기 | 대기 | - | [링크](#113-전체-읽음) |
-| 11.4 | 알림 삭제 | DELETE | `/api/notifications/{id}` | 알림 삭제 | 대기 | 대기 | - | [링크](#114-알림-삭제) |
+| 11.2 | SSE 알림 구독 | GET | `/api/notifications/stream` | 실시간 알림 구독 (SSE) | 대기 | 대기 | - | [링크](#112-sse-알림-구독) |
+| 11.3 | 읽지 않은 알림 개수 | GET | `/api/notifications/unread-count` | 읽지 않은 알림 개수 조회 | 대기 | 대기 | - | [링크](#113-읽지-않은-알림-개수) |
+| 11.4 | 알림 읽음 | PUT | `/api/notifications/{id}/read` | 알림 읽음 처리 | 대기 | 대기 | - | [링크](#114-알림-읽음) |
+| 11.5 | 전체 읽음 | PUT | `/api/notifications/read-all` | 모든 알림 읽음 | 대기 | 대기 | - | [링크](#115-전체-읽음) |
+| 11.6 | 알림 삭제 | DELETE | `/api/notifications/{id}` | 알림 삭제 | 대기 | 대기 | - | [링크](#116-알림-삭제) |
 | **12. 공통 - 설정** ||||||||
 | 12.1 | 설정 조회 | GET | `/api/settings` | 사용자 설정 조회 | 대기 | 대기 | - | [링크](#121-설정-조회) |
 | 12.2 | 설정 수정 | PUT | `/api/settings` | 사용자 설정 수정 | 대기 | 대기 | - | [링크](#122-설정-수정) |
@@ -194,13 +196,27 @@
 ### 11.1 알림 목록
 **Query:** `?is_read=false&page=1` → **Response:** `{"success": true, "data": {"notifications": [...], "unread_count": 12}}`
 
-### 11.2 알림 읽음
+### 11.2 SSE 알림 구독
+**실시간 알림을 수신하기 위한 Server-Sent Events 연결**
+- **Content-Type:** `text/event-stream`
+- **연결 유지:** Keep-alive 방식으로 실시간 알림 수신
+- **이벤트 타입:**
+  - `notification`: 새로운 알림 발생 시 전송
+    - **Data:** `{"id": 123, "type": "CORRECTION_REQUEST", "title": "정정 요청", "message": "김민지님이 근무 시간 정정을 요청했습니다.", "created_at": "2025-11-18T14:30:00", "is_read": false}`
+  - `unread_count`: 읽지 않은 알림 개수 업데이트
+    - **Data:** `{"unread_count": 5}`
+- **재연결:** 연결이 끊어지면 클라이언트에서 자동 재연결 권장
+
+### 11.3 읽지 않은 알림 개수
+**Response:** `{"success": true, "data": 5}`
+
+### 11.4 알림 읽음
 **Response:** `{"success": true, "message": "알림이 읽음 처리되었습니다."}`
 
-### 11.3 전체 읽음
+### 11.5 전체 읽음
 **Response:** `{"success": true, "message": "모든 알림이 읽음 처리되었습니다."}`
 
-### 11.4 알림 삭제
+### 11.6 알림 삭제
 **Response:** `{"success": true, "message": "알림이 삭제되었습니다."}`
 
 ### 12.1 설정 조회
