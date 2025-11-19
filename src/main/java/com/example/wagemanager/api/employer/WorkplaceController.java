@@ -1,9 +1,11 @@
 package com.example.wagemanager.api.employer;
 
 import com.example.wagemanager.common.dto.ApiResponse;
+import com.example.wagemanager.domain.user.entity.User;
 import com.example.wagemanager.domain.workplace.dto.WorkplaceDto;
 import com.example.wagemanager.domain.workplace.service.WorkplaceService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,19 +17,17 @@ public class WorkplaceController {
 
     private final WorkplaceService workplaceService;
 
-    // TODO: 인증 구현 후 @AuthenticationPrincipal로 userId 받아오기
-    // 임시로 @RequestHeader 사용
     @PostMapping
     public ApiResponse<WorkplaceDto.Response> createWorkplace(
-            @RequestHeader("User-Id") Long userId,
+            @AuthenticationPrincipal User user,
             @RequestBody WorkplaceDto.CreateRequest request) {
-        return ApiResponse.success(workplaceService.createWorkplace(userId, request));
+        return ApiResponse.success(workplaceService.createWorkplace(user.getId(), request));
     }
 
     @GetMapping
     public ApiResponse<List<WorkplaceDto.ListResponse>> getWorkplaces(
-            @RequestHeader("User-Id") Long userId) {
-        return ApiResponse.success(workplaceService.getWorkplacesByUserId(userId));
+            @AuthenticationPrincipal User user) {
+        return ApiResponse.success(workplaceService.getWorkplacesByUserId(user.getId()));
     }
 
     @GetMapping("/{id}")

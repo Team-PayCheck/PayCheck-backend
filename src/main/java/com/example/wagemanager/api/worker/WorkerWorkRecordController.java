@@ -1,10 +1,12 @@
 package com.example.wagemanager.api.worker;
 
 import com.example.wagemanager.common.dto.ApiResponse;
+import com.example.wagemanager.domain.user.entity.User;
 import com.example.wagemanager.domain.workrecord.dto.WorkRecordDto;
 import com.example.wagemanager.domain.workrecord.service.WorkRecordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -17,15 +19,14 @@ public class WorkerWorkRecordController {
 
     private final WorkRecordService workRecordService;
 
-    // TODO: 인증 구현 후 @AuthenticationPrincipal로 userId 받아오기
     // 내 근무 일정 조회
     @GetMapping
     public ApiResponse<List<WorkRecordDto.DetailedResponse>> getMyWorkRecords(
-            @RequestHeader("User-Id") Long userId,
+            @AuthenticationPrincipal User user,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         return ApiResponse.success(
-                workRecordService.getWorkRecordsByWorkerAndDateRange(userId, startDate, endDate));
+                workRecordService.getWorkRecordsByWorkerAndDateRange(user.getId(), startDate, endDate));
     }
 
     // 근무 기록 상세 조회
