@@ -49,6 +49,16 @@ public class WorkerService {
     }
 
     @Transactional
+    public WorkerDto.Response updateWorkerByUserId(Long userId, WorkerDto.UpdateRequest request) {
+        Worker worker = workerRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("근로자 정보를 찾을 수 없습니다."));
+
+        worker.updateKakaoPayLink(request.getKakaoPayLink());
+
+        return WorkerDto.Response.from(worker);
+    }
+
+    @Transactional
     public Worker createWorker(User user) {
         String workerCode = generateUniqueWorkerCode();
 
