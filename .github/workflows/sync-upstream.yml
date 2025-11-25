@@ -9,6 +9,8 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    # fork된 레포에서만 실행 (조직 레포에서는 건너뜀)
+    if: github.repository != 'WageManager/WageManager-backend'
 
     steps:
       - name: Checkout
