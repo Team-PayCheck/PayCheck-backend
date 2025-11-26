@@ -4,6 +4,7 @@ import com.example.wagemanager.common.dto.ApiResponse;
 import com.example.wagemanager.domain.user.entity.User;
 import com.example.wagemanager.domain.workplace.dto.WorkplaceDto;
 import com.example.wagemanager.domain.workplace.service.WorkplaceService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +21,7 @@ public class WorkplaceController {
     @PostMapping
     public ApiResponse<WorkplaceDto.Response> createWorkplace(
             @AuthenticationPrincipal User user,
-            @RequestBody WorkplaceDto.CreateRequest request) {
+            @Valid @RequestBody WorkplaceDto.CreateRequest request) {
         return ApiResponse.success(workplaceService.createWorkplace(user.getId(), request));
     }
 
@@ -38,7 +39,7 @@ public class WorkplaceController {
     @PutMapping("/{id}")
     public ApiResponse<WorkplaceDto.Response> updateWorkplace(
             @PathVariable Long id,
-            @RequestBody WorkplaceDto.UpdateRequest request) {
+            @Valid @RequestBody WorkplaceDto.UpdateRequest request) {
         return ApiResponse.success(workplaceService.updateWorkplace(id, request));
     }
 

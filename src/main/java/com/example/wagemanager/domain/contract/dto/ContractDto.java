@@ -1,6 +1,7 @@
 package com.example.wagemanager.domain.contract.dto;
 
 import com.example.wagemanager.domain.contract.entity.WorkerContract;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,11 +17,24 @@ public class ContractDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class CreateRequest {
+        @NotBlank(message = "근로자 코드는 필수입니다.")
         private String workerCode;
+
+        @NotNull(message = "시급은 필수입니다.")
+        @DecimalMin(value = "10,030.0", inclusive = false, message = "시급은 10,030 이상이어야 합니다.")
         private BigDecimal hourlyWage;
+
+        @NotBlank(message = "근무 요일은 필수입니다.")
         private String workDays; // JSON: [1,2,3,4,5,6,7]
+
+        @NotNull(message = "계약 시작일은 필수입니다.")
         private LocalDate contractStartDate;
+
         private LocalDate contractEndDate;
+
+        @NotNull(message = "급여 지급일은 필수입니다.")
+        @Min(value = 1, message = "급여 지급일은 1일 이상이어야 합니다.")
+        @Max(value = 31, message = "급여 지급일은 31일 이하여야 합니다.")
         private Integer paymentDay;
     }
 

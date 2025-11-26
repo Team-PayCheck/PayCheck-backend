@@ -3,6 +3,7 @@ package com.example.wagemanager.api.employer;
 import com.example.wagemanager.common.dto.ApiResponse;
 import com.example.wagemanager.domain.contract.dto.ContractDto;
 import com.example.wagemanager.domain.contract.service.ContractService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +20,7 @@ public class ContractController {
     @PostMapping("/workplaces/{workplaceId}/workers")
     public ApiResponse<ContractDto.Response> addWorkerToWorkplace(
             @PathVariable Long workplaceId,
-            @RequestBody ContractDto.CreateRequest request) {
+            @Valid @RequestBody ContractDto.CreateRequest request) {
         return ApiResponse.success(contractService.addWorkerToWorkplace(workplaceId, request));
     }
 
@@ -40,7 +41,7 @@ public class ContractController {
     @PutMapping("/contracts/{id}")
     public ApiResponse<ContractDto.Response> updateContract(
             @PathVariable Long id,
-            @RequestBody ContractDto.UpdateRequest request) {
+            @Valid @RequestBody ContractDto.UpdateRequest request) {
         return ApiResponse.success(contractService.updateContract(id, request));
     }
 
