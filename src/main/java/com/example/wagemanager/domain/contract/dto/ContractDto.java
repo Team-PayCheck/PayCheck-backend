@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 public class ContractDto {
 
@@ -21,11 +22,12 @@ public class ContractDto {
         private String workerCode;
 
         @NotNull(message = "시급은 필수입니다.")
-        @DecimalMin(value = "10,030.0", inclusive = false, message = "시급은 10,030 이상이어야 합니다.")
+        @DecimalMin(value = "10030.0", inclusive = true, message = "시급은 10,030 이상이어야 합니다.")
         private BigDecimal hourlyWage;
 
-        @NotBlank(message = "근무 요일은 필수입니다.")
-        private String workDays; // JSON: [1,2,3,4,5,6,7]
+        @NotNull(message = "근무 요일은 필수입니다.")
+        @Size(min = 1, message = "최소 1개의 근무 요일을 선택해야 합니다.")
+        private List<@Min(value = 1, message = "근무 요일은 1~7 사이여야 합니다.") @Max(value = 7, message = "근무 요일은 1~7 사이여야 합니다.") Integer> workDays;
 
         @NotNull(message = "계약 시작일은 필수입니다.")
         private LocalDate contractStartDate;
@@ -43,9 +45,16 @@ public class ContractDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class UpdateRequest {
+        @DecimalMin(value = "10030.0", inclusive = true, message = "시급은 10,030 이상이어야 합니다.")
         private BigDecimal hourlyWage;
-        private String workDays;
+
+        @Size(min = 1, message = "최소 1개의 근무 요일을 선택해야 합니다.")
+        private List<@Min(value = 1, message = "근무 요일은 1~7 사이여야 합니다.") @Max(value = 7, message = "근무 요일은 1~7 사이여야 합니다.") Integer> workDays;
+
         private LocalDate contractEndDate;
+
+        @Min(value = 1, message = "급여 지급일은 1일 이상이어야 합니다.")
+        @Max(value = 31, message = "급여 지급일은 31일 이하여야 합니다.")
         private Integer paymentDay;
     }
 

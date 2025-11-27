@@ -7,6 +7,8 @@ import com.example.wagemanager.domain.worker.entity.Worker;
 import com.example.wagemanager.domain.worker.repository.WorkerRepository;
 import com.example.wagemanager.domain.workplace.entity.Workplace;
 import com.example.wagemanager.domain.workplace.repository.WorkplaceRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,7 @@ public class ContractService {
     private final WorkerContractRepository contractRepository;
     private final WorkplaceRepository workplaceRepository;
     private final WorkerRepository workerRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public ContractDto.Response addWorkerToWorkplace(Long workplaceId, ContractDto.CreateRequest request) {
@@ -47,7 +50,7 @@ public class ContractService {
                 .workplace(workplace)
                 .worker(worker)
                 .hourlyWage(request.getHourlyWage())
-                .workDays(request.getWorkDays())
+                .workDays(convertWorkDaysToJson(request.getWorkDays()))
                 .contractStartDate(request.getContractStartDate())
                 .contractEndDate(request.getContractEndDate())
                 .paymentDay(request.getPaymentDay())
@@ -75,9 +78,13 @@ public class ContractService {
         WorkerContract contract = contractRepository.findById(contractId)
                 .orElseThrow(() -> new IllegalArgumentException("계약을 찾을 수 없습니다."));
 
+        String workDaysJson = request.getWorkDays() != null
+                ? convertWorkDaysToJson(request.getWorkDays())
+                : null;
+
         contract.update(
                 request.getHourlyWage(),
-                request.getWorkDays(),
+                workDaysJson,
                 request.getContractEndDate(),
                 request.getPaymentDay()
         );
@@ -91,5 +98,13 @@ public class ContractService {
                 .orElseThrow(() -> new IllegalArgumentException("계약을 찾을 수 없습니다."));
 
         contract.terminate();
+    }
+
+    private String convertWorkDaysToJson(List<Integer> workDays) {
+        try {
+            return objectMapper.writeValueAsString(workDays);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("근무 요일 변환 중 오류가 발생했습니다.", e);
+        }
     }
 }
