@@ -40,11 +40,16 @@ public class Workplace extends BaseEntity {
     @Builder.Default
     private Boolean isActive = true;
 
-    public void update(String businessName, String name, String address, String colorCode) {
+    @Column(name = "is_less_than_five_employees", nullable = false)
+    @Builder.Default
+    private Boolean isLessThanFiveEmployees = true; // 5인 미만 여부 (고용주 선택)
+
+    public void update(String businessName, String name, String address, String colorCode, Boolean isLessThanFiveEmployees) {
         if (businessName != null) this.businessName = businessName;
         if (name != null) this.name = name;
         if (address != null) this.address = address;
         if (colorCode != null) this.colorCode = colorCode;
+        if (isLessThanFiveEmployees != null) this.isLessThanFiveEmployees = isLessThanFiveEmployees;
     }
 
     public void deactivate() {
