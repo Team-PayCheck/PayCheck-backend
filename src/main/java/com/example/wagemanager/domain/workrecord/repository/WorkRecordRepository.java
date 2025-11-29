@@ -50,4 +50,21 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
             @Param("endDate") LocalDate endDate,
             @Param("statuses") List<WorkRecordStatus> statuses
     );
+
+    @Query("SELECT wr FROM WorkRecord wr " +
+            "WHERE wr.contract.id = :contractId " +
+            "AND wr.workDate BETWEEN :startDate AND :endDate " +
+            "ORDER BY wr.workDate ASC")
+    List<WorkRecord> findByContractAndDateRange(
+            @Param("contractId") Long contractId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
+
+    @Query("SELECT DISTINCT c FROM WorkerContract c " +
+            "WHERE c.workplace.id = :workplaceId " +
+            "AND c.isActive = true")
+    List<com.example.wagemanager.domain.contract.entity.WorkerContract> findContractsByWorkplaceId(
+            @Param("workplaceId") Long workplaceId
+    );
 }

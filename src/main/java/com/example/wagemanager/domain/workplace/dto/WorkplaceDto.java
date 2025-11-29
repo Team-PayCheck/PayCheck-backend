@@ -2,6 +2,7 @@ package com.example.wagemanager.domain.workplace.dto;
 
 import com.example.wagemanager.domain.workplace.entity.Workplace;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,6 +32,9 @@ public class WorkplaceDto {
 
         @Pattern(regexp = "^#([A-Fa-f0-9]{6})$", message = "색상 코드 형식이 올바르지 않습니다. (예: #FF5733)")
         private String colorCode;
+
+        @NotNull(message = "5인 미만 여부는 필수입니다.")
+        private Boolean isLessThanFiveEmployees;
     }
 
     @Getter
@@ -44,6 +48,9 @@ public class WorkplaceDto {
 
         @Pattern(regexp = "^#([A-Fa-f0-9]{6})$", message = "색상 코드 형식이 올바르지 않습니다. (예: #FF5733)")
         private String colorCode;
+
+        @NotNull(message = "5인 미만 여부는 필수입니다.")
+        private Boolean isLessThanFiveEmployees;
     }
 
     @Getter
@@ -58,6 +65,7 @@ public class WorkplaceDto {
         private String address;
         private String colorCode;
         private Boolean isActive;
+        private Boolean isLessThanFiveEmployees;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
@@ -70,6 +78,7 @@ public class WorkplaceDto {
                     .address(workplace.getAddress())
                     .colorCode(workplace.getColorCode())
                     .isActive(workplace.getIsActive())
+                    .isLessThanFiveEmployees(workplace.getIsLessThanFiveEmployees())
                     .createdAt(workplace.getCreatedAt())
                     .updatedAt(workplace.getUpdatedAt())
                     .build();

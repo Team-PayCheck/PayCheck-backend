@@ -38,6 +38,9 @@ public class ContractDto {
         @Min(value = 1, message = "급여 지급일은 1일 이상이어야 합니다.")
         @Max(value = 31, message = "급여 지급일은 31일 이하여야 합니다.")
         private Integer paymentDay;
+
+        @NotNull(message = "4대보험 적용 여부는 필수입니다.")
+        private Boolean applyInsuranceAndTax;
     }
 
     @Getter
@@ -56,6 +59,9 @@ public class ContractDto {
         @Min(value = 1, message = "급여 지급일은 1일 이상이어야 합니다.")
         @Max(value = 31, message = "급여 지급일은 31일 이하여야 합니다.")
         private Integer paymentDay;
+
+        @NotNull(message = "4대보험 적용 여부는 필수입니다.")
+        private Boolean applyInsuranceAndTax;
     }
 
     @Getter
@@ -76,6 +82,7 @@ public class ContractDto {
         private LocalDate contractEndDate;
         private Integer paymentDay;
         private Boolean isActive;
+        private Boolean applyInsuranceAndTax;
 
         public static Response from(WorkerContract contract) {
             return Response.builder()
@@ -92,6 +99,7 @@ public class ContractDto {
                     .contractEndDate(contract.getContractEndDate())
                     .paymentDay(contract.getPaymentDay())
                     .isActive(contract.getIsActive())
+                    .applyInsuranceAndTax(contract.getApplyInsuranceAndTax())
                     .build();
         }
     }

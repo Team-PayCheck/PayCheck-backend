@@ -86,7 +86,8 @@ public class ContractService {
                 request.getHourlyWage(),
                 workDaysJson,
                 request.getContractEndDate(),
-                request.getPaymentDay()
+                request.getPaymentDay(),
+                request.getApplyInsuranceAndTax()
         );
 
         return ContractDto.Response.from(contract);

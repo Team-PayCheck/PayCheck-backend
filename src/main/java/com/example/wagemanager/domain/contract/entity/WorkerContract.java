@@ -48,11 +48,17 @@ public class WorkerContract extends BaseEntity {
     @Builder.Default
     private Boolean isActive = true;
 
-    public void update(BigDecimal hourlyWage, String workDays, LocalDate contractEndDate, Integer paymentDay) {
+    @Column(name = "apply_insurance_and_tax", nullable = false)
+    @Builder.Default
+    private Boolean applyInsuranceAndTax = false;
+
+    public void update(BigDecimal hourlyWage, String workDays, LocalDate contractEndDate, Integer paymentDay,
+                       Boolean applyInsuranceAndTax) {
         if (hourlyWage != null) this.hourlyWage = hourlyWage;
         if (workDays != null) this.workDays = workDays;
         if (contractEndDate != null) this.contractEndDate = contractEndDate;
         if (paymentDay != null) this.paymentDay = paymentDay;
+        if (applyInsuranceAndTax != null) this.applyInsuranceAndTax = applyInsuranceAndTax;
     }
 
     public void terminate() {

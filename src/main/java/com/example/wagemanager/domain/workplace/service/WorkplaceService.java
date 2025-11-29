@@ -68,7 +68,8 @@ public class WorkplaceService {
                 request.getBusinessName(),
                 request.getName(),
                 request.getAddress(),
-                request.getColorCode()
+                request.getColorCode(),
+                request.getIsLessThanFiveEmployees()
         );
 
         return WorkplaceDto.Response.from(workplace);
