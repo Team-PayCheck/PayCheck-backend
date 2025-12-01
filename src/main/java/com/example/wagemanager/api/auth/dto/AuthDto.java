@@ -12,17 +12,6 @@ import lombok.NoArgsConstructor;
 public class AuthDto {
 
     /**
-     * 개발용 임시 로그인 요청 DTO
-     */
-    @Getter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class DevLoginRequest {
-        private Long userId;
-    }
-
-    /**
      * 카카오 로그인 요청 DTO
      */
     @Getter
