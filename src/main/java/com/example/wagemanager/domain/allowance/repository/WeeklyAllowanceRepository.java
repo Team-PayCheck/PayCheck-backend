@@ -24,7 +24,11 @@ public interface WeeklyAllowanceRepository extends JpaRepository<WeeklyAllowance
             WHERE wa.contract.id = :contractId
             AND FUNCTION('YEAR', wa.createdAt) = FUNCTION('YEAR', :targetDate)
             AND FUNCTION('WEEK', wa.createdAt) = FUNCTION('WEEK', :targetDate)
-            LIMIT 1
             """)
-    Optional<WeeklyAllowance> findByContractAndWeek(@Param("contractId") Long contractId, @Param("targetDate") LocalDate targetDate);
+    List<WeeklyAllowance> findAllByContractAndWeek(@Param("contractId") Long contractId, @Param("targetDate") LocalDate targetDate);
+
+    default Optional<WeeklyAllowance> findByContractAndWeek(Long contractId, LocalDate targetDate) {
+        List<WeeklyAllowance> results = findAllByContractAndWeek(contractId, targetDate);
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+    }
 }
