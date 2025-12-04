@@ -2,6 +2,7 @@ package com.example.wagemanager.domain.user.dto;
 
 import com.example.wagemanager.domain.user.entity.User;
 import com.example.wagemanager.domain.user.enums.UserType;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,6 +14,7 @@ public class UserDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "UserResponse")
     public static class Response {
         private Long id;
         private String kakaoId;
@@ -37,6 +39,7 @@ public class UserDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "UserUpdateRequest")
     public static class UpdateRequest {
         private String name;
         private String phone;
@@ -47,6 +50,7 @@ public class UserDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "UserRegisterRequest")
     public static class RegisterRequest {
         private String kakaoId;
         private String name;
@@ -59,6 +63,7 @@ public class UserDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "UserRegisterResponse")
     public static class RegisterResponse {
         private Long userId;
         private String name;

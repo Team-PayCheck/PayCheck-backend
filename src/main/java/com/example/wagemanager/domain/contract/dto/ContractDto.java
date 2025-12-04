@@ -1,6 +1,7 @@
 package com.example.wagemanager.domain.contract.dto;
 
 import com.example.wagemanager.domain.contract.entity.WorkerContract;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +18,7 @@ public class ContractDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "ContractCreateRequest")
     public static class CreateRequest {
         @NotBlank(message = "근로자 코드는 필수입니다.")
         private String workerCode;
@@ -47,6 +49,7 @@ public class ContractDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "ContractUpdateRequest")
     public static class UpdateRequest {
         @DecimalMin(value = "10030.0", inclusive = true, message = "시급은 10,030 이상이어야 합니다.")
         private BigDecimal hourlyWage;
@@ -68,6 +71,7 @@ public class ContractDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "ContractResponse")
     public static class Response {
         private Long id;
         private Long workplaceId;
@@ -108,6 +112,7 @@ public class ContractDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "ContractListResponse")
     public static class ListResponse {
         private Long id;
         private String workerName;

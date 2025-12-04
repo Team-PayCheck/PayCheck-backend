@@ -2,6 +2,7 @@ package com.example.wagemanager.domain.payment.dto;
 
 import com.example.wagemanager.domain.payment.entity.Payment;
 import com.example.wagemanager.domain.payment.enums.PaymentStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,6 +17,7 @@ public class PaymentDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "PaymentPaymentRequest")
     public static class PaymentRequest {
         @NotNull(message = "급여 ID는 필수입니다.")
         private Long salaryId;
@@ -26,6 +28,7 @@ public class PaymentDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "PaymentResponse")
     public static class Response {
         private Long id;
         private Long salaryId;
@@ -66,6 +69,7 @@ public class PaymentDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "PaymentListResponse")
     public static class ListResponse {
         private Long id;
         private Long salaryId;

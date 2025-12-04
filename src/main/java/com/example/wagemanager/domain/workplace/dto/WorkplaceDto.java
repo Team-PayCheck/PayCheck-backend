@@ -1,6 +1,7 @@
 package com.example.wagemanager.domain.workplace.dto;
 
 import com.example.wagemanager.domain.workplace.entity.Workplace;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -17,6 +18,7 @@ public class WorkplaceDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "WorkplaceCreateRequest")
     public static class CreateRequest {
         @NotBlank(message = "사업자 등록번호는 필수입니다.")
         @Pattern(regexp = "\\d{3}-\\d{2}-\\d{5}", message = "사업자 등록번호 형식이 올바르지 않습니다. (예: 123-45-67890)")
@@ -41,6 +43,7 @@ public class WorkplaceDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "WorkplaceUpdateRequest")
     public static class UpdateRequest {
         private String businessName;
         private String name;
@@ -57,6 +60,7 @@ public class WorkplaceDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "WorkplaceResponse")
     public static class Response {
         private Long id;
         private String businessNumber;
@@ -89,6 +93,7 @@ public class WorkplaceDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "WorkplaceListResponse")
     public static class ListResponse {
         private Long id;
         private String businessName;

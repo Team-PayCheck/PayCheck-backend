@@ -1,5 +1,6 @@
 package com.example.wagemanager.api.auth.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,6 +19,7 @@ public class AuthDto {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    @Schema(name = "AuthKakaoLoginRequest")
     public static class KakaoLoginRequest {
 
         @NotBlank(message = "카카오 액세스 토큰은 필수입니다.")
@@ -31,6 +33,7 @@ public class AuthDto {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    @Schema(name = "AuthKakaoRegisterRequest")
     public static class KakaoRegisterRequest {
 
         @NotBlank(message = "카카오 액세스 토큰은 필수입니다.")
@@ -47,6 +50,7 @@ public class AuthDto {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    @Schema(name = "AuthLoginResponse")
     public static class LoginResponse {
         private String accessToken;
         private Long userId;
@@ -57,6 +61,7 @@ public class AuthDto {
     @Getter
     @AllArgsConstructor
     @Builder
+    @Schema(name = "AuthLogoutResponse")
     public static class LogoutResponse {
         private String message;
 

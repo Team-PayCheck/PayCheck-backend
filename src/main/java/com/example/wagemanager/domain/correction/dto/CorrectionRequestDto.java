@@ -2,6 +2,7 @@ package com.example.wagemanager.domain.correction.dto;
 
 import com.example.wagemanager.domain.correction.entity.CorrectionRequest;
 import com.example.wagemanager.domain.correction.enums.CorrectionStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,6 +19,7 @@ public class CorrectionRequestDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "CorrectionRequestCreateRequest")
     public static class CreateRequest {
         @NotNull
         private Long workRecordId;
@@ -35,6 +37,7 @@ public class CorrectionRequestDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "CorrectionRequestReviewRequest")
     public static class ReviewRequest {
         private String reviewComment;
     }
@@ -43,6 +46,7 @@ public class CorrectionRequestDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "CorrectionRequestResponse")
     public static class Response {
         private Long id;
         private Long workRecordId;
@@ -96,6 +100,7 @@ public class CorrectionRequestDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "CorrectionRequestListResponse")
     public static class ListResponse {
         private Long id;
         private Long workRecordId;
@@ -136,6 +141,7 @@ public class CorrectionRequestDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "CorrectionRequestRequesterInfo")
     public static class RequesterInfo {
         private Long id;
         private String name;
@@ -145,6 +151,7 @@ public class CorrectionRequestDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "CorrectionRequestReviewerInfo")
     public static class ReviewerInfo {
         private Long id;
         private String name;

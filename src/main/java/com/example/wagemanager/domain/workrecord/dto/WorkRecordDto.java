@@ -2,6 +2,7 @@ package com.example.wagemanager.domain.workrecord.dto;
 
 import com.example.wagemanager.domain.workrecord.entity.WorkRecord;
 import com.example.wagemanager.domain.workrecord.enums.WorkRecordStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,6 +19,7 @@ public class WorkRecordDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "WorkRecordResponse")
     public static class Response {
         private Long id;
         private Long contractId;
@@ -48,6 +50,7 @@ public class WorkRecordDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "WorkRecordDetailedResponse")
     public static class DetailedResponse {
         private Long id;
         private Long contractId;
@@ -86,6 +89,7 @@ public class WorkRecordDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "WorkRecordCalendarResponse")
     public static class CalendarResponse {
         private Long id;
         private Long contractId;
@@ -114,6 +118,7 @@ public class WorkRecordDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "WorkRecordCreateRequest")
     public static class CreateRequest {
         @NotNull
         private Long contractId;
@@ -131,6 +136,7 @@ public class WorkRecordDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "WorkRecordBatchCreateRequest")
     public static class BatchCreateRequest {
         @NotNull
         private Long contractId;
@@ -148,6 +154,7 @@ public class WorkRecordDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "WorkRecordUpdateRequest")
     public static class UpdateRequest {
         private LocalTime startTime;
         private LocalTime endTime;

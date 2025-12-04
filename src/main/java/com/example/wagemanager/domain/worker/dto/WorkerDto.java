@@ -1,6 +1,7 @@
 package com.example.wagemanager.domain.worker.dto;
 
 import com.example.wagemanager.domain.worker.entity.Worker;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,6 +13,7 @@ public class WorkerDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "WorkerResponse")
     public static class Response {
         private Long id;
         private Long userId;
@@ -36,6 +38,7 @@ public class WorkerDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @Schema(name = "WorkerUpdateRequest")
     public static class UpdateRequest {
         // private String accountNumber;
         // private String bankName;
