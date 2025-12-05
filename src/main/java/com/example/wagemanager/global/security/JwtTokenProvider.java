@@ -17,12 +17,15 @@ public class JwtTokenProvider {
 
     private final SecretKey secretKey;
     private final long expirationTime;
+    private final long refreshExpirationTime;
 
     public JwtTokenProvider(
             @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration}") long expirationTime) {
+            @Value("${jwt.expiration}") long expirationTime,
+            @Value("${jwt.refresh-expiration}") long refreshExpirationTime) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationTime = expirationTime;
+        this.refreshExpirationTime = refreshExpirationTime;
     }
 
     /**
@@ -72,5 +75,30 @@ public class JwtTokenProvider {
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
+    }
+
+    /**
+     * Refresh Token 생성
+     * @param userId 사용자 ID
+     * @return Refresh Token 문자열
+     */
+    public String generateRefreshToken(Long userId) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + refreshExpirationTime);
+
+        return Jwts.builder()
+                .subject(String.valueOf(userId))
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(secretKey)
+                .compact();
+    }
+
+    /**
+     * Refresh Token의 만료 시간 반환 (밀리초)
+     * @return Refresh Token 만료 시간
+     */
+    public long getRefreshExpirationTime() {
+        return refreshExpirationTime;
     }
 }

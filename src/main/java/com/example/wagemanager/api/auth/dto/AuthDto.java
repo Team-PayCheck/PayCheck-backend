@@ -41,6 +41,11 @@ public class AuthDto {
 
         @NotBlank(message = "사용자 유형은 필수입니다.")
         private String userType;
+
+        @NotBlank(message = "전화번호는 필수입니다.")
+        private String phone;
+
+        private String kakaoPayLink; // WORKER 타입인 경우 필수
     }
 
     /**
@@ -70,5 +75,18 @@ public class AuthDto {
                     .message("로그아웃되었습니다.")
                     .build();
         }
+    }
+
+
+    /**
+     * 토큰 갱신 응답 DTO
+     */
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @Schema(name = "AuthRefreshResponse")
+    public static class RefreshResponse {
+        private String accessToken;
     }
 }
