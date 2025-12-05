@@ -64,7 +64,7 @@ public class UserService {
 
         // UserType에 따라 Worker 또는 Employer 생성
         if (request.getUserType() == UserType.WORKER) {
-            Worker worker = workerService.createWorker(savedUser);
+            Worker worker = workerService.createWorker(savedUser, request.getKakaoPayLink());
             workerCode = worker.getWorkerCode();
         } else if (request.getUserType() == UserType.EMPLOYER) {
             employerService.createEmployer(savedUser, request.getPhone());

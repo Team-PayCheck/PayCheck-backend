@@ -59,12 +59,13 @@ public class WorkerService {
     }
 
     @Transactional
-    public Worker createWorker(User user) {
+    public Worker createWorker(User user, String kakaoPayLink) {
         String workerCode = generateUniqueWorkerCode();
 
         Worker worker = Worker.builder()
                 .user(user)
                 .workerCode(workerCode)
+                .kakaoPayLink(kakaoPayLink)
                 .build();
 
         return workerRepository.save(worker);

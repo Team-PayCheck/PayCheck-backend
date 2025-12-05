@@ -45,13 +45,6 @@ public class UserController {
         return ApiResponse.success(userService.updateUser(userId, request));
     }
 
-    @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
-    @PostMapping("/register")
-    public ApiResponse<UserDto.RegisterResponse> register(
-            @RequestBody UserDto.RegisterRequest request) {
-        return ApiResponse.success(userService.register(request));
-    }
-
     @Operation(summary = "내 정보 조회", description = "로그인한 사용자 본인의 정보를 조회합니다.")
     @GetMapping("/me")
     public ApiResponse<UserDto.Response> getMyInfo(@AuthenticationPrincipal User user) {
