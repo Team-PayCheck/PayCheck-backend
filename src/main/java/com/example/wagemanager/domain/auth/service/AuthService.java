@@ -1,7 +1,7 @@
 package com.example.wagemanager.domain.auth.service;
 
-import com.example.wagemanager.api.auth.dto.AuthDto;
 import com.example.wagemanager.common.exception.NotFoundException;
+import com.example.wagemanager.domain.auth.dto.AuthDto;
 import com.example.wagemanager.domain.auth.entity.RefreshToken;
 import com.example.wagemanager.domain.auth.repository.RefreshTokenRepository;
 import com.example.wagemanager.domain.user.dto.UserDto;
@@ -70,8 +70,6 @@ public class AuthService {
                         "USER_NOT_FOUND",
                         "등록되지 않은 카카오 계정입니다. 회원가입을 진행해주세요."
                 ));
-
-        updateProfileIfEmpty(user, userInfo);
 
         String accessToken = jwtTokenProvider.generateToken(user.getId());
         String refreshToken = createOrUpdateRefreshToken(user.getId());
@@ -168,16 +166,6 @@ public class AuthService {
         return refreshTokenString;
     }
 
-    private void updateProfileIfEmpty(User user, KakaoUserInfo kakaoUserInfo) {
-        String name = user.getName() == null ? kakaoUserInfo.displayName() : null;
-        String phone = user.getPhone() == null ? normalizePhoneNumber(kakaoUserInfo.phoneNumber()) : null;
-        String profileImage = user.getProfileImageUrl() == null ? kakaoUserInfo.profileImageUrl() : null;
-
-        if (name != null || phone != null || profileImage != null) {
-            user.updateProfile(name, phone, profileImage);
-        }
-    }
-
     @Transactional
     public LoginResult registerWithKakao(AuthDto.KakaoRegisterRequest request) {
         if (!StringUtils.hasText(request.getKakaoAccessToken())) {
@@ -203,7 +191,7 @@ public class AuthService {
         UserDto.RegisterRequest registerRequest = UserDto.RegisterRequest.builder()
                 .kakaoId(userInfo.kakaoId())
                 .name(resolveDisplayName(userInfo))
-                .phone(request.getPhone())
+                .phone(normalizePhoneNumber(userInfo.phoneNumber()))
                 .profileImageUrl(userInfo.profileImageUrl())
                 .userType(userType)
                 .kakaoPayLink(request.getKakaoPayLink())

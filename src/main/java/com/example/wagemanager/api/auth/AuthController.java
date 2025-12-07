@@ -1,7 +1,7 @@
 package com.example.wagemanager.api.auth;
 
-import com.example.wagemanager.api.auth.dto.AuthDto;
 import com.example.wagemanager.common.dto.ApiResponse;
+import com.example.wagemanager.domain.auth.dto.AuthDto;
 import com.example.wagemanager.domain.auth.service.AuthService;
 import com.example.wagemanager.domain.user.entity.User;
 import io.swagger.v3.oas.annotations.Operation;

@@ -1,4 +1,4 @@
-package com.example.wagemanager.api.auth.dto;
+package com.example.wagemanager.domain.auth.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -41,9 +41,6 @@ public class AuthDto {
 
         @NotBlank(message = "사용자 유형은 필수입니다.")
         private String userType;
-
-        @NotBlank(message = "전화번호는 필수입니다.")
-        private String phone;
 
         private String kakaoPayLink; // WORKER 타입인 경우 필수
     }

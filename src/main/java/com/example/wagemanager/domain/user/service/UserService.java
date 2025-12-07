@@ -44,11 +44,6 @@ public class UserService {
 
     @Transactional
     public UserDto.RegisterResponse register(UserDto.RegisterRequest request) {
-        // 카카오 ID 중복 체크
-        if (userRepository.findByKakaoId(request.getKakaoId()).isPresent()) {
-            throw new IllegalArgumentException("이미 등록된 카카오 계정입니다.");
-        }
-
         // User 생성
         User user = User.builder()
                 .kakaoId(request.getKakaoId())
