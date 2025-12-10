@@ -3,7 +3,10 @@ package com.example.wagemanager.domain.workrecord.dto;
 import com.example.wagemanager.domain.workrecord.entity.WorkRecord;
 import com.example.wagemanager.domain.workrecord.enums.WorkRecordStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -120,15 +123,22 @@ public class WorkRecordDto {
     @AllArgsConstructor
     @Schema(name = "WorkRecordCreateRequest")
     public static class CreateRequest {
-        @NotNull
+        @NotNull(message = "계약 ID는 필수입니다.")
         private Long contractId;
-        @NotNull
+
+        @NotNull(message = "근무일은 필수입니다.")
         private LocalDate workDate;
-        @NotNull
+
+        @NotNull(message = "시작 시간은 필수입니다.")
         private LocalTime startTime;
-        @NotNull
+
+        @NotNull(message = "종료 시간은 필수입니다.")
         private LocalTime endTime;
+
+        @Min(value = 0, message = "휴게 시간은 0분 이상이어야 합니다.")
         private Integer breakMinutes;
+
+        @Size(max = 500, message = "메모는 500자 이하로 입력해주세요.")
         private String memo;
     }
 
@@ -138,15 +148,22 @@ public class WorkRecordDto {
     @AllArgsConstructor
     @Schema(name = "WorkRecordBatchCreateRequest")
     public static class BatchCreateRequest {
-        @NotNull
+        @NotNull(message = "계약 ID는 필수입니다.")
         private Long contractId;
-        @NotNull
+
+        @NotEmpty(message = "근무일 목록은 비어있을 수 없습니다.")
         private List<LocalDate> workDates;
-        @NotNull
+
+        @NotNull(message = "시작 시간은 필수입니다.")
         private LocalTime startTime;
-        @NotNull
+
+        @NotNull(message = "종료 시간은 필수입니다.")
         private LocalTime endTime;
+
+        @Min(value = 0, message = "휴게 시간은 0분 이상이어야 합니다.")
         private Integer breakMinutes;
+
+        @Size(max = 500, message = "메모는 500자 이하로 입력해주세요.")
         private String memo;
     }
 
@@ -157,8 +174,13 @@ public class WorkRecordDto {
     @Schema(name = "WorkRecordUpdateRequest")
     public static class UpdateRequest {
         private LocalTime startTime;
+
         private LocalTime endTime;
+
+        @Min(value = 0, message = "휴게 시간은 0분 이상이어야 합니다.")
         private Integer breakMinutes;
+
+        @Size(max = 500, message = "메모는 500자 이하로 입력해주세요.")
         private String memo;
     }
 }

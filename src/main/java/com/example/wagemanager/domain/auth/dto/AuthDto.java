@@ -2,6 +2,7 @@ package com.example.wagemanager.domain.auth.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -42,7 +43,15 @@ public class AuthDto {
         @NotBlank(message = "사용자 유형은 필수입니다.")
         private String userType;
 
+        @NotBlank(message = "전화번호는 필수입니다.")
+        @Pattern(regexp = "^01[0-9]-\\d{4}-\\d{4}$", message = "전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)")
+        private String phone;
+
+        @Pattern(regexp = "^https://qr\\.kakaopay\\.com/.*$", message = "카카오페이 링크 형식이 올바르지 않습니다.")
         private String kakaoPayLink; // WORKER 타입인 경우 필수
+
+        @Builder.Default
+        private String profileImageUrl = "https://via.placeholder.com/150/CCCCCC/FFFFFF?text=User";
     }
 
     /**

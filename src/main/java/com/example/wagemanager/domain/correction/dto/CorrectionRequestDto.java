@@ -3,7 +3,9 @@ package com.example.wagemanager.domain.correction.dto;
 import com.example.wagemanager.domain.correction.entity.CorrectionRequest;
 import com.example.wagemanager.domain.correction.enums.CorrectionStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,15 +23,20 @@ public class CorrectionRequestDto {
     @AllArgsConstructor
     @Schema(name = "CorrectionRequestCreateRequest")
     public static class CreateRequest {
-        @NotNull
+        @NotNull(message = "근무 기록 ID는 필수입니다.")
         private Long workRecordId;
-        @NotNull
+
+        @NotNull(message = "요청 근무일은 필수입니다.")
         private LocalDate requestedWorkDate;
-        @NotNull
+
+        @NotNull(message = "요청 시작 시간은 필수입니다.")
         private LocalTime requestedStartTime;
-        @NotNull
+
+        @NotNull(message = "요청 종료 시간은 필수입니다.")
         private LocalTime requestedEndTime;
-        @NotNull
+
+        @NotBlank(message = "정정 사유는 필수입니다.")
+        @Size(max = 500, message = "정정 사유는 500자 이하로 입력해주세요.")
         private String reason;
     }
 
@@ -39,6 +46,8 @@ public class CorrectionRequestDto {
     @AllArgsConstructor
     @Schema(name = "CorrectionRequestReviewRequest")
     public static class ReviewRequest {
+        @NotBlank(message = "검토 의견은 필수입니다.")
+        @Size(max = 500, message = "검토 의견은 500자 이하로 입력해주세요.")
         private String reviewComment;
     }
 

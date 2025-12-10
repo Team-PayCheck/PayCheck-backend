@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -45,14 +46,18 @@ public class WorkplaceDto {
     @AllArgsConstructor
     @Schema(name = "WorkplaceUpdateRequest")
     public static class UpdateRequest {
+        @Size(min = 1, max = 100, message = "사업장명은 1자 이상 100자 이하로 입력해주세요.")
         private String businessName;
+
+        @Size(min = 1, max = 100, message = "지점명은 1자 이상 100자 이하로 입력해주세요.")
         private String name;
+
+        @Size(max = 200, message = "주소는 200자 이하로 입력해주세요.")
         private String address;
 
         @Pattern(regexp = "^#([A-Fa-f0-9]{6})$", message = "색상 코드 형식이 올바르지 않습니다. (예: #FF5733)")
         private String colorCode;
 
-        @NotNull(message = "5인 미만 여부는 필수입니다.")
         private Boolean isLessThanFiveEmployees;
     }
 

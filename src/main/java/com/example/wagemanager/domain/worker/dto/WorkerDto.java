@@ -2,6 +2,7 @@ package com.example.wagemanager.domain.worker.dto;
 
 import com.example.wagemanager.domain.worker.entity.Worker;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -42,6 +43,7 @@ public class WorkerDto {
     public static class UpdateRequest {
         // private String accountNumber;
         // private String bankName;
+        @Pattern(regexp = "^https://qr\\.kakaopay\\.com/.*$", message = "카카오페이 링크 형식이 올바르지 않습니다.")
         private String kakaoPayLink;
     }
 }

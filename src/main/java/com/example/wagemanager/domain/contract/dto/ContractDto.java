@@ -3,6 +3,7 @@ package com.example.wagemanager.domain.contract.dto;
 import com.example.wagemanager.domain.contract.entity.WorkerContract;
 import com.example.wagemanager.domain.salary.util.DeductionCalculator;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,9 +29,9 @@ public class ContractDto {
         @DecimalMin(value = "10030.0", inclusive = true, message = "시급은 10,030 이상이어야 합니다.")
         private BigDecimal hourlyWage;
 
-        @NotNull(message = "근무 요일은 필수입니다.")
-        @Size(min = 1, message = "최소 1개의 근무 요일을 선택해야 합니다.")
-        private List<@Min(value = 1, message = "근무 요일은 1~7 사이여야 합니다.") @Max(value = 7, message = "근무 요일은 1~7 사이여야 합니다.") Integer> workDays;
+        @NotNull(message = "근무 스케줄은 필수입니다.")
+        @Size(min = 1, message = "최소 1개의 근무 스케줄을 등록해야 합니다.")
+        private List<@Valid WorkScheduleDto> workSchedules;
 
         @NotNull(message = "계약 시작일은 필수입니다.")
         private LocalDate contractStartDate;
@@ -55,8 +56,8 @@ public class ContractDto {
         @DecimalMin(value = "10030.0", inclusive = true, message = "시급은 10,030 이상이어야 합니다.")
         private BigDecimal hourlyWage;
 
-        @Size(min = 1, message = "최소 1개의 근무 요일을 선택해야 합니다.")
-        private List<@Min(value = 1, message = "근무 요일은 1~7 사이여야 합니다.") @Max(value = 7, message = "근무 요일은 1~7 사이여야 합니다.") Integer> workDays;
+        @Size(min = 1, message = "최소 1개의 근무 스케줄을 등록해야 합니다.")
+        private List<@Valid WorkScheduleDto> workSchedules;
 
         private LocalDate contractEndDate;
 
@@ -64,6 +65,7 @@ public class ContractDto {
         @Max(value = 31, message = "급여 지급일은 31일 이하여야 합니다.")
         private Integer paymentDay;
 
+        @NotNull(message = "급여 공제 유형은 필수입니다.")
         private DeductionCalculator.PayrollDeductionType payrollDeductionType;
     }
 
@@ -81,7 +83,7 @@ public class ContractDto {
         private String workerCode;
         private String workerPhone;
         private BigDecimal hourlyWage;
-        private String workDays;
+        private String workSchedules;
         private LocalDate contractStartDate;
         private LocalDate contractEndDate;
         private Integer paymentDay;
@@ -98,7 +100,7 @@ public class ContractDto {
                     .workerCode(contract.getWorker().getWorkerCode())
                     .workerPhone(contract.getWorker().getUser().getPhone())
                     .hourlyWage(contract.getHourlyWage())
-                    .workDays(contract.getWorkDays())
+                    .workSchedules(contract.getWorkSchedules())
                     .contractStartDate(contract.getContractStartDate())
                     .contractEndDate(contract.getContractEndDate())
                     .paymentDay(contract.getPaymentDay())
