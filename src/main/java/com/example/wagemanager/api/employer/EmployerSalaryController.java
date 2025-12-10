@@ -16,7 +16,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/employer/salaries")
 @RequiredArgsConstructor
-public class SalaryController {
+@PreAuthorize("@userPermission.isEmployer()")
+public class EmployerSalaryController {
 
     private final SalaryService salaryService;
 

@@ -32,11 +32,27 @@ public class SalaryPermission {
         return salary.getContract().getWorkplace().getEmployer().getUser().getId().equals(currentUser.getId());
     }
 
+    public boolean canAccessAsWorker(Long salaryId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof User)) {
+            return false;
+        }
+
+        User currentUser = (User) authentication.getPrincipal();
+        Salary salary = salaryRepository.findById(salaryId).orElse(null);
+
+        if (salary == null) {
+            return false;
+        }
+
+        return salary.getContract().getWorker().getUser().getId().equals(currentUser.getId());
+    }
+
     public boolean canAccessWorkplaceSalaries(Long workplaceId) {
         return workplacePermission.canAccess(workplaceId);
     }
 
     public boolean canCalculateForContract(Long contractId) {
-        return contractPermission.canAccessAsEmployer(contractId);
+        return contractPermission.canAccessAsEmployer(contractId) || contractPermission.canAccessAsWorker(contractId);
     }
 }

@@ -19,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/employer/workplaces")
 @RequiredArgsConstructor
+@PreAuthorize("@userPermission.isEmployer()")
 public class WorkplaceController {
 
     private final WorkplaceService workplaceService;

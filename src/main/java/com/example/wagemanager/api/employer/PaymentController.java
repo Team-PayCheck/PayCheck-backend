@@ -17,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/employer/payments")
 @RequiredArgsConstructor
+@PreAuthorize("@userPermission.isEmployer()")
 public class PaymentController {
 
     private final PaymentService paymentService;

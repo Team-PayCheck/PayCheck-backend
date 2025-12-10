@@ -17,7 +17,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/employer")
 @RequiredArgsConstructor
-public class ContractController {
+@PreAuthorize("@userPermission.isEmployer()")
+public class EmployerContractController {
 
     private final ContractService contractService;
 
