@@ -11,15 +11,8 @@
 - 예: 월급날이 매월 15일인 경우
   - **1월 급여**: 전년 12월 15일 ~ 1월 14일까지의 근무
   - **2월 급여**: 1월 15일 ~ 2월 14일까지의 근무
-
-### 코드 예시
-```java
-// 월급날이 21일인 경우
-Integer paymentDay = 21;
-LocalDate startDate = LocalDate.of(year, month, 1).minusMonths(1).withDayOfMonth(paymentDay);
-LocalDate endDate = LocalDate.of(year, month, 1).withDayOfMonth(paymentDay).minusDays(1);
-// 예: 2024년 2월 급여 → 2024-01-21 ~ 2024-02-20
-```
+- 예: 월급날이 21일인 경우
+  - **2월 급여**: 1월 21일 ~ 2월 20일까지의 근무
 
 ## 🏢 근무 기록 (WorkRecord) 관리
 
@@ -35,12 +28,6 @@ LocalDate endDate = LocalDate.of(year, month, 1).withDayOfMonth(paymentDay).minu
 
 ### 자동 상태 결정
 근무 기록 생성 시 날짜를 비교하여 자동으로 상태가 결정됩니다:
-
-```java
-WorkRecordStatus status = workDate.isBefore(LocalDate.now())
-    ? WorkRecordStatus.COMPLETED
-    : WorkRecordStatus.SCHEDULED;
-```
 
 - **과거 날짜**: 자동으로 COMPLETED → 즉시 급여에 반영
 - **미래 날짜**: SCHEDULED → 급여에 반영 안 됨
@@ -111,12 +98,7 @@ WorkRecordStatus status = workDate.isBefore(LocalDate.now())
 - 주가 완전히 끝난 후(다음 주 월요일 시작) 정확한 계산 가능
 
 ### 마지막 주차 판단 기준
-
-```java
-// 마지막 주차 판단: 월급날이 해당 주(weekStartDate ~ weekEndDate)에 포함되는지 확인
-boolean isLastWeek = !paymentDayDate.isBefore(allowance.getWeekStartDate())
-                  && !paymentDayDate.isAfter(allowance.getWeekEndDate());
-```
+- 월급날이 해당 주(월요일 ~ 일요일)에 포함되는지 확인하여 마지막 주차 여부를 판단합니다.
 
 ### 구체적인 예시
 
@@ -150,32 +132,11 @@ boolean isLastWeek = !paymentDayDate.isBefore(allowance.getWeekStartDate())
 
 ### 이월 처리 로직
 
-```java
-// 1. 당월 WeeklyAllowance 처리 - 마지막 주차 제외
-for (WeeklyAllowance allowance : weeklyAllowances) {
-    boolean isLastWeek = !paymentDayDate.isBefore(allowance.getWeekStartDate())
-                      && !paymentDayDate.isAfter(allowance.getWeekEndDate());
+1. **당월 주간 수당 처리**
+   - 마지막 주차를 제외한 모든 주차의 주휴수당과 연장수당을 현재 월 급여에 포함
 
-    if (!isLastWeek) {
-        // 마지막 주차가 아니면 현재 월 급여에 포함
-        totalWeeklyPaidLeaveAmount += allowance.getWeeklyPaidLeaveAmount();
-        totalOvertimePay += allowance.getOvertimeAmount();
-    }
-}
-
-// 2. 전월에서 이월된 수당 포함
-LocalDate previousPaymentDayDate = paymentDayDate.minusMonths(1);
-for (WeeklyAllowance allowance : previousMonthAllowances) {
-    boolean isPreviousLastWeek = !previousPaymentDayDate.isBefore(allowance.getWeekStartDate())
-                              && !previousPaymentDayDate.isAfter(allowance.getWeekEndDate());
-
-    if (isPreviousLastWeek) {
-        // 전월 마지막 주차의 수당을 현재 월 급여에 추가
-        totalWeeklyPaidLeaveAmount += allowance.getWeeklyPaidLeaveAmount();
-        totalOvertimePay += allowance.getOvertimeAmount();
-    }
-}
-```
+2. **전월에서 이월된 수당 포함**
+   - 전월의 마지막 주차였던 주간 수당(주휴수당, 연장수당)을 현재 월 급여에 추가
 
 ## 🧮 총 급여 계산
 
@@ -199,24 +160,13 @@ for (WeeklyAllowance allowance : previousMonthAllowances) {
 ### 자동 재계산 트리거
 
 1. **근무 완료 처리 시** (SCHEDULED → COMPLETED)
-   ```java
-   workRecord.complete();
-   coordinatorService.handleWorkRecordCompletion(workRecord);
-   ```
+   - 예정된 근무를 완료 처리하면 급여가 자동으로 재계산됩니다.
 
 2. **COMPLETED 상태의 근무 기록 수정 시**
-   ```java
-   if (workRecord.getStatus() == WorkRecordStatus.COMPLETED) {
-       recalculateSalaryForWorkRecord(workRecord);
-   }
-   ```
+   - 이미 완료된 근무 기록을 수정하면 급여가 자동으로 재계산됩니다.
 
 3. **과거 날짜로 근무 기록 생성 시**
-   ```java
-   if (status == WorkRecordStatus.COMPLETED) {
-       coordinatorService.handleWorkRecordCompletion(savedRecord);
-   }
-   ```
+   - 과거 날짜로 근무 기록을 생성하면 자동으로 COMPLETED 상태가 되며 급여가 재계산됩니다.
 
 ### 재계산되지 않는 경우
 
@@ -244,42 +194,6 @@ for (WeeklyAllowance allowance : previousMonthAllowances) {
 - WorkRecord는 반드시 WeeklyAllowance와 연결되어야 합니다.
 - WeeklyAllowance는 반드시 Contract와 연결되어야 합니다.
 - Salary는 반드시 Contract와 연결되어야 합니다.
-
-## 📝 API 호출 예시
-
-### 급여 계산 API
-```http
-POST /api/salary/calculate
-Content-Type: application/json
-
-{
-  "contractId": 1,
-  "year": 2024,
-  "month": 2
-}
-```
-
-### 응답 예시
-```json
-{
-  "contractId": 1,
-  "year": 2024,
-  "month": 2,
-  "totalWorkHours": 160.0,
-  "basePay": 1600000,
-  "overtimePay": 75000,
-  "nightPay": 50000,
-  "holidayPay": 30000,
-  "weeklyPaidLeaveAmount": 80000,
-  "totalGrossPay": 1835000,
-  "fourMajorInsurance": 80000,
-  "incomeTax": 50000,
-  "localIncomeTax": 5000,
-  "totalDeduction": 135000,
-  "netPay": 1700000,
-  "paymentDueDate": "2024-02-15"
-}
-```
 
 ## 🔗 관련 파일
 

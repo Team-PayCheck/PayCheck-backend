@@ -65,7 +65,6 @@ public interface CorrectionRequestRepository extends JpaRepository<CorrectionReq
             "JOIN FETCH wr.contract c " +
             "JOIN FETCH c.workplace w " +
             "JOIN FETCH cr.requester r " +
-            "LEFT JOIN FETCH cr.reviewer rv " +
             "WHERE cr.id = :id")
     Optional<CorrectionRequest> findByIdWithDetails(@Param("id") Long id);
 
