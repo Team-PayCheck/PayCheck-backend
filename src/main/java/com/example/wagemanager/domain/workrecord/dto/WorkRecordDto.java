@@ -194,4 +194,20 @@ public class WorkRecordDto {
         @Schema(description = "승인 여부 (true: 승인, false: 거절)", example = "true")
         private Boolean approved;
     }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(name = "WorkRecordBatchCreateResponse", description = "일괄 등록 결과")
+    public static class BatchCreateResponse {
+        @Schema(description = "생성된 일정 개수", example = "5")
+        private Integer createdCount;
+
+        @Schema(description = "건너뛴 일정 개수 (중복으로 인해 생성되지 않음)", example = "2")
+        private Integer skippedCount;
+
+        @Schema(description = "요청한 전체 일정 개수", example = "7")
+        private Integer totalRequested;
+    }
 }

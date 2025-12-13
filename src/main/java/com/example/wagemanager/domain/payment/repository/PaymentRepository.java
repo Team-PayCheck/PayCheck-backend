@@ -60,4 +60,13 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             @Param("status") PaymentStatus status,
             @Param("workplaceId") Long workplaceId
     );
+
+    @Query("SELECT p FROM Payment p " +
+           "JOIN FETCH p.salary s " +
+           "JOIN FETCH s.contract c " +
+           "JOIN FETCH c.worker w " +
+           "JOIN FETCH w.user u " +
+           "WHERE u.id = :userId " +
+           "ORDER BY s.year DESC, s.month DESC")
+    List<Payment> findByWorkerUserId(@Param("userId") Long userId);
 }

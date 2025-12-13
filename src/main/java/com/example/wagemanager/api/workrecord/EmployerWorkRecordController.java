@@ -33,6 +33,14 @@ public class EmployerWorkRecordController {
         return ApiResponse.success(workRecordCommandService.createWorkRecordByEmployer(request));
     }
 
+    @Operation(summary = "근무 일정 일괄 등록", description = "고용주가 여러 날짜에 동일한 근무 일정을 일괄 생성합니다. 중복된 날짜는 자동으로 스킵됩니다.")
+    @PreAuthorize("@contractPermission.canAccessAsEmployer(#request.contractId)")
+    @PostMapping("/batch")
+    public ApiResponse<WorkRecordDto.BatchCreateResponse> createWorkRecordsBatch(
+            @Valid @RequestBody WorkRecordDto.BatchCreateRequest request) {
+        return ApiResponse.success(workRecordCommandService.createWorkRecordsBatch(request));
+    }
+
     @Operation(summary = "근무 기록 조회 (캘린더)", description = "특정 사업장의 기간별 근무 기록을 캘린더 형식으로 조회합니다.")
     @PreAuthorize("@workRecordPermission.canAccessWorkplaceRecords(#workplaceId)")
     @GetMapping

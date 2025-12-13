@@ -120,6 +120,15 @@ public class PaymentService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 근로자 본인의 송금 내역 조회
+     */
+    public List<PaymentDto.ListResponse> getPaymentsByWorker(Long userId) {
+        return paymentRepository.findByWorkerUserId(userId)
+                .stream()
+                .map(PaymentDto.ListResponse::from)
+                .collect(Collectors.toList());
+    }
 
     /**
      * 송금 기한 초과 자동 실패 처리 (예약 작업)

@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -337,6 +338,86 @@ public class WorkRecordCommandService {
                 .build();
 
         eventPublisher.publishEvent(event);
+    }
+
+    /**
+     * 고용주가 근무 일정 일괄 생성
+     * 여러 날짜에 동일한 시간으로 일정 생성
+     */
+    public WorkRecordDto.BatchCreateResponse createWorkRecordsBatch(WorkRecordDto.BatchCreateRequest request) {
+        WorkerContract contract = workerContractRepository.findById(request.getContractId())
+                .orElseThrow(() -> new NotFoundException(ErrorCode.CONTRACT_NOT_FOUND, "계약을 찾을 수 없습니다."));
+
+        int createdCount = 0;
+
+        for (LocalDate workDate : request.getWorkDates()) {
+            // 중복 체크 (이미 해당 날짜에 근무 기록이 있으면 스킵)
+            boolean exists = workRecordRepository.existsByContractAndWorkDate(contract, workDate);
+            if (exists) {
+                continue;
+            }
+
+            int totalMinutes = calculateWorkMinutes(
+                    LocalDateTime.of(workDate, request.getStartTime()),
+                    LocalDateTime.of(workDate, request.getEndTime()),
+                    request.getBreakMinutes() != null ? request.getBreakMinutes() : 0
+            );
+
+            // 근무 날짜와 현재 날짜를 비교하여 상태 결정
+            WorkRecordStatus status = workDate.isBefore(LocalDate.now())
+                    ? WorkRecordStatus.COMPLETED
+                    : WorkRecordStatus.SCHEDULED;
+
+            // WorkRecord가 생성된 주에 WeeklyAllowance 자동 생성/조회
+            WeeklyAllowance weeklyAllowance = coordinatorService.getOrCreateWeeklyAllowance(
+                    contract.getId(), workDate);
+
+            WorkRecord workRecord = WorkRecord.builder()
+                    .contract(contract)
+                    .workDate(workDate)
+                    .startTime(request.getStartTime())
+                    .endTime(request.getEndTime())
+                    .breakMinutes(request.getBreakMinutes() != null ? request.getBreakMinutes() : 0)
+                    .totalWorkMinutes(totalMinutes)
+                    .status(status)
+                    .memo(request.getMemo())
+                    .weeklyAllowance(weeklyAllowance)
+                    .build();
+
+            WorkRecord savedRecord = workRecordRepository.save(workRecord);
+            createdCount++;
+
+            // 도메인 간 협력 처리
+            if (status == WorkRecordStatus.COMPLETED) {
+                coordinatorService.handleWorkRecordCreation(savedRecord);
+                coordinatorService.handleWorkRecordCompletion(savedRecord);
+            } else {
+                coordinatorService.handleWorkRecordCreation(savedRecord);
+            }
+        }
+
+        // 근로자에게 일괄 생성 알림 전송 (1회만)
+        if (createdCount > 0) {
+            User worker = contract.getWorker().getUser();
+            String title = String.format("%d개의 근무 일정이 등록되었습니다.", createdCount);
+
+            NotificationEvent event = NotificationEvent.builder()
+                    .user(worker)
+                    .type(NotificationType.SCHEDULE_CREATED)
+                    .title(title)
+                    .actionType(NotificationActionType.VIEW_WORK_RECORD)
+                    .actionData(null)  // 일괄 생성이므로 특정 레코드 ID 없음
+                    .build();
+
+            eventPublisher.publishEvent(event);
+        }
+
+        // 결과 반환
+        return WorkRecordDto.BatchCreateResponse.builder()
+                .createdCount(createdCount)
+                .skippedCount(request.getWorkDates().size() - createdCount)
+                .totalRequested(request.getWorkDates().size())
+                .build();
     }
 
     private int calculateWorkMinutes(LocalDateTime start, LocalDateTime end, int breakMinutes) {
