@@ -73,4 +73,18 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
 
     @Query("SELECT c FROM WorkerContract c WHERE c.isActive = true")
     List<WorkerContract> findAllActiveContracts();
+
+    // 사업장별 승인 대기중인 근무 기록 조회
+    @Query("SELECT wr FROM WorkRecord wr " +
+            "JOIN FETCH wr.contract c " +
+            "JOIN FETCH c.workplace " +
+            "JOIN FETCH c.worker w " +
+            "JOIN FETCH w.user " +
+            "WHERE c.workplace.id = :workplaceId " +
+            "AND wr.status = :status " +
+            "ORDER BY wr.workDate ASC")
+    List<WorkRecord> findByWorkplaceAndStatus(
+            @Param("workplaceId") Long workplaceId,
+            @Param("status") WorkRecordStatus status
+    );
 }

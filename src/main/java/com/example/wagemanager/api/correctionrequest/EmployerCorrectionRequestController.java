@@ -4,6 +4,8 @@ import com.example.wagemanager.common.dto.ApiResponse;
 import com.example.wagemanager.domain.correction.dto.CorrectionRequestDto;
 import com.example.wagemanager.domain.correction.enums.CorrectionStatus;
 import com.example.wagemanager.domain.correction.service.CorrectionRequestService;
+import com.example.wagemanager.domain.workrecord.dto.PendingApprovalDto;
+import com.example.wagemanager.domain.workrecord.service.WorkRecordQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +22,18 @@ import java.util.List;
 public class EmployerCorrectionRequestController {
 
     private final CorrectionRequestService correctionRequestService;
+    private final WorkRecordQueryService workRecordQueryService;
+
+    @Operation(summary = "승인 대기중인 모든 요청 조회 (통합)",
+               description = "사업장의 승인 대기중인 근무 생성 요청과 정정 요청을 통합하여 조회합니다. 필터를 통해 특정 타입만 조회할 수 있습니다.")
+    @PreAuthorize("@correctionRequestPermission.canAccessWorkplaceCorrectionRequests(#workplaceId)")
+    @GetMapping("/workplaces/{workplaceId}/pending-approvals")
+    public ApiResponse<PendingApprovalDto.Response> getPendingApprovals(
+            @Parameter(description = "사업장 ID", required = true) @PathVariable Long workplaceId,
+            @Parameter(description = "필터 타입 (ALL: 전체, CORRECTION: 정정요청만, CREATION: 생성요청만)") @RequestParam(required = false, defaultValue = "ALL") PendingApprovalDto.FilterType filter) {
+        return ApiResponse.success(
+                workRecordQueryService.getAllPendingApprovalsByWorkplace(workplaceId, filter));
+    }
 
     @Operation(summary = "사업장별 정정요청 목록 조회", description = "특정 사업장의 정정요청 목록을 조회합니다.")
     @PreAuthorize("@correctionRequestPermission.canAccessWorkplaceCorrectionRequests(#workplaceId)")

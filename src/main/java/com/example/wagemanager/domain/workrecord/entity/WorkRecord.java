@@ -154,6 +154,27 @@ public class WorkRecord extends BaseEntity {
         calculateTotalSalary();
     }
 
+    // 승인 처리 (PENDING_APPROVAL → SCHEDULED 또는 COMPLETED)
+    public void approve() {
+        if (this.status != WorkRecordStatus.PENDING_APPROVAL) {
+            throw new IllegalStateException("승인 대기 상태만 승인할 수 있습니다.");
+        }
+
+        // 근무 날짜가 과거면 COMPLETED, 미래면 SCHEDULED
+        if (this.workDate.isBefore(LocalDate.now())) {
+            this.status = WorkRecordStatus.COMPLETED;
+            calculateHours();
+            calculateTotalSalary();
+        } else {
+            this.status = WorkRecordStatus.SCHEDULED;
+        }
+    }
+
+    // 상태 확인
+    public boolean isPendingApproval() {
+        return this.status == WorkRecordStatus.PENDING_APPROVAL;
+    }
+
     // 근무 시간 분류 계산
     // 전체 근무 시간을 일반 근무, 야간 근무, 휴일 근무 시간으로 분류
     private void calculateHours() {

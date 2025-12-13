@@ -3,6 +3,7 @@ package com.example.wagemanager.domain.allowance.entity;
 import com.example.wagemanager.common.BaseEntity;
 import com.example.wagemanager.domain.contract.entity.WorkerContract;
 import com.example.wagemanager.domain.workrecord.entity.WorkRecord;
+import com.example.wagemanager.domain.workrecord.enums.WorkRecordStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -84,8 +85,10 @@ public class WeeklyAllowance extends BaseEntity {
     private BigDecimal overtimeAmount = BigDecimal.ZERO;
 
     // 주간 총 근무 시간 계산 (WorkRecord 기반)
+    // PENDING_APPROVAL 상태는 제외 (SCHEDULED, COMPLETED만 포함)
     public void calculateTotalWorkHours() {
         this.totalWorkHours = this.workRecords.stream()
+                .filter(wr -> wr.getStatus() != WorkRecordStatus.PENDING_APPROVAL)
                 .map(WorkRecord::getTotalHours)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }

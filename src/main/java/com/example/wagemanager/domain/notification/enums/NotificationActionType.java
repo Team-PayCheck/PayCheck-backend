@@ -18,6 +18,12 @@ public enum NotificationActionType {
     VIEW_WORK_RECORD,
 
     /**
+     * 근무 일정 승인/거절
+     * - 고용주: 근로자가 요청한 근무 일정 승인/거절 화면으로 이동
+     */
+    VIEW_PENDING_APPROVAL,
+
+    /**
      * 급여 상세 조회
      * - 급여 명세서 확인 (근로자)
      */

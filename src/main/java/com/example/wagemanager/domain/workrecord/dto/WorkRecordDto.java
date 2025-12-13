@@ -183,4 +183,15 @@ public class WorkRecordDto {
         @Size(max = 500, message = "메모는 500자 이하로 입력해주세요.")
         private String memo;
     }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(name = "WorkRecordApprovalRequest", description = "근무 일정 승인/거절 요청")
+    public static class ApprovalRequest {
+        @NotNull(message = "승인 여부는 필수입니다.")
+        @Schema(description = "승인 여부 (true: 승인, false: 거절)", example = "true")
+        private Boolean approved;
+    }
 }

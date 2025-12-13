@@ -31,9 +31,9 @@ public class WorkerWorkRecordController {
     @PreAuthorize("@contractPermission.canAccessAsWorker(#request.contractId)")
     @PostMapping
     public ApiResponse<WorkRecordDto.Response> createWorkRecord(
+            @AuthenticationPrincipal User worker,
             @Valid @RequestBody WorkRecordDto.CreateRequest request) {
-        // TODO: 고용주에게 근무 일정 생성 승인 요청 알람 전송 및 승인 대기 상태로 생성
-        return ApiResponse.success(workRecordCommandService.createWorkRecord(request));
+        return ApiResponse.success(workRecordCommandService.createWorkRecordByWorker(worker, request));
     }
 
     @Operation(summary = "내 근무 일정 조회", description = "로그인한 근로자의 기간별 근무 일정을 조회합니다.")

@@ -30,8 +30,7 @@ public class EmployerWorkRecordController {
     @PostMapping
     public ApiResponse<WorkRecordDto.Response> createWorkRecord(
             @Valid @RequestBody WorkRecordDto.CreateRequest request) {
-        // TODO: 근로자에게 근무 일정 생성 알람 전송
-        return ApiResponse.success(workRecordCommandService.createWorkRecord(request));
+        return ApiResponse.success(workRecordCommandService.createWorkRecordByEmployer(request));
     }
 
     @Operation(summary = "근무 기록 조회 (캘린더)", description = "특정 사업장의 기간별 근무 기록을 캘린더 형식으로 조회합니다.")
@@ -53,7 +52,7 @@ public class EmployerWorkRecordController {
         return ApiResponse.success(workRecordQueryService.getWorkRecordById(id));
     }
 
-    @Operation(summary = "근무 일정 수정", description = "등록된 근무 일정 정보를 수정합니다.")
+    @Operation(summary = "근무 일정 수정", description = "등록된 근무 일정 정보를 수정합니다. 수정 시 근로자에게 알람이 전송됩니다.")
     @PreAuthorize("@workRecordPermission.canAccessAsEmployer(#id)")
     @PutMapping("/{id}")
     public ApiResponse<WorkRecordDto.Response> updateWorkRecord(
@@ -71,12 +70,29 @@ public class EmployerWorkRecordController {
         return ApiResponse.success(null);
     }
 
-    @Operation(summary = "근무 일정 삭제", description = "등록된 근무 일정을 삭제합니다.")
+    @Operation(summary = "근무 일정 삭제", description = "등록된 근무 일정을 삭제합니다. 삭제 시 근로자에게 알람이 전송됩니다.")
     @PreAuthorize("@workRecordPermission.canAccessAsEmployer(#id)")
     @DeleteMapping("/{id}")
     public ApiResponse<Void> deleteWorkRecord(
             @Parameter(description = "근무 기록 ID", required = true) @PathVariable Long id) {
         workRecordCommandService.deleteWorkRecord(id);
+        return ApiResponse.success(null);
+    }
+
+    @Operation(summary = "근무 일정 승인", description = "근로자가 요청한 근무 일정을 승인합니다. 승인 시 근로자에게 알람이 전송됩니다.")
+    @PreAuthorize("@workRecordPermission.canAccessAsEmployer(#id)")
+    @PutMapping("/{id}/approve")
+    public ApiResponse<WorkRecordDto.Response> approveWorkRecord(
+            @Parameter(description = "근무 기록 ID", required = true) @PathVariable Long id) {
+        return ApiResponse.success(workRecordCommandService.approveWorkRecord(id));
+    }
+
+    @Operation(summary = "근무 일정 거절", description = "근로자가 요청한 근무 일정을 거절합니다. 거절 시 근로자에게 알람이 전송됩니다.")
+    @PreAuthorize("@workRecordPermission.canAccessAsEmployer(#id)")
+    @PutMapping("/{id}/reject")
+    public ApiResponse<Void> rejectWorkRecord(
+            @Parameter(description = "근무 기록 ID", required = true) @PathVariable Long id) {
+        workRecordCommandService.rejectWorkRecord(id);
         return ApiResponse.success(null);
     }
 }

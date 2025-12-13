@@ -2,6 +2,7 @@ package com.example.wagemanager.domain.correction.dto;
 
 import com.example.wagemanager.domain.correction.entity.CorrectionRequest;
 import com.example.wagemanager.domain.correction.enums.CorrectionStatus;
+import com.example.wagemanager.domain.user.entity.User;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -24,7 +25,7 @@ public class CorrectionRequestDto {
         @NotNull(message = "근무 기록 ID는 필수입니다.")
         private Long workRecordId;
 
-        @NotNull(message = "요청 근무일은 필수입니다.")
+        @NotNull(message = "요청 근무 날짜는 필수입니다.")
         private LocalDate requestedWorkDate;
 
         @NotNull(message = "요청 시작 시간은 필수입니다.")
@@ -65,10 +66,7 @@ public class CorrectionRequestDto {
                     .requestedStartTime(request.getRequestedStartTime())
                     .requestedEndTime(request.getRequestedEndTime())
                     .status(request.getStatus())
-                    .requester(RequesterInfo.builder()
-                            .id(request.getRequester().getId())
-                            .name(request.getRequester().getName())
-                            .build())
+                    .requester(RequesterInfo.from(request.getRequester()))
                     .reviewedAt(request.getReviewedAt())
                     .createdAt(request.getCreatedAt())
                     .build();
@@ -104,10 +102,7 @@ public class CorrectionRequestDto {
                     .requestedStartTime(request.getRequestedStartTime())
                     .requestedEndTime(request.getRequestedEndTime())
                     .status(request.getStatus())
-                    .requester(RequesterInfo.builder()
-                            .id(request.getRequester().getId())
-                            .name(request.getRequester().getName())
-                            .build())
+                    .requester(RequesterInfo.from(request.getRequester()))
                     .workplaceName(request.getWorkRecord().getContract().getWorkplace().getName())
                     .createdAt(request.getCreatedAt())
                     .build();
@@ -118,9 +113,16 @@ public class CorrectionRequestDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    @Schema(name = "CorrectionRequestRequesterInfo")
+    @Schema(name = "RequesterInfo")
     public static class RequesterInfo {
         private Long id;
         private String name;
+
+        public static RequesterInfo from(User user) {
+            return RequesterInfo.builder()
+                    .id(user.getId())
+                    .name(user.getName())
+                    .build();
+        }
     }
 }
