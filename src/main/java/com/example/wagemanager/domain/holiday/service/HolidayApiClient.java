@@ -155,7 +155,6 @@ public class HolidayApiClient {
                         .month(date.getMonthValue())
                         .holidayName(item.getDateName())
                         .type(determineHolidayType(item.getDateName()))
-                        .isLunar("N".equals(item.getIsHoliday())) // Y: 양력, N: 음력
                         .originalDate(item.getLocdate())
                         .remarks(item.getRemarks())
                         .build();

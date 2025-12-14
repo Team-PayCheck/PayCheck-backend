@@ -77,12 +77,6 @@ public class HolidayApiResponse {
         private String dateName;
 
         /**
-         * 양력/음력 구분 (Y: 양력, N: 음력)
-         */
-        @JacksonXmlProperty(localName = "isHoliday")
-        private String isHoliday;
-
-        /**
          * 비고
          */
         @JacksonXmlProperty(localName = "remarks")
