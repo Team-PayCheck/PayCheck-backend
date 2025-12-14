@@ -62,12 +62,6 @@ public class Holiday extends BaseEntity {
     private HolidayType type;
 
     /**
-     * 양력/음력 여부
-     */
-    @Column(name = "is_lunar")
-    private Boolean isLunar;
-
-    /**
      * API 원본 데이터 (locdate)
      * 예: "20250101"
      */
@@ -110,10 +104,9 @@ public class Holiday extends BaseEntity {
     /**
      * 공휴일 정보 업데이트
      */
-    public void update(String holidayName, HolidayType type, Boolean isLunar, String remarks) {
+    public void update(String holidayName, HolidayType type, String remarks) {
         this.holidayName = holidayName;
         this.type = type;
-        this.isLunar = isLunar;
         this.remarks = remarks;
     }
 }
