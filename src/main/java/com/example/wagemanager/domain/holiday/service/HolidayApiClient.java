@@ -92,7 +92,7 @@ public class HolidayApiClient {
      */
     private String buildApiUrl(String endpoint, int year) {
         return UriComponentsBuilder
-                .fromHttpUrl(API_BASE_URL + endpoint)
+                .fromUriString(API_BASE_URL + endpoint)
                 .queryParam("serviceKey", apiKey)
                 .queryParam("solYear", year)
                 .queryParam("numOfRows", 100)
