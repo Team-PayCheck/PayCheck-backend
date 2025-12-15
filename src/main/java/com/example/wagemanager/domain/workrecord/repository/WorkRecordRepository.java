@@ -14,7 +14,11 @@ import java.util.List;
 @Repository
 public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
 
-    List<WorkRecord> findByContractId(Long contractId);
+    @Query("SELECT wr FROM WorkRecord wr " +
+            "JOIN FETCH wr.contract c " +
+            "JOIN FETCH c.worker w " +
+            "WHERE c.id = :contractId")
+    List<WorkRecord> findByContractId(@Param("contractId") Long contractId);
 
     @Query("SELECT wr FROM WorkRecord wr " +
             "JOIN FETCH wr.contract c " +
@@ -42,7 +46,8 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
     );
 
     @Query("SELECT wr FROM WorkRecord wr " +
-            "WHERE wr.contract.id = :contractId " +
+            "JOIN FETCH wr.contract c " +
+            "WHERE c.id = :contractId " +
             "AND wr.workDate BETWEEN :startDate AND :endDate " +
             "AND wr.status IN :statuses")
     List<WorkRecord> findByContractAndDateRangeAndStatus(
@@ -53,7 +58,8 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
     );
 
     @Query("SELECT wr FROM WorkRecord wr " +
-            "WHERE wr.contract.id = :contractId " +
+            "JOIN FETCH wr.contract c " +
+            "WHERE c.id = :contractId " +
             "AND wr.workDate BETWEEN :startDate AND :endDate " +
             "ORDER BY wr.workDate ASC")
     List<WorkRecord> findByContractAndDateRange(
@@ -63,6 +69,8 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
     );
 
     @Query("SELECT DISTINCT c FROM WorkerContract c " +
+            "JOIN FETCH c.worker w " +
+            "JOIN FETCH c.workplace " +
             "WHERE c.workplace.id = :workplaceId " +
             "AND c.isActive = true")
     List<WorkerContract> findContractsByWorkplaceId(
@@ -71,7 +79,10 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
 
     boolean existsByContractAndWorkDate(WorkerContract contract, LocalDate workDate);
 
-    @Query("SELECT c FROM WorkerContract c WHERE c.isActive = true")
+    @Query("SELECT c FROM WorkerContract c " +
+            "JOIN FETCH c.worker w " +
+            "JOIN FETCH c.workplace " +
+            "WHERE c.isActive = true")
     List<WorkerContract> findAllActiveContracts();
 
     // 사업장별 승인 대기중인 근무 기록 조회

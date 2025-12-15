@@ -13,7 +13,10 @@ import java.util.Optional;
 @Repository
 public interface WeeklyAllowanceRepository extends JpaRepository<WeeklyAllowance, Long> {
 
-    List<WeeklyAllowance> findByContractId(Long contractId);
+    @Query("SELECT wa FROM WeeklyAllowance wa " +
+            "JOIN FETCH wa.contract c " +
+            "WHERE c.id = :contractId")
+    List<WeeklyAllowance> findByContractId(@Param("contractId") Long contractId);
 
     /**
      * 특정 계약의 특정 년/월에 해당하는 WeeklyAllowance 조회 (createdAt 기준)

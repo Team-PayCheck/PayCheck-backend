@@ -4,6 +4,7 @@ import com.example.wagemanager.common.dto.ApiResponse;
 import com.example.wagemanager.domain.user.entity.User;
 import com.example.wagemanager.domain.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Nullable;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -87,6 +88,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * HTTP 요청 헤더에서 JWT 토큰 추출
      * Authorization: Bearer {token} 형식
      */
+    @Nullable
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {

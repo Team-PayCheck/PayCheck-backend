@@ -14,18 +14,34 @@ import java.util.List;
 import java.util.Optional;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
-    List<Notification> findByUserOrderByCreatedAtDesc(User user);
+    @Query("SELECT n FROM Notification n " +
+            "JOIN FETCH n.user u " +
+            "WHERE u = :user " +
+            "ORDER BY n.createdAt DESC")
+    List<Notification> findByUserOrderByCreatedAtDesc(@Param("user") User user);
 
-    @Query("SELECT n FROM Notification n WHERE n.user = :user AND n.isRead = false ORDER BY n.createdAt DESC")
+    @Query("SELECT n FROM Notification n " +
+            "JOIN FETCH n.user u " +
+            "WHERE u = :user AND n.isRead = false " +
+            "ORDER BY n.createdAt DESC")
     List<Notification> findUnreadByUser(@Param("user") User user);
 
-    Page<Notification> findByUser(User user, Pageable pageable);
+    @Query("SELECT n FROM Notification n " +
+            "JOIN FETCH n.user u " +
+            "WHERE u = :user")
+    Page<Notification> findByUser(@Param("user") User user, Pageable pageable);
 
-    Page<Notification> findByUserAndIsRead(User user, Boolean isRead, Pageable pageable);
+    @Query("SELECT n FROM Notification n " +
+            "JOIN FETCH n.user u " +
+            "WHERE u = :user AND n.isRead = :isRead")
+    Page<Notification> findByUserAndIsRead(@Param("user") User user, @Param("isRead") Boolean isRead, Pageable pageable);
 
     long countByUserAndIsReadFalse(User user);
 
-    Optional<Notification> findByIdAndUser(Long id, User user);
+    @Query("SELECT n FROM Notification n " +
+            "JOIN FETCH n.user u " +
+            "WHERE n.id = :id AND u = :user")
+    Optional<Notification> findByIdAndUser(@Param("id") Long id, @Param("user") User user);
 
     @Modifying
     @Query("UPDATE Notification n SET n.isRead = true, n.readAt = :readAt WHERE n.user = :user AND n.isRead = false")
