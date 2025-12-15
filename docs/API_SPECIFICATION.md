@@ -70,224 +70,1811 @@
 ## JSON Examples
 
 ### 1.1 카카오 로그인
-**Request:** `{"kakao_access_token": "token"}` → **Response:** `{"success": true, "data": {"access_token": "jwt...", "user": {...}}}`
-- 신규 사용자의 경우 자동으로 회원가입 처리됨
-- 카카오 API에서 이름, 전화번호, 프로필 이미지 자동 추출
+
+**Request:**
+```json
+{
+  "kakaoAccessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response (고용주):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1001,
+    "kakaoId": "123456789",
+    "name": "김철수",
+    "userType": "EMPLOYER",
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "createdAt": "2025-12-10T14:30:00"
+  }
+}
+```
+
+**Response (근로자):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 2001,
+    "kakaoId": "987654321",
+    "name": "이영희",
+    "userType": "WORKER",
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "createdAt": "2025-12-10T14:30:00"
+  }
+}
+```
+
+---
 
 ### 1.2 로그아웃
-**Request:** `{"refresh_token": "jwt..."}` → **Response:** `{"success": true, "message": "로그아웃되었습니다."}`
+
+**Request:**
+```json
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "로그아웃되었습니다."
+}
+```
+
+---
 
 ### 1.3 토큰 갱신
-**Request:** `{"refresh_token": "jwt..."}` → **Response:** `{"success": true, "data": {"access_token": "new_jwt..."}}`
+
+**Request:**
+```json
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+---
 
 ### 2.1 내 정보 조회
-**Response:** `{"success": true, "data": {"id": 1, "name": "박성호", "user_type": "EMPLOYER"}}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1001,
+    "kakaoId": "123456789",
+    "name": "김철수",
+    "phone": "010-8543-2179",
+    "userType": "EMPLOYER",
+    "profileImageUrl": "https://example.com/image/001.jpg",
+    "createdAt": "2025-12-10T14:30:00",
+    "updatedAt": "2025-12-15T09:00:00"
+  }
+}
+```
+
+---
 
 ### 2.2 내 정보 수정
-**Request:** `{"name": "박성호", "phone": "010-1234-5679"}` → **Response:** `{"success": true}`
+
+**Request:**
+```json
+{
+  "name": "김철수",
+  "phone": "010-8543-2179",
+  "profileImageUrl": "https://example.com/image/002.jpg"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1001,
+    "kakaoId": "123456789",
+    "name": "김철수",
+    "phone": "010-8543-2179",
+    "userType": "EMPLOYER",
+    "profileImageUrl": "https://example.com/image/002.jpg",
+    "createdAt": "2025-12-10T14:30:00",
+    "updatedAt": "2025-12-15T10:30:00"
+  }
+}
+```
+
+---
 
 ### 2.3 계좌 정보 수정
-**Request:** `{"bank_name": "국민은행", "account_number": "1234-56-789"}` → **Response:** `{"success": true}`
+
+**Request:**
+```json
+{
+  "bankName": "국민은행",
+  "accountNumber": "123-4567890-12"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "계좌 정보가 수정되었습니다."
+}
+```
+
+---
 
 ### 3.1 사업장 등록
-**Request:** `{"business_number": "123-45-67890", "name": "홍대점", ...}` → **Response:** `{"success": true, "data": {"id": 1, ...}}`
+
+**Request:**
+```json
+{
+  "businessNumber": "123-45-67890",
+  "businessName": "홍대카페",
+  "name": "홍대점",
+  "address": "서울시 마포구 홍익로 123",
+  "colorCode": "#FF5733",
+  "isLessThanFiveEmployees": false
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 101,
+    "businessNumber": "123-45-67890",
+    "businessName": "홍대카페",
+    "name": "홍대점",
+    "address": "서울시 마포구 홍익로 123",
+    "colorCode": "#FF5733",
+    "isLessThanFiveEmployees": false,
+    "isActive": true,
+    "createdAt": "2025-12-15T09:00:00",
+    "updatedAt": "2025-12-15T09:00:00"
+  }
+}
+```
+
+---
 
 ### 3.2 사업장 목록
-**Response:** `{"success": true, "data": [{"id": 1, "name": "홍대점", "worker_count": 5}]}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 101,
+      "businessNumber": "123-45-67890",
+      "businessName": "홍대카페",
+      "name": "홍대점",
+      "address": "서울시 마포구 홍익로 123",
+      "colorCode": "#FF5733",
+      "isLessThanFiveEmployees": false,
+      "isActive": true,
+      "workerCount": 5,
+      "createdAt": "2025-12-10T09:00:00",
+      "updatedAt": "2025-12-15T09:00:00"
+    },
+    {
+      "id": 102,
+      "businessNumber": "456-78-91011",
+      "businessName": "강남편의점",
+      "name": "강남역점",
+      "address": "서울시 강남구 강남대로 456",
+      "colorCode": "#3366FF",
+      "isLessThanFiveEmployees": false,
+      "isActive": true,
+      "workerCount": 12,
+      "createdAt": "2025-11-15T10:30:00",
+      "updatedAt": "2025-12-12T14:30:00"
+    },
+    {
+      "id": 103,
+      "businessNumber": "789-01-23456",
+      "businessName": "서초카페",
+      "name": "서초점",
+      "address": "서울시 서초구 서초대로 789",
+      "colorCode": "#33FF66",
+      "isLessThanFiveEmployees": true,
+      "isActive": false,
+      "workerCount": 18,
+      "createdAt": "2025-10-20T11:00:00",
+      "updatedAt": "2025-12-01T15:00:00"
+    }
+  ]
+}
+```
+
+---
 
 ### 3.3 사업장 상세
-**Response:** `{"success": true, "data": {"id": 1, "business_number": "123-45-67890", ...}}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 101,
+    "businessNumber": "123-45-67890",
+    "businessName": "홍대카페",
+    "name": "홍대점",
+    "address": "서울시 마포구 홍익로 123",
+    "colorCode": "#FF5733",
+    "isLessThanFiveEmployees": false,
+    "isActive": true,
+    "workerCount": 5,
+    "createdAt": "2025-12-10T09:00:00",
+    "updatedAt": "2025-12-15T09:00:00"
+  }
+}
+```
+
+---
 
 ### 3.4 사업장 수정
-**Request:** `{"name": "홍대점", "address": "서울시..."}` → **Response:** `{"success": true}`
+
+**Request:**
+```json
+{
+  "name": "홍대점",
+  "address": "서울시 마포구 홍익로 150",
+  "colorCode": "#FF5733"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 101,
+    "businessNumber": "123-45-67890",
+    "businessName": "홍대카페",
+    "name": "홍대점",
+    "address": "서울시 마포구 홍익로 150",
+    "colorCode": "#FF5733",
+    "isLessThanFiveEmployees": false,
+    "isActive": true,
+    "createdAt": "2025-12-10T09:00:00",
+    "updatedAt": "2025-12-15T10:30:00"
+  }
+}
+```
+
+---
 
 ### 3.5 사업장 비활성화
-**Response:** `{"success": true, "message": "사업장이 비활성화되었습니다."}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "사업장이 비활성화되었습니다."
+}
+```
+
+---
 
 ### 4.1 근로자 추가
-**Request:** `{"worker_code": "ABC123", "hourly_wage": 10000, ...}` → **Response:** `{"success": true, "data": {"contract_id": 1, ...}}`
+
+**Request:**
+```json
+{
+  "workerCode": "WORKER001",
+  "hourlyWage": 10030,
+  "workSchedules": [
+    {
+      "dayOfWeek": 1,
+      "startTime": "09:00",
+      "endTime": "18:00"
+    },
+    {
+      "dayOfWeek": 2,
+      "startTime": "09:00",
+      "endTime": "18:00"
+    },
+    {
+      "dayOfWeek": 3,
+      "startTime": "09:00",
+      "endTime": "18:00"
+    },
+    {
+      "dayOfWeek": 4,
+      "startTime": "09:00",
+      "endTime": "18:00"
+    },
+    {
+      "dayOfWeek": 5,
+      "startTime": "09:00",
+      "endTime": "18:00"
+    },
+    {
+      "dayOfWeek": 6,
+      "startTime": "10:00",
+      "endTime": "15:00"
+    }
+  ],
+  "contractStartDate": "2025-12-15",
+  "contractEndDate": null,
+  "paymentDay": 25,
+  "payrollDeductionType": "NONE"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "contractId": 201,
+    "workerId": 2001,
+    "workerName": "박민준",
+    "workerCode": "WORKER001",
+    "workplaceId": 101,
+    "workplaceName": "홍대점",
+    "hourlyWage": 10030,
+    "workSchedules": [
+      {
+        "dayOfWeek": 1,
+        "startTime": "09:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeek": 2,
+        "startTime": "09:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeek": 3,
+        "startTime": "09:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeek": 4,
+        "startTime": "09:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeek": 5,
+        "startTime": "09:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeek": 6,
+        "startTime": "10:00",
+        "endTime": "15:00"
+      }
+    ],
+    "contractStartDate": "2025-12-15",
+    "contractEndDate": null,
+    "paymentDay": 25,
+    "payrollDeductionType": "NONE",
+    "contractStatus": "ONGOING",
+    "createdAt": "2025-12-15T09:30:00",
+    "updatedAt": "2025-12-15T09:30:00"
+  }
+}
+```
+
+---
 
 ### 4.2 근로자 목록
-**Response:** `{"success": true, "data": [{"contract_id": 1, "worker": {"name": "김민지"}, ...}]}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "contractId": 201,
+      "workerId": 2001,
+      "workerName": "박민준",
+      "workerCode": "WORKER001",
+      "hourlyWage": 10030,
+      "paymentDay": 25,
+      "contractStatus": "ONGOING",
+      "contractStartDate": "2025-12-15",
+      "contractEndDate": null,
+      "createdAt": "2025-12-15T09:30:00",
+      "updatedAt": "2025-12-15T09:30:00"
+    },
+    {
+      "contractId": 202,
+      "workerId": 2002,
+      "workerName": "최수진",
+      "workerCode": "WORKER002",
+      "hourlyWage": 11000,
+      "paymentDay": 25,
+      "contractStatus": "ONGOING",
+      "contractStartDate": "2025-11-01",
+      "contractEndDate": null,
+      "createdAt": "2025-11-01T10:00:00",
+      "updatedAt": "2025-12-10T14:30:00"
+    },
+    {
+      "contractId": 203,
+      "workerId": 2003,
+      "workerName": "윤지현",
+      "workerCode": "WORKER003",
+      "hourlyWage": 15000,
+      "paymentDay": 25,
+      "contractStatus": "ENDED",
+      "contractStartDate": "2025-10-01",
+      "contractEndDate": "2025-12-10",
+      "createdAt": "2025-10-01T09:00:00",
+      "updatedAt": "2025-12-10T15:45:00"
+    },
+    {
+      "contractId": 204,
+      "workerId": 2004,
+      "workerName": "이영희",
+      "workerCode": "WORKER004",
+      "hourlyWage": 12000,
+      "paymentDay": 20,
+      "contractStatus": "SCHEDULED",
+      "contractStartDate": "2025-12-20",
+      "contractEndDate": null,
+      "createdAt": "2025-12-15T11:00:00",
+      "updatedAt": "2025-12-15T11:00:00"
+    }
+  ]
+}
+```
+
+---
 
 ### 4.3 계약 상세
-**Response:** `{"success": true, "data": {"contract_id": 1, "hourly_wage": 10000, ...}}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "contractId": 201,
+    "workerId": 2001,
+    "workerName": "박민준",
+    "workerCode": "WORKER001",
+    "workplaceId": 101,
+    "workplaceName": "홍대점",
+    "hourlyWage": 10030,
+    "workSchedules": [
+      {
+        "dayOfWeek": 1,
+        "startTime": "09:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeek": 2,
+        "startTime": "09:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeek": 3,
+        "startTime": "09:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeek": 4,
+        "startTime": "09:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeek": 5,
+        "startTime": "09:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeek": 6,
+        "startTime": "10:00",
+        "endTime": "15:00"
+      }
+    ],
+    "contractStartDate": "2025-12-15",
+    "contractEndDate": null,
+    "paymentDay": 25,
+    "payrollDeductionType": "NONE",
+    "contractStatus": "ONGOING",
+    "createdAt": "2025-12-15T09:30:00",
+    "updatedAt": "2025-12-15T09:30:00"
+  }
+}
+```
+
+---
 
 ### 4.4 계약 수정
-**Request:** `{"hourly_wage": 11000, "payment_day": 28}` → **Response:** `{"success": true}`
+
+**Request:**
+```json
+{
+  "hourlyWage": 11000,
+  "paymentDay": 25
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "contractId": 201,
+    "workerId": 2001,
+    "workerName": "박민준",
+    "workerCode": "WORKER001",
+    "workplaceId": 101,
+    "workplaceName": "홍대점",
+    "hourlyWage": 11000,
+    "workSchedules": [
+      {
+        "dayOfWeek": 1,
+        "startTime": "09:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeek": 2,
+        "startTime": "09:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeek": 3,
+        "startTime": "09:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeek": 4,
+        "startTime": "09:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeek": 5,
+        "startTime": "09:00",
+        "endTime": "18:00"
+      },
+      {
+        "dayOfWeek": 6,
+        "startTime": "10:00",
+        "endTime": "15:00"
+      }
+    ],
+    "contractStartDate": "2025-12-15",
+    "contractEndDate": null,
+    "paymentDay": 25,
+    "payrollDeductionType": "NONE",
+    "contractStatus": "ONGOING",
+    "createdAt": "2025-12-15T09:30:00",
+    "updatedAt": "2025-12-15T14:00:00"
+  }
+}
+```
+
+---
 
 ### 4.5 계약 종료
-**Response:** `{"success": true, "message": "계약이 종료되었습니다."}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "계약이 종료되었습니다."
+}
+```
+
+---
 
 ### 5.1 일정 등록
-**Request:** `{"contract_id": 1, "work_date": "2025-11-01", "start_time": "09:00", "end_time": "14:00"}` → **Response:** `{"success": true, "data": {"id": 1, "status": "SCHEDULED", "is_modified": false}}`
 
-**중요:** 근무 기록 생성 시 자동 상태 결정
-- **과거 날짜**: `COMPLETED` 상태로 자동 생성 → 즉시 급여에 반영 ✅
-- **미래/당일 날짜**: `SCHEDULED` 상태로 생성 → 급여에 반영 안 됨
-- 고용주가 생성 시 근로자에게 알람 전송 (TODO)
+**Request:**
+```json
+{
+  "contractId": 201,
+  "workDate": "2025-12-15",
+  "startTime": "09:00",
+  "endTime": "18:00",
+  "breakMinutes": 60,
+  "memo": "정상 근무"
+}
+```
 
-**급여 재계산 트리거:**
-- `COMPLETED` 상태로 생성된 경우 자동으로 해당 월 급여 재계산
-- 근로자에게 알람 전송 (TODO)
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 301,
+    "contractId": 201,
+    "workDate": "2025-12-15",
+    "startTime": "09:00",
+    "endTime": "18:00",
+    "breakMinutes": 60,
+    "totalWorkHours": 8.0,
+    "status": "PENDING_APPROVAL",
+    "isModified": false,
+    "memo": "정상 근무",
+    "createdAt": "2025-12-15T09:30:00",
+    "updatedAt": "2025-12-15T09:30:00"
+  }
+}
+```
 
-### 5.2 일정 일괄등록 (초기 설정용)
-**Request:** `{"contract_id": 1, "work_dates": ["2025-11-01", "2025-11-02", ...], "start_time": "09:00", "end_time": "14:00"}` → **Response:** `{"success": true, "data": {"created_count": 20}}`
+---
 
-**용도:** 계약 초기에 근무 스케줄 등록 시 **최초 2개월치** 근무 일정을 일괄 생성
-- 이후 근무 일정은 스케줄러가 자동 생성
-- 과거/미래 날짜 모두 생성 가능 (상태 자동 결정)
+### 5.2 일정 일괄등록
+
+**Request:**
+```json
+{
+  "contractId": 201,
+  "workDates": [
+    "2025-12-16",
+    "2025-12-17",
+    "2025-12-18",
+    "2025-12-19",
+    "2025-12-20",
+    "2025-12-21"
+  ],
+  "startTime": "09:00",
+  "endTime": "18:00",
+  "breakMinutes": 60,
+  "memo": "일괄 등록"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "createdCount": 6
+  }
+}
+```
+
+---
 
 ### 5.3 근무기록 조회
-**Query:** `?workplace_id=1&start_date=2025-11-01&end_date=2025-11-30` → **Response:** `{"success": true, "data": [{"id": 1, "status": "COMPLETED", "is_modified": false, ...}]}`
 
-**응답 필드 설명:**
-- `status`: `SCHEDULED` (예정) 또는 `COMPLETED` (완료)
-- `is_modified`: 수정 여부
-- `total_hours`: 총 근무 시간
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 301,
+      "contractId": 201,
+      "workerName": "박민준",
+      "workplaceName": "홍대점",
+      "workDate": "2025-12-15",
+      "startTime": "09:00",
+      "endTime": "18:00",
+      "breakMinutes": 60,
+      "totalWorkHours": 8.0,
+      "status": "SCHEDULED",
+      "isModified": false,
+      "memo": "정상 근무",
+      "createdAt": "2025-12-15T09:30:00",
+      "updatedAt": "2025-12-15T09:30:00"
+    },
+    {
+      "id": 302,
+      "contractId": 201,
+      "workerName": "박민준",
+      "workplaceName": "홍대점",
+      "workDate": "2025-12-20",
+      "startTime": "09:00",
+      "endTime": "18:00",
+      "breakMinutes": 60,
+      "totalWorkHours": 8.0,
+      "status": "SCHEDULED",
+      "isModified": false,
+      "memo": "정상 근무",
+      "createdAt": "2025-12-15T09:30:00",
+      "updatedAt": "2025-12-15T09:30:00"
+    },
+    {
+      "id": 303,
+      "contractId": 202,
+      "workerName": "최수진",
+      "workplaceName": "홍대점",
+      "workDate": "2025-12-15",
+      "startTime": "10:00",
+      "endTime": "19:00",
+      "breakMinutes": 60,
+      "totalWorkHours": 8.0,
+      "status": "PENDING_APPROVAL",
+      "isModified": false,
+      "memo": "당일 등록",
+      "createdAt": "2025-12-15T14:30:00",
+      "updatedAt": "2025-12-15T14:30:00"
+    },
+    {
+      "id": 304,
+      "contractId": 201,
+      "workerName": "박민준",
+      "workplaceName": "홍대점",
+      "workDate": "2025-12-10",
+      "startTime": "09:00",
+      "endTime": "18:00",
+      "breakMinutes": 60,
+      "totalWorkHours": 8.0,
+      "status": "COMPLETED",
+      "isModified": false,
+      "memo": "정상 근무",
+      "createdAt": "2025-12-10T09:30:00",
+      "updatedAt": "2025-12-10T17:30:00"
+    }
+  ]
+}
+```
+
+---
 
 ### 5.4 일정 수정
-**Request:** `{"start_time": "10:00", "end_time": "15:00"}` → **Response:** `{"success": true, "data": {"is_modified": true}}`
 
-**급여 재계산:**
-- `COMPLETED` 상태의 근무 기록 수정 시 자동으로 해당 월 급여 재계산 ✅
-- `SCHEDULED` 상태 수정 시 급여 재계산 안 됨
+**Request:**
+```json
+{
+  "startTime": "09:30",
+  "endTime": "18:30",
+  "breakMinutes": 60,
+  "memo": "시간 변경"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 301,
+    "contractId": 201,
+    "workDate": "2025-12-15",
+    "startTime": "09:30",
+    "endTime": "18:30",
+    "breakMinutes": 60,
+    "totalWorkHours": 8.0,
+    "status": "PENDING_APPROVAL",
+    "isModified": true,
+    "memo": "시간 변경",
+    "createdAt": "2025-12-15T09:30:00",
+    "updatedAt": "2025-12-15T10:00:00"
+  }
+}
+```
+
+---
 
 ### 5.5 근무 완료
-**Response:** `{"success": true, "data": {"id": 1, "status": "COMPLETED", "total_hours": 5.0}}`
 
-**급여 재계산:**
-- `SCHEDULED` → `COMPLETED` 상태 변경 시 자동으로 해당 월 급여 재계산 ✅
-- 이 시점에 비로소 급여에 포함됨 (중요!)
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 301,
+    "contractId": 201,
+    "workDate": "2025-12-15",
+    "startTime": "09:00",
+    "endTime": "18:00",
+    "breakMinutes": 60,
+    "totalWorkHours": 8.0,
+    "status": "COMPLETED",
+    "isModified": false,
+    "createdAt": "2025-12-15T09:30:00",
+    "updatedAt": "2025-12-15T18:00:00"
+  }
+}
+```
+
+---
 
 ### 5.6 일정 삭제
-**Response:** `{"success": true, "message": "근무 일정이 삭제되었습니다."}`
 
-**제약사항:**
-- `SCHEDULED` 상태만 삭제 가능
-- `COMPLETED` 상태는 삭제 불가 (정정 요청 사용)
-- 삭제 시 급여에 영향 없음 (예정 일정이므로)
+**Response:**
+```json
+{
+  "success": true,
+  "message": "근무 일정이 삭제되었습니다."
+}
+```
+
+---
 
 ### 6.1 요청 목록
-**Response:** `{"success": true, "data": [{"id": 1, "requester": {"name": "김민지"}, "status": "PENDING", ...}]}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 401,
+      "contractId": 201,
+      "workRecordId": 301,
+      "requesterId": 2001,
+      "requesterName": "박민준",
+      "originalWorkDate": "2025-12-10",
+      "originalStartTime": "09:00",
+      "originalEndTime": "18:00",
+      "requestedWorkDate": "2025-12-10",
+      "requestedStartTime": "09:30",
+      "requestedEndTime": "18:30",
+      "status": "PENDING",
+      "reviewedAt": null,
+      "createdAt": "2025-12-15T14:30:00",
+      "updatedAt": "2025-12-15T14:30:00"
+    },
+    {
+      "id": 402,
+      "contractId": 202,
+      "workRecordId": 302,
+      "requesterId": 2002,
+      "requesterName": "최수진",
+      "originalWorkDate": "2025-12-12",
+      "originalStartTime": "10:00",
+      "originalEndTime": "19:00",
+      "requestedWorkDate": "2025-12-12",
+      "requestedStartTime": "10:00",
+      "requestedEndTime": "19:30",
+      "status": "PENDING",
+      "reviewedAt": null,
+      "createdAt": "2025-12-15T15:00:00",
+      "updatedAt": "2025-12-15T15:00:00"
+    },
+    {
+      "id": 403,
+      "contractId": 201,
+      "workRecordId": 303,
+      "requesterId": 2001,
+      "requesterName": "박민준",
+      "originalWorkDate": "2025-12-05",
+      "originalStartTime": "09:00",
+      "originalEndTime": "18:00",
+      "requestedWorkDate": "2025-12-05",
+      "requestedStartTime": "09:00",
+      "requestedEndTime": "17:00",
+      "status": "APPROVED",
+      "reviewedAt": "2025-12-14T10:30:00",
+      "createdAt": "2025-12-13T16:00:00",
+      "updatedAt": "2025-12-14T10:30:00"
+    },
+    {
+      "id": 404,
+      "contractId": 202,
+      "workRecordId": 304,
+      "requesterId": 2002,
+      "requesterName": "최수진",
+      "originalWorkDate": "2025-12-08",
+      "originalStartTime": "10:00",
+      "originalEndTime": "19:00",
+      "requestedWorkDate": "2025-12-08",
+      "requestedStartTime": "11:00",
+      "requestedEndTime": "19:00",
+      "status": "REJECTED",
+      "reviewedAt": "2025-12-13T14:00:00",
+      "createdAt": "2025-12-12T17:30:00",
+      "updatedAt": "2025-12-13T14:00:00"
+    }
+  ]
+}
+```
+
+---
 
 ### 6.2 요청 상세
-**Response:** `{"success": true, "data": {"id": 1, "requested_end_time": "14:30", ...}}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 401,
+    "contractId": 201,
+    "workRecordId": 301,
+    "requesterId": 2001,
+    "requesterName": "박민준",
+    "originalWorkDate": "2025-12-10",
+    "originalStartTime": "09:00",
+    "originalEndTime": "18:00",
+    "requestedWorkDate": "2025-12-10",
+    "requestedStartTime": "09:30",
+    "requestedEndTime": "18:30",
+    "originalBreakMinutes": 60,
+    "requestedBreakMinutes": 60,
+    "status": "PENDING",
+    "reviewedAt": null,
+    "createdAt": "2025-12-15T14:30:00",
+    "updatedAt": "2025-12-15T14:30:00"
+  }
+}
+```
+
+---
 
 ### 6.3 요청 승인
-**Response:** `{"success": true, "data": {"status": "APPROVED"}}`
 
-**참고:** 승인 시 추가적인 요청 본문(Request Body) 없이 승인 처리됩니다. 승인 시각은 `reviewed_at` 필드에 자동으로 기록됩니다.
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 401,
+    "contractId": 201,
+    "workRecordId": 301,
+    "requesterId": 2001,
+    "requesterName": "박민준",
+    "originalWorkDate": "2025-12-10",
+    "originalStartTime": "09:00",
+    "originalEndTime": "18:00",
+    "requestedWorkDate": "2025-12-10",
+    "requestedStartTime": "09:30",
+    "requestedEndTime": "18:30",
+    "status": "APPROVED",
+    "reviewedAt": "2025-12-15T15:30:00",
+    "createdAt": "2025-12-15T14:30:00",
+    "updatedAt": "2025-12-15T15:30:00"
+  }
+}
+```
+
+---
 
 ### 6.4 요청 반려
-**Response:** `{"success": true, "data": {"status": "REJECTED"}}`
 
-**참고:** 반려 시 추가적인 요청 본문(Request Body) 없이 반려 처리됩니다. 반려 시각은 `reviewed_at` 필드에 자동으로 기록됩니다.
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 401,
+    "contractId": 201,
+    "workRecordId": 301,
+    "requesterId": 2001,
+    "requesterName": "박민준",
+    "originalWorkDate": "2025-12-10",
+    "originalStartTime": "09:00",
+    "originalEndTime": "18:00",
+    "requestedWorkDate": "2025-12-10",
+    "requestedStartTime": "09:30",
+    "requestedEndTime": "18:30",
+    "status": "REJECTED",
+    "reviewedAt": "2025-12-15T15:30:00",
+    "createdAt": "2025-12-15T14:30:00",
+    "updatedAt": "2025-12-15T15:30:00"
+  }
+}
+```
+
+---
 
 ### 7.1 급여 목록
-**Query:** `?workplace_id=1&year=2025&month=11` → **Response:** `{"success": true, "data": [{"salary_id": 1, "net_pay": 1008000, ...}]}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 501,
+      "contractId": 201,
+      "workerId": 2001,
+      "workerName": "박민준",
+      "workplaceId": 101,
+      "workplaceName": "홍대점",
+      "year": 2025,
+      "month": 11,
+      "basePay": 440132,
+      "overtimePay": 15090,
+      "nightPay": 0,
+      "holidayPay": 0,
+      "deduction": 22000,
+      "netPay": 433222,
+      "createdAt": "2025-12-05T09:00:00",
+      "updatedAt": "2025-12-05T09:00:00"
+    },
+    {
+      "id": 502,
+      "contractId": 202,
+      "workerId": 2002,
+      "workerName": "최수진",
+      "workplaceId": 101,
+      "workplaceName": "홍대점",
+      "year": 2025,
+      "month": 11,
+      "basePay": 484000,
+      "overtimePay": 20000,
+      "nightPay": 5500,
+      "holidayPay": 11000,
+      "deduction": 25000,
+      "netPay": 495500,
+      "createdAt": "2025-12-05T09:00:00",
+      "updatedAt": "2025-12-05T09:00:00"
+    },
+    {
+      "id": 503,
+      "contractId": 201,
+      "workerId": 2001,
+      "workerName": "박민준",
+      "workplaceId": 101,
+      "workplaceName": "홍대점",
+      "year": 2025,
+      "month": 12,
+      "basePay": 380264,
+      "overtimePay": 0,
+      "nightPay": 0,
+      "holidayPay": 0,
+      "deduction": 19000,
+      "netPay": 361264,
+      "createdAt": "2025-12-10T09:00:00",
+      "updatedAt": "2025-12-15T10:30:00"
+    },
+    {
+      "id": 504,
+      "contractId": 202,
+      "workerId": 2002,
+      "workerName": "최수진",
+      "workplaceId": 101,
+      "workplaceName": "홍대점",
+      "year": 2025,
+      "month": 12,
+      "basePay": 418000,
+      "overtimePay": 8800,
+      "nightPay": 0,
+      "holidayPay": 0,
+      "deduction": 21500,
+      "netPay": 405300,
+      "createdAt": "2025-12-10T09:00:00",
+      "updatedAt": "2025-12-15T10:30:00"
+    }
+  ]
+}
+```
+
+---
 
 ### 7.2 급여 상세
-**Response:** `{"success": true, "data": {"salary_id": 1, "base_pay": 1000000, "net_pay": 1008000, ...}}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 501,
+    "contractId": 201,
+    "workerId": 2001,
+    "workerName": "박민준",
+    "workplaceId": 101,
+    "workplaceName": "홍대점",
+    "year": 2025,
+    "month": 11,
+    "totalWorkHours": 44.0,
+    "hourlyWage": 10030,
+    "basePay": 440132,
+    "overtimePay": 15090,
+    "nightPay": 0,
+    "holidayPay": 0,
+    "totalAllowance": 15090,
+    "deduction": 22000,
+    "netPay": 433222,
+    "paymentStatus": "PENDING",
+    "createdAt": "2025-12-05T09:00:00",
+    "updatedAt": "2025-12-05T09:00:00"
+  }
+}
+```
+
+---
 
 ### 7.3 급여 계산
-**Request:** `{"contract_id": 1, "year": 2025, "month": 11}` → **Response:** `{"success": true, "data": {"salary_id": 1, "net_pay": 1008000}}`
 
-**계산 정책:** 📘 자세한 내용은 [급여 정산 정책 문서](./SALARY_CALCULATION_POLICY.md) 참조
-1. **계산 기간**: 전월 월급날 ~ 당월 월급날 전일 (예: 15일 월급 → 전월 15일 ~ 당월 14일)
-2. **포함 근무**: `COMPLETED` 상태의 근무 기록만 집계
-3. **주휴수당/연장수당 이월**: 마지막 주차(월급날 포함 주)의 주휴수당/연장수당은 다음 달로 이월 ⚠️
-4. **자동 재계산**: 근무 완료/수정 시 자동으로 재계산됨
+**Request:**
+```json
+{
+  "contractId": 201,
+  "year": 2025,
+  "month": 12
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 505,
+    "contractId": 201,
+    "workerId": 2001,
+    "workerName": "박민준",
+    "year": 2025,
+    "month": 12,
+    "basePay": 380264,
+    "overtimePay": 0,
+    "nightPay": 0,
+    "holidayPay": 0,
+    "netPay": 361264
+  }
+}
+```
+
+---
 
 ### 7.4 급여 송금
-**Request:** `{"salary_id": 1, "payment_method": "KAKAO_PAY"}` → **Response:** `{"success": true, "data": {"payment_id": 1, "status": "COMPLETED"}}`
+
+**Request:**
+```json
+{
+  "salaryId": 501,
+  "paymentMethod": "BANK_TRANSFER"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 601,
+    "salaryId": 501,
+    "contractId": 201,
+    "workerId": 2001,
+    "workerName": "박민준",
+    "amount": 433222,
+    "paymentMethod": "BANK_TRANSFER",
+    "status": "COMPLETED",
+    "paymentDate": "2025-12-15T09:00:00",
+    "createdAt": "2025-12-15T09:00:00",
+    "updatedAt": "2025-12-15T09:00:00"
+  }
+}
+```
+
+---
 
 ### 8.1 일정 조회
-**Query:** `?start_date=2025-11-01&end_date=2025-11-30` → **Response:** `{"success": true, "data": [{"id": 1, "status": "COMPLETED", "is_modified": false, ...}]}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 305,
+      "contractId": 201,
+      "workDate": "2025-12-20",
+      "startTime": "09:00",
+      "endTime": "18:00",
+      "breakMinutes": 60,
+      "totalWorkHours": 8.0,
+      "status": "SCHEDULED",
+      "isModified": false,
+      "memo": "정상 근무",
+      "createdAt": "2025-12-15T09:30:00",
+      "updatedAt": "2025-12-15T09:30:00"
+    },
+    {
+      "id": 306,
+      "contractId": 201,
+      "workDate": "2025-12-25",
+      "startTime": "09:00",
+      "endTime": "18:00",
+      "breakMinutes": 60,
+      "totalWorkHours": 8.0,
+      "status": "SCHEDULED",
+      "isModified": false,
+      "memo": "정상 근무",
+      "createdAt": "2025-12-15T09:30:00",
+      "updatedAt": "2025-12-15T09:30:00"
+    },
+    {
+      "id": 307,
+      "contractId": 201,
+      "workDate": "2025-12-15",
+      "startTime": "09:00",
+      "endTime": "18:00",
+      "breakMinutes": 60,
+      "totalWorkHours": 8.0,
+      "status": "PENDING_APPROVAL",
+      "isModified": false,
+      "memo": "당일 기록",
+      "createdAt": "2025-12-15T14:30:00",
+      "updatedAt": "2025-12-15T14:30:00"
+    },
+    {
+      "id": 308,
+      "contractId": 201,
+      "workDate": "2025-12-10",
+      "startTime": "09:00",
+      "endTime": "18:00",
+      "breakMinutes": 60,
+      "totalWorkHours": 8.0,
+      "status": "COMPLETED",
+      "isModified": false,
+      "memo": "완료됨",
+      "createdAt": "2025-12-10T09:30:00",
+      "updatedAt": "2025-12-10T17:30:00"
+    }
+  ]
+}
+```
+
+---
 
 ### 8.2 기록 상세
-**Response:** `{"success": true, "data": {"id": 1, "total_hours": 5.0, "status": "COMPLETED", ...}}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 308,
+    "contractId": 201,
+    "workerId": 2001,
+    "workerName": "박민준",
+    "workplaceId": 101,
+    "workplaceName": "홍대점",
+    "workDate": "2025-12-10",
+    "startTime": "09:00",
+    "endTime": "18:00",
+    "breakMinutes": 60,
+    "totalWorkHours": 8.0,
+    "status": "COMPLETED",
+    "isModified": false,
+    "memo": "완료됨",
+    "createdAt": "2025-12-10T09:30:00",
+    "updatedAt": "2025-12-10T17:30:00"
+  }
+}
+```
+
+---
 
 ### 8.3 근무 완료
-**Response:** `{"success": true, "data": {"id": 1, "status": "COMPLETED"}}`
 
-**참고:** 근로자도 자신의 근무를 완료 처리할 수 있으며, 이 경우 자동으로 급여에 반영됩니다.
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 307,
+    "contractId": 201,
+    "workDate": "2025-12-15",
+    "startTime": "09:00",
+    "endTime": "18:00",
+    "breakMinutes": 60,
+    "totalWorkHours": 8.0,
+    "status": "COMPLETED",
+    "isModified": false,
+    "createdAt": "2025-12-15T14:30:00",
+    "updatedAt": "2025-12-15T18:00:00"
+  }
+}
+```
+
+---
 
 ### 9.1 요청 생성
-**Request:** `{"work_record_id": 1, "requested_work_date": "2025-11-01", "requested_start_time": "09:00", "requested_end_time": "14:30"}` → **Response:** `{"success": true, "data": {"id": 1, "status": "PENDING"}}`
 
-**참고:** 정정 요청 생성 시 요청 근무일, 시작 시간, 종료 시간을 입력합니다. 원본 근무 시간은 자동으로 저장됩니다.
+**Request:**
+```json
+{
+  "workRecordId": 304,
+  "requestedWorkDate": "2025-12-10",
+  "requestedStartTime": "09:30",
+  "requestedEndTime": "18:30"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 405,
+    "contractId": 201,
+    "workRecordId": 304,
+    "originalWorkDate": "2025-12-10",
+    "originalStartTime": "09:00",
+    "originalEndTime": "18:00",
+    "originalBreakMinutes": 60,
+    "requestedWorkDate": "2025-12-10",
+    "requestedStartTime": "09:30",
+    "requestedEndTime": "18:30",
+    "status": "PENDING",
+    "reviewedAt": null,
+    "createdAt": "2025-12-15T14:30:00",
+    "updatedAt": "2025-12-15T14:30:00"
+  }
+}
+```
+
+---
 
 ### 9.2 내 요청 목록
-**Response:** `{"success": true, "data": [{"id": 1, "status": "PENDING", ...}]}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 405,
+      "contractId": 201,
+      "workRecordId": 304,
+      "originalWorkDate": "2025-12-10",
+      "originalStartTime": "09:00",
+      "originalEndTime": "18:00",
+      "requestedWorkDate": "2025-12-10",
+      "requestedStartTime": "09:30",
+      "requestedEndTime": "18:30",
+      "status": "PENDING",
+      "reviewedAt": null,
+      "createdAt": "2025-12-15T14:30:00",
+      "updatedAt": "2025-12-15T14:30:00"
+    },
+    {
+      "id": 406,
+      "contractId": 201,
+      "workRecordId": 305,
+      "originalWorkDate": "2025-12-08",
+      "originalStartTime": "09:00",
+      "originalEndTime": "18:00",
+      "requestedWorkDate": "2025-12-08",
+      "requestedStartTime": "10:00",
+      "requestedEndTime": "19:00",
+      "status": "PENDING",
+      "reviewedAt": null,
+      "createdAt": "2025-12-14T16:00:00",
+      "updatedAt": "2025-12-14T16:00:00"
+    },
+    {
+      "id": 407,
+      "contractId": 201,
+      "workRecordId": 303,
+      "originalWorkDate": "2025-12-05",
+      "originalStartTime": "09:00",
+      "originalEndTime": "18:00",
+      "requestedWorkDate": "2025-12-05",
+      "requestedStartTime": "09:00",
+      "requestedEndTime": "17:00",
+      "status": "APPROVED",
+      "reviewedAt": "2025-12-10T14:30:00",
+      "createdAt": "2025-12-09T15:00:00",
+      "updatedAt": "2025-12-10T14:30:00"
+    },
+    {
+      "id": 408,
+      "contractId": 201,
+      "workRecordId": 306,
+      "originalWorkDate": "2025-12-01",
+      "originalStartTime": "09:00",
+      "originalEndTime": "18:00",
+      "requestedWorkDate": "2025-12-01",
+      "requestedStartTime": "14:30",
+      "requestedEndTime": "22:00",
+      "status": "REJECTED",
+      "reviewedAt": "2025-12-05T11:00:00",
+      "createdAt": "2025-12-04T17:00:00",
+      "updatedAt": "2025-12-05T11:00:00"
+    }
+  ]
+}
+```
+
+---
 
 ### 9.3 요청 상세
-**Response:** `{"success": true, "data": {"id": 1, "work_record_id": 1, "original_start_time": "09:00", "original_end_time": "14:00", "requested_work_date": "2025-11-01", "requested_start_time": "09:00", "requested_end_time": "14:30", "status": "PENDING", "reviewed_at": null, ...}}`
 
-**응답 필드:**
-- `original_*`: 정정 요청 생성 시점의 원본 근무 시간
-- `requested_*`: 요청한 근무 시간
-- `reviewed_at`: 승인/반려 처리 시각 (처리 전에는 null)
+**Response (PENDING):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 405,
+    "contractId": 201,
+    "workRecordId": 304,
+    "originalWorkDate": "2025-12-10",
+    "originalStartTime": "09:00",
+    "originalEndTime": "18:00",
+    "originalBreakMinutes": 60,
+    "requestedWorkDate": "2025-12-10",
+    "requestedStartTime": "09:30",
+    "requestedEndTime": "18:30",
+    "requestedBreakMinutes": 60,
+    "status": "PENDING",
+    "reviewedAt": null,
+    "createdAt": "2025-12-15T14:30:00",
+    "updatedAt": "2025-12-15T14:30:00"
+  }
+}
+```
+
+**Response (APPROVED/REJECTED):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 407,
+    "contractId": 201,
+    "workRecordId": 303,
+    "originalWorkDate": "2025-12-05",
+    "originalStartTime": "09:00",
+    "originalEndTime": "18:00",
+    "originalBreakMinutes": 60,
+    "requestedWorkDate": "2025-12-05",
+    "requestedStartTime": "09:00",
+    "requestedEndTime": "17:00",
+    "requestedBreakMinutes": 60,
+    "status": "APPROVED",
+    "reviewedAt": "2025-12-10T14:30:00",
+    "createdAt": "2025-12-09T15:00:00",
+    "updatedAt": "2025-12-10T14:30:00"
+  }
+}
+```
+
+---
 
 ### 9.4 요청 취소
-**Response:** `{"success": true, "message": "정정 요청이 취소되었습니다."}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "정정 요청이 취소되었습니다."
+}
+```
+
+---
 
 ### 10.1 급여 목록
-**Query:** `?year=2025` → **Response:** `{"success": true, "data": [{"salary_id": 1, "month": 11, "net_pay": 1008000, ...}]}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 501,
+      "contractId": 201,
+      "workerName": "박민준",
+      "year": 2025,
+      "month": 10,
+      "basePay": 440132,
+      "overtimePay": 10000,
+      "nightPay": 5000,
+      "holidayPay": 0,
+      "deduction": 22000,
+      "netPay": 433132,
+      "createdAt": "2025-11-05T09:00:00",
+      "updatedAt": "2025-11-05T09:00:00"
+    },
+    {
+      "id": 502,
+      "contractId": 201,
+      "workerName": "박민준",
+      "year": 2025,
+      "month": 11,
+      "basePay": 440132,
+      "overtimePay": 15090,
+      "nightPay": 0,
+      "holidayPay": 0,
+      "deduction": 22000,
+      "netPay": 433222,
+      "createdAt": "2025-12-05T09:00:00",
+      "updatedAt": "2025-12-05T09:00:00"
+    },
+    {
+      "id": 503,
+      "contractId": 201,
+      "workerName": "박민준",
+      "year": 2025,
+      "month": 12,
+      "basePay": 380264,
+      "overtimePay": 0,
+      "nightPay": 0,
+      "holidayPay": 0,
+      "deduction": 19000,
+      "netPay": 361264,
+      "createdAt": "2025-12-10T09:00:00",
+      "updatedAt": "2025-12-15T10:30:00"
+    }
+  ]
+}
+```
+
+---
 
 ### 10.2 급여 상세
-**Response:** `{"success": true, "data": {"salary_id": 1, "total_work_hours": 110, "net_pay": 1008000, ...}}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 502,
+    "contractId": 201,
+    "workerId": 2001,
+    "workerName": "박민준",
+    "workplaceId": 101,
+    "workplaceName": "홍대점",
+    "year": 2025,
+    "month": 11,
+    "totalWorkHours": 44.0,
+    "hourlyWage": 10030,
+    "basePay": 440132,
+    "overtimePay": 15090,
+    "nightPay": 0,
+    "holidayPay": 0,
+    "totalAllowance": 15090,
+    "deduction": 22000,
+    "netPay": 433222,
+    "paymentStatus": "PENDING",
+    "createdAt": "2025-12-05T09:00:00",
+    "updatedAt": "2025-12-05T09:00:00"
+  }
+}
+```
+
+---
 
 ### 10.3 송금 내역
-**Response:** `{"success": true, "data": [{"payment_id": 1, "status": "COMPLETED", "payment_date": "2025-11-25", ...}]}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 601,
+      "salaryId": 501,
+      "contractId": 201,
+      "workerName": "박민준",
+      "year": 2025,
+      "month": 10,
+      "amount": 433132,
+      "paymentMethod": "BANK_TRANSFER",
+      "status": "COMPLETED",
+      "paymentDate": "2025-10-25T09:00:00",
+      "createdAt": "2025-10-25T09:00:00",
+      "updatedAt": "2025-10-25T09:00:00"
+    },
+    {
+      "id": 602,
+      "salaryId": 502,
+      "contractId": 201,
+      "workerName": "박민준",
+      "year": 2025,
+      "month": 11,
+      "amount": 433222,
+      "paymentMethod": "BANK_TRANSFER",
+      "status": "COMPLETED",
+      "paymentDate": "2025-11-25T09:00:00",
+      "createdAt": "2025-11-25T09:00:00",
+      "updatedAt": "2025-11-25T09:00:00"
+    },
+    {
+      "id": 603,
+      "salaryId": 503,
+      "contractId": 201,
+      "workerName": "박민준",
+      "year": 2025,
+      "month": 12,
+      "amount": 361264,
+      "paymentMethod": "BANK_TRANSFER",
+      "status": "PENDING",
+      "paymentDate": null,
+      "createdAt": "2025-12-10T09:00:00",
+      "updatedAt": "2025-12-15T10:30:00"
+    }
+  ]
+}
+```
+
+---
 
 ### 11.1 알림 목록
-**Query:** `?is_read=false&page=1` → **Response:** `{"success": true, "data": {"notifications": [...], "unread_count": 12}}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "notifications": [
+      {
+        "id": 701,
+        "userId": 1001,
+        "type": "SCHEDULE_CHANGE",
+        "title": "근무 일정 변경",
+        "message": "박민준님의 근무 일정이 변경되었습니다.",
+        "referenceId": 301,
+        "isRead": false,
+        "createdAt": "2025-12-15T14:30:00",
+        "updatedAt": "2025-12-15T14:30:00"
+      },
+      {
+        "id": 702,
+        "userId": 2001,
+        "type": "PAYMENT_SUCCESS",
+        "title": "급여 송금 완료",
+        "message": "2025년 11월 급여가 송금되었습니다.",
+        "referenceId": 601,
+        "isRead": true,
+        "createdAt": "2025-12-10T09:00:00",
+        "updatedAt": "2025-12-10T09:30:00"
+      },
+      {
+        "id": 703,
+        "userId": 1001,
+        "type": "CORRECTION_REQUEST",
+        "title": "정정 요청 생성",
+        "message": "박민준님이 근무 시간 정정을 요청했습니다.",
+        "referenceId": 405,
+        "isRead": false,
+        "createdAt": "2025-12-15T14:30:00",
+        "updatedAt": "2025-12-15T14:30:00"
+      },
+      {
+        "id": 704,
+        "userId": 2001,
+        "type": "CORRECTION_RESPONSE",
+        "title": "정정 요청 처리",
+        "message": "정정 요청이 승인되었습니다.",
+        "referenceId": 407,
+        "isRead": true,
+        "createdAt": "2025-12-10T14:30:00",
+        "updatedAt": "2025-12-10T14:45:00"
+      }
+    ],
+    "unreadCount": 2
+  }
+}
+```
+
+---
 
 ### 11.2 SSE 알림 구독
-**실시간 알림을 수신하기 위한 Server-Sent Events 연결**
-- **Content-Type:** `text/event-stream`
-- **연결 유지:** Keep-alive 방식으로 실시간 알림 수신
-- **이벤트 타입:**
-  - `notification`: 새로운 알림 발생 시 전송
-    - **Data:** `{"id": 123, "type": "CORRECTION_REQUEST", "title": "정정 요청", "message": "김민지님이 근무 시간 정정을 요청했습니다.", "created_at": "2025-11-18T14:30:00", "is_read": false}`
-  - `unread_count`: 읽지 않은 알림 개수 업데이트
-    - **Data:** `{"unread_count": 5}`
-- **재연결:** 연결이 끊어지면 클라이언트에서 자동 재연결 권장
+
+**Connection Established:**
+```
+GET /api/notifications/stream HTTP/1.1
+Content-Type: text/event-stream
+```
+
+**Event Type 1: notification**
+```
+event: notification
+data: {
+  "id": 705,
+  "userId": 1001,
+  "type": "CORRECTION_REQUEST",
+  "title": "정정 요청 생성",
+  "message": "최수진님이 근무 시간 정정을 요청했습니다.",
+  "referenceId": 406,
+  "isRead": false,
+  "createdAt": "2025-12-15T15:00:00"
+}
+```
+
+**Event Type 2: unread_count**
+```
+event: unread_count
+data: {"unread_count": 3}
+```
+
+**Event Type 3: notification (다른 타입)**
+```
+event: notification
+data: {
+  "id": 706,
+  "userId": 2002,
+  "type": "PAYMENT_SUCCESS",
+  "title": "급여 송금 완료",
+  "message": "2025년 12월 급여가 송금되었습니다.",
+  "referenceId": 603,
+  "isRead": false,
+  "createdAt": "2025-12-15T15:15:00"
+}
+```
+
+---
 
 ### 11.3 읽지 않은 알림 개수
-**Response:** `{"success": true, "data": 5}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": 5
+}
+```
+
+---
 
 ### 11.4 알림 읽음
-**Response:** `{"success": true, "message": "알림이 읽음 처리되었습니다."}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "알림이 읽음 처리되었습니다."
+}
+```
+
+---
 
 ### 11.5 전체 읽음
-**Response:** `{"success": true, "message": "모든 알림이 읽음 처리되었습니다."}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "모든 알림이 읽음 처리되었습니다."
+}
+```
+
+---
 
 ### 11.6 알림 삭제
-**Response:** `{"success": true, "message": "알림이 삭제되었습니다."}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "알림이 삭제되었습니다."
+}
+```
+
+---
 
 ### 12.1 내 설정 조회
+
 **Response:**
 ```json
 {
   "success": true,
   "data": {
     "id": 1,
-    "userId": 1,
+    "userId": 1001,
     "notificationEnabled": true,
     "pushEnabled": true,
     "emailEnabled": false,
     "smsEnabled": false,
     "scheduleChangeAlertEnabled": true,
     "paymentAlertEnabled": true,
-    "correctionRequestAlertEnabled": true
+    "correctionRequestAlertEnabled": true,
+    "createdAt": "2025-12-10T14:30:00",
+    "updatedAt": "2025-12-10T14:30:00"
   }
 }
 ```
-- 설정이 없는 경우 자동으로 기본 설정이 생성됩니다.
+
+---
 
 ### 12.2 내 설정 수정
+
 **Request:**
 ```json
 {
@@ -300,25 +1887,26 @@
   "correctionRequestAlertEnabled": false
 }
 ```
+
 **Response:**
 ```json
 {
   "success": true,
   "data": {
     "id": 1,
-    "userId": 1,
+    "userId": 1001,
     "notificationEnabled": true,
     "pushEnabled": false,
     "emailEnabled": true,
     "smsEnabled": false,
     "scheduleChangeAlertEnabled": true,
     "paymentAlertEnabled": true,
-    "correctionRequestAlertEnabled": false
+    "correctionRequestAlertEnabled": false,
+    "createdAt": "2025-12-10T14:30:00",
+    "updatedAt": "2025-12-15T10:00:00"
   }
 }
 ```
-- null 값은 무시되며, 제공된 필드만 업데이트됩니다.
-- 설정이 없는 경우 자동으로 기본 설정이 생성됩니다.
 
 ---
 
