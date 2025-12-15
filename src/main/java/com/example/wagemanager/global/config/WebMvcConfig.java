@@ -33,9 +33,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
     }
 
     @Override
-    public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
+    public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
         // XML MessageConverter 제거 - 컨트롤러는 JSON만 처리
         // RestTemplate/WebClient에서는 별도로 XmlMapper를 설정하여 XML 파싱 가능
+        // extendMessageConverters는 Spring Boot가 기본 컨버터를 모두 추가한 후에 호출됨
         converters.removeIf(converter -> converter instanceof MappingJackson2XmlHttpMessageConverter);
     }
 }
