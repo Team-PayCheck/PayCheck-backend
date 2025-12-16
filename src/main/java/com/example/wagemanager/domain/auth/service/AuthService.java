@@ -192,24 +192,49 @@ public class AuthService {
     }
 
     /**
-     * 개발용 임시 로그인 (실제 사용자 조회/생성 없이 토큰 발급)
+     * 개발용 사용자 생성
+     *
+     * @param userId 사용자 ID
+     * @param name 사용자 이름
+     * @param userType 사용자 타입
+     * @return 생성된 사용자
+     */
+    @SuppressWarnings("null")
+    private User createDevUser(Long userId, String name, UserType userType) {
+        User newUser = User.builder()
+                .kakaoId("dev_" + userId) // 개발용 임시 kakaoId
+                .name(name)
+                .userType(userType)
+                .profileImageUrl("")
+                .build();
+        return userRepository.save(newUser);
+    }
+
+    /**
+     * 개발용 임시 로그인 (사용자가 없으면 생성하여 DB에 저장)
      * 주의: 개발 환경에서만 사용하고 배포 환경에서는 반드시 비활성화 해야 함
      *
      * @param request 개발용 로그인 요청 DTO
      * @return 로그인 결과 (응답 DTO + Refresh Token)
      */
+    @Transactional
     public LoginResult devLogin(AuthDto.DevLoginRequest request) {
-        Long userId = Long.parseLong(request.getUserId());
-        
+        Long requestedUserId = Long.parseLong(request.getUserId());
+        UserType userType = parseUserType(request.getUserType());
+
+        // 사용자 조회 또는 생성
+        User user = userRepository.findById(requestedUserId)
+                .orElseGet(() -> createDevUser(requestedUserId, request.getName(), userType));
+
         // 토큰 생성
-        TokenService.TokenPair tokenPair = tokenService.generateTokenPair(userId);
+        TokenService.TokenPair tokenPair = tokenService.generateTokenPair(user.getId());
 
         // 응답 DTO 생성
         AuthDto.LoginResponse loginResponse = AuthDto.LoginResponse.builder()
                 .accessToken(tokenPair.getAccessToken())
-                .userId(userId)
-                .name(request.getName())
-                .userType(request.getUserType())
+                .userId(user.getId())
+                .name(user.getName())
+                .userType(user.getUserType().name())
                 .build();
 
         return LoginResult.builder()
