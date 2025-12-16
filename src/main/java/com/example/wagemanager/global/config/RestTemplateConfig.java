@@ -12,6 +12,9 @@ import org.springframework.web.client.RestTemplate;
  * 외부 API 호출 시 사용할 RestTemplate 설정
  * - 일반 RestTemplate: JSON 처리용
  * - XML RestTemplate: 공공 API XML 파싱용 (컨트롤러와 분리)
+ *
+ * 주의: XmlMapper를 Bean으로 등록하지 않음 (Spring Boot 자동 설정이
+ * MappingJackson2XmlHttpMessageConverter를 등록하는 것을 방지)
  */
 @Configuration
 public class RestTemplateConfig {
@@ -34,25 +37,22 @@ public class RestTemplateConfig {
      * XML 전용 RestTemplate
      * 공공 API XML 파싱용으로 별도 분리
      * 컨트롤러의 MessageConverter와 독립적으로 동작
+     *
+     * XmlMapper를 Bean으로 등록하지 않고 직접 생성하여 사용
+     * (Bean으로 등록하면 Spring Boot가 자동으로 XML 컨버터를 MVC에 추가함)
      */
     @Bean
-    public RestTemplate xmlRestTemplate(RestTemplateBuilder builder, XmlMapper xmlMapper) {
+    public RestTemplate xmlRestTemplate(RestTemplateBuilder builder) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(5000); // 5초
         factory.setReadTimeout(5000); // 5초
+
+        // XmlMapper를 직접 생성 (Bean으로 등록하지 않음)
+        XmlMapper xmlMapper = new XmlMapper();
 
         return builder
                 .requestFactory(() -> factory)
                 .additionalMessageConverters(new MappingJackson2XmlHttpMessageConverter(xmlMapper))
                 .build();
-    }
-
-    /**
-     * XmlMapper 빈
-     * XML 파싱용 (RestTemplate에서만 사용, 컨트롤러는 사용 안 함)
-     */
-    @Bean
-    public XmlMapper xmlMapper() {
-        return new XmlMapper();
     }
 }
