@@ -26,8 +26,7 @@ public class OpenApiConfig {
                         .name(jwt)
                         .type(SecurityScheme.Type.HTTP)
                         .scheme("bearer")
-                        .bearerFormat("JWT"))
-                .addSchemas("ApiErrorResponse", createErrorResponseSchema());
+                        .bearerFormat("JWT"));
 
         return new OpenAPI()
                 .info(new Info()
@@ -39,26 +38,8 @@ public class OpenApiConfig {
     }
 
     /**
-     * 에러 응답 스키마 정의
-     * API_SPECIFICATION.md에 정의된 에러 응답 포맷과 일치
-     */
-    @SuppressWarnings("rawtypes")
-    private Schema createErrorResponseSchema() {
-        Schema errorDetailSchema = new Schema<>()
-                .type("object")
-                .addProperty("code", new Schema<>().type("string").example("NOT_FOUND"))
-                .addProperty("message", new Schema<>().type("string").example("리소스를 찾을 수 없습니다."));
-
-        return new Schema<>()
-                .type("object")
-                .addProperty("success", new Schema<>().type("boolean").example(false))
-                .addProperty("data", new Schema<>().type("object").nullable(true).example(null))
-                .addProperty("error", errorDetailSchema);
-    }
-
-    /**
      * 모든 API에 공통 에러 응답 추가
-     * 기존 응답이 있더라도 에러 응답 스키마로 덮어씌움
+     * 각 HTTP 상태 코드에 맞는 예시를 표시
      */
     @Bean
     public OperationCustomizer globalErrorResponseCustomizer() {
@@ -69,37 +50,48 @@ public class OpenApiConfig {
                 operation.setResponses(responses);
             }
 
-            // 에러 응답용 Content 생성 (매번 새로 생성해야 함)
             // 400 Bad Request
             responses.addApiResponse("400", new ApiResponse()
                     .description("잘못된 요청")
-                    .content(createErrorContent()));
+                    .content(createErrorContent("BAD_REQUEST", "잘못된 요청입니다.")));
 
             // 401 Unauthorized
             responses.addApiResponse("401", new ApiResponse()
                     .description("인증 실패")
-                    .content(createErrorContent()));
+                    .content(createErrorContent("UNAUTHORIZED", "인증에 실패했습니다.")));
 
             // 404 Not Found
             responses.addApiResponse("404", new ApiResponse()
                     .description("리소스를 찾을 수 없음")
-                    .content(createErrorContent()));
+                    .content(createErrorContent("NOT_FOUND", "리소스를 찾을 수 없습니다.")));
 
             // 500 Internal Server Error
             responses.addApiResponse("500", new ApiResponse()
                     .description("서버 오류")
-                    .content(createErrorContent()));
+                    .content(createErrorContent("INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다.")));
 
             return operation;
         };
     }
 
     /**
-     * 에러 응답용 Content 생성
+     * 에러 응답용 Content 생성 (상태 코드별 예시 포함)
      */
-    private Content createErrorContent() {
+    @SuppressWarnings("rawtypes")
+    private Content createErrorContent(String errorCode, String errorMessage) {
+        Schema errorDetailSchema = new Schema<>()
+                .type("object")
+                .addProperty("code", new Schema<>().type("string").example(errorCode))
+                .addProperty("message", new Schema<>().type("string").example(errorMessage));
+
+        Schema errorResponseSchema = new Schema<>()
+                .type("object")
+                .addProperty("success", new Schema<>().type("boolean").example(false))
+                .addProperty("data", new Schema<>().type("object").nullable(true).example(null))
+                .addProperty("error", errorDetailSchema);
+
         return new Content()
                 .addMediaType("application/json", new MediaType()
-                        .schema(new Schema<>().$ref("#/components/schemas/ApiErrorResponse")));
+                        .schema(errorResponseSchema));
     }
 }
