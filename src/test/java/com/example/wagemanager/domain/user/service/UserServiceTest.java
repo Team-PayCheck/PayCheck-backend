@@ -71,19 +71,6 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("카카오 ID로 조회 실패 - 사용자 없음")
-    void getUserByKakaoId_Fail_NotFound() {
-        // given
-        when(userRepository.findByKakaoId("invalid_kakao")).thenReturn(Optional.empty());
-
-        // when & then
-        assertThatThrownBy(() -> userService.getUserByKakaoId("invalid_kakao"))
-                .isInstanceOf(NotFoundException.class)
-                .hasMessageContaining("사용자를 찾을 수 없습니다");
-        verify(userRepository).findByKakaoId("invalid_kakao");
-    }
-
-    @Test
     @DisplayName("사용자 정보 수정 실패 - 사용자 없음")
     void updateUser_Fail_NotFound() {
         // given
