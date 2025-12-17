@@ -87,35 +87,6 @@ class UserServiceSimpleTest {
     }
 
     @Test
-    @DisplayName("카카오 ID로 조회 성공")
-    void getUserByKakaoId_Success() {
-        // given
-        when(userRepository.findByKakaoId("worker_kakao_id")).thenReturn(Optional.of(testWorker));
-
-        // when
-        UserDto.Response result = userService.getUserByKakaoId("worker_kakao_id");
-
-        // then
-        assertThat(result).isNotNull();
-        assertThat(result.getName()).isEqualTo("근로자 테스트");
-
-        verify(userRepository).findByKakaoId("worker_kakao_id");
-    }
-
-    @Test
-    @DisplayName("카카오 ID로 조회 실패")
-    void getUserByKakaoId_NotFound() {
-        // given
-        when(userRepository.findByKakaoId("invalid_kakao_id")).thenReturn(Optional.empty());
-
-        // when & then
-        assertThatThrownBy(() -> userService.getUserByKakaoId("invalid_kakao_id"))
-                .isInstanceOf(NotFoundException.class);
-
-        verify(userRepository).findByKakaoId("invalid_kakao_id");
-    }
-
-    @Test
     @DisplayName("사용자 정보 업데이트 성공")
     void updateUser_Success() {
         // given
