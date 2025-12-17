@@ -7,6 +7,7 @@ public enum NotificationType {
     SCHEDULE_APPROVED,          // 근무 일정 승인됨 (고용주가 승인 시)
     SCHEDULE_REJECTED,          // 근무 일정 거절됨 (고용주가 거절 시)
     SCHEDULE_DELETED,           // 근무 일정 삭제됨 (고용주가 삭제 시)
+    SCHEDULE_DELETION_REQUEST,  // 근로자가 근무 삭제를 요청함
     CORRECTION_RESPONSE,        // 근무기록 정정 요청 승인/거절
     PAYMENT_DUE,                // 월급일/급여 지급 예정
     PAYMENT_SUCCESS,            // 급여 입금 완료

@@ -2,6 +2,8 @@ package com.example.wagemanager.api.workrecord;
 
 import com.example.wagemanager.common.dto.ApiResponse;
 import com.example.wagemanager.domain.user.entity.User;
+import com.example.wagemanager.domain.workrecord.deletion.dto.WorkRecordDeletionRequestDto;
+import com.example.wagemanager.domain.workrecord.deletion.service.WorkRecordDeletionRequestService;
 import com.example.wagemanager.domain.workrecord.dto.WorkRecordDto;
 import com.example.wagemanager.domain.workrecord.service.WorkRecordCommandService;
 import com.example.wagemanager.domain.workrecord.service.WorkRecordQueryService;
@@ -26,6 +28,7 @@ public class WorkerWorkRecordController {
 
     private final WorkRecordQueryService workRecordQueryService;
     private final WorkRecordCommandService workRecordCommandService;
+    private final WorkRecordDeletionRequestService workRecordDeletionRequestService;
 
     @Operation(summary = "근무 일정 생성 요청", description = "근로자가 근무 일정 생성을 요청합니다. 고용주의 승인이 필요합니다.")
     @PreAuthorize("@contractPermission.canAccessAsWorker(#request.contractId)")
@@ -61,5 +64,16 @@ public class WorkerWorkRecordController {
             @Parameter(description = "근무 기록 ID", required = true) @PathVariable Long id) {
         workRecordCommandService.completeWorkRecord(id);
         return ApiResponse.success(null);
+    }
+
+    @Operation(summary = "근무 삭제 요청", description = "근로자가 등록된 근무 일정을 삭제해 달라고 요청합니다.")
+    @PreAuthorize("@workRecordPermission.canAccessAsWorker(#id)")
+    @PostMapping("/{id}/deletion-request")
+    public ApiResponse<WorkRecordDeletionRequestDto.Response> requestWorkRecordDeletion(
+            @AuthenticationPrincipal User worker,
+            @Parameter(description = "근무 기록 ID", required = true) @PathVariable Long id,
+            @Valid @RequestBody(required = false) WorkRecordDeletionRequestDto.CreateRequest request) {
+        return ApiResponse.success(
+                workRecordDeletionRequestService.requestDeletion(worker, id, request));
     }
 }

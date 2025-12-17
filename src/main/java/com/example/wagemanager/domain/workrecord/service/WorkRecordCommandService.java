@@ -10,6 +10,9 @@ import com.example.wagemanager.domain.notification.enums.NotificationActionType;
 import com.example.wagemanager.domain.notification.enums.NotificationType;
 import com.example.wagemanager.domain.notification.event.NotificationEvent;
 import com.example.wagemanager.domain.user.entity.User;
+import com.example.wagemanager.domain.workrecord.deletion.entity.WorkRecordDeletionRequest;
+import com.example.wagemanager.domain.workrecord.deletion.enums.WorkRecordDeletionRequestStatus;
+import com.example.wagemanager.domain.workrecord.deletion.repository.WorkRecordDeletionRequestRepository;
 import com.example.wagemanager.domain.workrecord.dto.WorkRecordDto;
 import com.example.wagemanager.domain.workrecord.entity.WorkRecord;
 import com.example.wagemanager.domain.workrecord.enums.WorkRecordStatus;
@@ -35,6 +38,7 @@ public class WorkRecordCommandService {
     private final WorkRecordRepository workRecordRepository;
     private final WorkerContractRepository workerContractRepository;
     private final WorkRecordCoordinatorService coordinatorService;
+    private final WorkRecordDeletionRequestRepository workRecordDeletionRequestRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
@@ -268,6 +272,11 @@ public class WorkRecordCommandService {
             throw new BadRequestException(ErrorCode.INVALID_WORK_RECORD_STATUS, "승인 대기 중인 근무 일정만 거절할 수 있습니다.");
         }
 
+        // 삭제 요청이 있으면 승인 처리
+        workRecordDeletionRequestRepository.findByWorkRecordIdAndStatus(
+                        workRecordId, WorkRecordDeletionRequestStatus.PENDING)
+                .ifPresent(WorkRecordDeletionRequest::approve);
+
         // 알림 전송을 위해 데이터 저장
         User worker = workRecord.getContract().getWorker().getUser();
         LocalDate workDate = workRecord.getWorkDate();
@@ -309,6 +318,11 @@ public class WorkRecordCommandService {
     public void deleteWorkRecord(Long workRecordId) {
         WorkRecord workRecord = workRecordRepository.findById(workRecordId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.WORK_RECORD_NOT_FOUND, "근무 기록을 찾을 수 없습니다."));
+
+        // 삭제 요청이 있으면 승인 처리
+        workRecordDeletionRequestRepository.findByWorkRecordIdAndStatus(
+                        workRecordId, WorkRecordDeletionRequestStatus.PENDING)
+                .ifPresent(WorkRecordDeletionRequest::approve);
 
         // 알림 전송을 위해 데이터 저장
         User worker = workRecord.getContract().getWorker().getUser();
