@@ -4,11 +4,15 @@ import com.example.wagemanager.common.exception.BadRequestException;
 import com.example.wagemanager.common.exception.ErrorCode;
 import com.example.wagemanager.common.exception.NotFoundException;
 import com.example.wagemanager.domain.auth.dto.AuthDto;
+import com.example.wagemanager.domain.employer.entity.Employer;
+import com.example.wagemanager.domain.employer.repository.EmployerRepository;
 import com.example.wagemanager.domain.user.dto.UserDto;
 import com.example.wagemanager.domain.user.entity.User;
 import com.example.wagemanager.domain.user.enums.UserType;
 import com.example.wagemanager.domain.user.repository.UserRepository;
 import com.example.wagemanager.domain.user.service.UserService;
+import com.example.wagemanager.domain.worker.entity.Worker;
+import com.example.wagemanager.domain.worker.repository.WorkerRepository;
 import com.example.wagemanager.global.oauth.kakao.dto.KakaoUserInfo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,6 +34,8 @@ public class AuthService {
     private final TokenService tokenService;
     private final UserRepository userRepository;
     private final UserService userService;
+    private final EmployerRepository employerRepository;
+    private final WorkerRepository workerRepository;
 
     /**
      * 로그인 결과 (응답 DTO + Refresh Token)
@@ -192,7 +198,7 @@ public class AuthService {
     }
 
     /**
-     * 개발용 사용자 생성
+     * 개발용 사용자 생성 (Employer/Worker 엔티티도 함께 생성)
      *
      * @param userId 사용자 ID
      * @param name 사용자 이름
@@ -201,13 +207,32 @@ public class AuthService {
      */
     @SuppressWarnings("null")
     private User createDevUser(Long userId, String name, UserType userType) {
+        // User 생성
         User newUser = User.builder()
                 .kakaoId("dev_" + userId) // 개발용 임시 kakaoId
                 .name(name)
                 .userType(userType)
                 .profileImageUrl("")
                 .build();
-        return userRepository.save(newUser);
+        User savedUser = userRepository.save(newUser);
+
+        // 사용자 타입에 따라 Employer 또는 Worker 생성
+        if (userType == UserType.EMPLOYER) {
+            Employer employer = Employer.builder()
+                    .user(savedUser)
+                    .phone("010-0000-0000") // 개발용 임시 전화번호
+                    .build();
+            employerRepository.save(employer);
+        } else if (userType == UserType.WORKER) {
+            Worker worker = Worker.builder()
+                    .user(savedUser)
+                    .workerCode("DEV" + String.format("%03d", userId % 1000)) // 개발용 임시 근로자 코드
+                    .kakaoPayLink("https://qr.kakaopay.com/dev_test") // 개발용 임시 카카오페이 링크
+                    .build();
+            workerRepository.save(worker);
+        }
+
+        return savedUser;
     }
 
     /**
@@ -221,10 +246,27 @@ public class AuthService {
     public LoginResult devLogin(AuthDto.DevLoginRequest request) {
         Long requestedUserId = Long.parseLong(request.getUserId());
         UserType userType = parseUserType(request.getUserType());
+        String devKakaoId = "dev_" + requestedUserId;
 
-        // 사용자 조회 또는 생성
-        User user = userRepository.findById(requestedUserId)
+        // kakaoId로 사용자 조회 또는 생성 (findById가 아닌 findByKakaoId 사용)
+        User user = userRepository.findByKakaoId(devKakaoId)
                 .orElseGet(() -> createDevUser(requestedUserId, request.getName(), userType));
+
+        // 기존 사용자인 경우, Employer/Worker가 없으면 생성
+        if (user.getUserType() == UserType.EMPLOYER && employerRepository.findByUserId(user.getId()).isEmpty()) {
+            Employer employer = Employer.builder()
+                    .user(user)
+                    .phone("010-0000-0000")
+                    .build();
+            employerRepository.save(employer);
+        } else if (user.getUserType() == UserType.WORKER && workerRepository.findByUserId(user.getId()).isEmpty()) {
+            Worker worker = Worker.builder()
+                    .user(user)
+                    .workerCode("DEV" + String.format("%03d", requestedUserId % 1000))
+                    .kakaoPayLink("https://qr.kakaopay.com/dev_test")
+                    .build();
+            workerRepository.save(worker);
+        }
 
         // 토큰 생성
         TokenService.TokenPair tokenPair = tokenService.generateTokenPair(user.getId());

@@ -18,6 +18,8 @@ public class WorkerDto {
     public static class Response {
         private Long id;
         private Long userId;
+        private String name;
+        private String phone;
         private String workerCode;
         // private String accountNumber;
         // private String bankName;
@@ -27,6 +29,8 @@ public class WorkerDto {
             return Response.builder()
                     .id(worker.getId())
                     .userId(worker.getUser().getId())
+                    .name(worker.getUser().getName())
+                    .phone(worker.getUser().getPhone())
                     .workerCode(worker.getWorkerCode())
                     // .accountNumber(worker.getAccountNumber())
                     // .bankName(worker.getBankName())

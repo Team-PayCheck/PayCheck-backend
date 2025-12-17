@@ -333,7 +333,7 @@ public class WorkRecordCommandService {
                 .user(worker)
                 .type(NotificationType.SCHEDULE_DELETED)
                 .title(title)
-                .actionType(null)  // 삭제된 경우 액션 없음
+                .actionType(NotificationActionType.NONE)  // 삭제된 경우 액션 없음
                 .actionData(null)
                 .build();
 

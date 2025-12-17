@@ -12,6 +12,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -101,6 +102,8 @@ public class WorkRecordDto {
         private LocalDate workDate;
         private LocalTime startTime;
         private LocalTime endTime;
+        private Integer breakMinutes;
+        private BigDecimal hourlyWage;
         private WorkRecordStatus status;
 
         public static CalendarResponse from(WorkRecord workRecord) {
@@ -112,6 +115,8 @@ public class WorkRecordDto {
                     .workDate(workRecord.getWorkDate())
                     .startTime(workRecord.getStartTime())
                     .endTime(workRecord.getEndTime())
+                    .breakMinutes(workRecord.getBreakMinutes())
+                    .hourlyWage(workRecord.getContract().getHourlyWage())
                     .status(workRecord.getStatus())
                     .build();
         }
