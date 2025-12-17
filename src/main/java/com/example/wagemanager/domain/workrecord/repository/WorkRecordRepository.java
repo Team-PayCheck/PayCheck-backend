@@ -98,4 +98,16 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
             @Param("workplaceId") Long workplaceId,
             @Param("status") WorkRecordStatus status
     );
+
+    @Query("SELECT wr FROM WorkRecord wr " +
+            "JOIN FETCH wr.contract c " +
+            "JOIN FETCH c.worker wk " +
+            "JOIN FETCH c.workplace " +
+            "WHERE wk.id = :workerId " +
+            "AND wr.status = :status " +
+            "ORDER BY wr.createdAt DESC")
+    List<WorkRecord> findByWorkerIdAndStatus(
+            @Param("workerId") Long workerId,
+            @Param("status") WorkRecordStatus status
+    );
 }

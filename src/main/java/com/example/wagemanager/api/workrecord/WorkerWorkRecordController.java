@@ -49,9 +49,17 @@ public class WorkerWorkRecordController {
                 workRecordQueryService.getWorkRecordsByWorkerAndDateRange(user.getId(), startDate, endDate));
     }
 
+    @Operation(summary = "승인 대기 근무 일정 조회", description = "근로자가 추가 요청한 일정 중 승인 대기 상태(PENDING_APPROVAL)를 조회합니다.")
+    @GetMapping("/pending")
+    public ApiResponse<List<WorkRecordDto.DetailedResponse>> getPendingApprovalWorkRecords(
+            @AuthenticationPrincipal User user) {
+        return ApiResponse.success(
+                workRecordQueryService.getPendingApprovalWorkRecordsByWorker(user.getId()));
+    }
+
     @Operation(summary = "근무 기록 상세 조회", description = "특정 근무 기록의 상세 정보를 조회합니다.")
     @PreAuthorize("@workRecordPermission.canAccessAsWorker(#id)")
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     public ApiResponse<WorkRecordDto.DetailedResponse> getWorkRecord(
             @Parameter(description = "근무 기록 ID", required = true) @PathVariable Long id) {
         return ApiResponse.success(workRecordQueryService.getWorkRecordById(id));
@@ -59,7 +67,7 @@ public class WorkerWorkRecordController {
 
     @Operation(summary = "근무 완료 처리", description = "근무를 완료 상태로 변경합니다.")
     @PreAuthorize("@workRecordPermission.canAccessAsWorker(#id)")
-    @PutMapping("/{id}/complete")
+    @PutMapping("/{id:\\d+}/complete")
     public ApiResponse<Void> completeWorkRecord(
             @Parameter(description = "근무 기록 ID", required = true) @PathVariable Long id) {
         workRecordCommandService.completeWorkRecord(id);
@@ -68,7 +76,7 @@ public class WorkerWorkRecordController {
 
     @Operation(summary = "근무 삭제 요청", description = "근로자가 등록된 근무 일정을 삭제해 달라고 요청합니다.")
     @PreAuthorize("@workRecordPermission.canAccessAsWorker(#id)")
-    @PostMapping("/{id}/deletion-request")
+    @PostMapping("/{id:\\d+}/deletion-request")
     public ApiResponse<WorkRecordDeletionRequestDto.Response> requestWorkRecordDeletion(
             @AuthenticationPrincipal User worker,
             @Parameter(description = "근무 기록 ID", required = true) @PathVariable Long id,

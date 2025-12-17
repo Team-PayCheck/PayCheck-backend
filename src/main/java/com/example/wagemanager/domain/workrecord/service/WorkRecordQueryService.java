@@ -63,6 +63,16 @@ public class WorkRecordQueryService {
                 .collect(Collectors.toList());
     }
 
+    public List<WorkRecordDto.DetailedResponse> getPendingApprovalWorkRecordsByWorker(Long userId) {
+        Worker worker = workerRepository.findByUserId(userId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.WORKER_NOT_FOUND, "근로자 정보를 찾을 수 없습니다."));
+
+        List<WorkRecord> records = workRecordRepository.findByWorkerIdAndStatus(worker.getId(), WorkRecordStatus.PENDING_APPROVAL);
+        return records.stream()
+                .map(WorkRecordDto.DetailedResponse::from)
+                .collect(Collectors.toList());
+    }
+
     // 고용주용: 승인 대기중인 모든 요청 조회 (CorrectionRequest + WorkRecord 통합)
     public PendingApprovalDto.Response getAllPendingApprovalsByWorkplace(Long workplaceId, PendingApprovalDto.FilterType filterType) {
         List<PendingApprovalDto.CorrectionRequestInfo> correctionRequestInfos = List.of();
