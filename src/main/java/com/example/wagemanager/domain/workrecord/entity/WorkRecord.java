@@ -121,6 +121,18 @@ public class WorkRecord extends BaseEntity {
     @Builder.Default
     private BigDecimal totalSalary = BigDecimal.ZERO;
 
+    // JPA 생명주기 콜백: 엔티티 저장/수정 전 자동 계산
+    @PrePersist
+    @PreUpdate
+    private void prePersist() {
+        if (startTime != null && endTime != null) {
+            calculateHours();
+            if (status == WorkRecordStatus.COMPLETED) {
+                calculateTotalSalary();
+            }
+        }
+    }
+
     // 근무 시간 수정 (근무 전/후 모두 사용)
     public void updateWorkTime(LocalTime startTime, LocalTime endTime, String memo) {
         this.startTime = startTime;
@@ -168,6 +180,9 @@ public class WorkRecord extends BaseEntity {
         // 전체 근무 시간 계산
         long minutes = java.time.Duration.between(startTime, endTime).toMinutes();
         this.totalHours = BigDecimal.valueOf(minutes).divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP);
+
+        // 실제 근무 시간 계산 (전체 시간 - 휴식 시간)
+        this.totalWorkMinutes = (int) (minutes - this.breakMinutes);
 
         // 휴일 여부 판별 (일요일=0, 토요일=6)
         boolean isHoliday = workDate.getDayOfWeek().getValue() >= WEEKEND_DAY_THRESHOLD;

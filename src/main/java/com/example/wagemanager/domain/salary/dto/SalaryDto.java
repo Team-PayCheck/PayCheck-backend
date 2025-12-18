@@ -71,6 +71,7 @@ public class SalaryDto {
     @Schema(name = "SalaryListResponse")
     public static class ListResponse {
         private Long id;
+        private Long contractId;
         private String workerName;
         private Integer year;
         private Integer month;
@@ -81,6 +82,7 @@ public class SalaryDto {
         public static ListResponse from(Salary salary) {
             return ListResponse.builder()
                     .id(salary.getId())
+                    .contractId(salary.getContract().getId())
                     .workerName(salary.getContract().getWorker().getUser().getName())
                     .year(salary.getYear())
                     .month(salary.getMonth())
