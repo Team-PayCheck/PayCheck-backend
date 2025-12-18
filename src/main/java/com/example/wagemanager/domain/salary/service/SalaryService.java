@@ -170,12 +170,12 @@ public class SalaryService {
 
         // 세금 및 보험료 계산 (payrollDeductionType에 따라)
         // 근무 기록은 있지만 급여가 0원이면 4대보험 면제
-        String deductionType = contract.getPayrollDeductionType();
+        DeductionCalculator.PayrollDeductionType deductionType = contract.getPayrollDeductionType();
 
-        if ("PART_TIME_TAX_AND_INSURANCE".equals(deductionType)
+        if (deductionType == DeductionCalculator.PayrollDeductionType.PART_TIME_TAX_AND_INSURANCE
             && totalGrossPay.compareTo(BigDecimal.ZERO) == 0) {
             // 근무하지 않은 경우(급여 0원) 4대보험 면제
-            deductionType = "PART_TIME_NONE";
+            deductionType = DeductionCalculator.PayrollDeductionType.PART_TIME_NONE;
         }
 
         DeductionCalculator.TaxResult taxResult = DeductionCalculator.calculate(totalGrossPay, deductionType);
