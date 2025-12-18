@@ -111,42 +111,6 @@ class WorkRecordCommandServiceTest {
     }
 
     @Test
-    @DisplayName("근로자의 근무 일정 생성 성공 - PENDING_APPROVAL 상태")
-    void createWorkRecordByWorker_Success() {
-        // given
-        User worker = mock(User.class);
-        User employer = mock(User.class);
-        testContract = mock(WorkerContract.class);
-        testWorkRecord = mock(WorkRecord.class);
-        com.example.wagemanager.domain.workplace.entity.Workplace workplace = mock(com.example.wagemanager.domain.workplace.entity.Workplace.class);
-        com.example.wagemanager.domain.employer.entity.Employer employerEntity = mock(com.example.wagemanager.domain.employer.entity.Employer.class);
-
-        WorkRecordDto.CreateRequest request = WorkRecordDto.CreateRequest.builder()
-                .contractId(1L)
-                .workDate(LocalDate.now())
-                .startTime(LocalTime.of(9, 0))
-                .endTime(LocalTime.of(18, 0))
-                .breakMinutes(60)
-                .build();
-
-        when(workerContractRepository.findById(anyLong())).thenReturn(Optional.of(testContract));
-        when(coordinatorService.getOrCreateWeeklyAllowance(any(), any())).thenReturn(testWeeklyAllowance);
-        when(workRecordRepository.save(any(WorkRecord.class))).thenReturn(testWorkRecord);
-        when(worker.getName()).thenReturn("테스트 근로자");
-        when(testWorkRecord.getContract()).thenReturn(testContract);
-        when(testContract.getWorkplace()).thenReturn(workplace);
-        when(workplace.getEmployer()).thenReturn(employerEntity);
-        when(employerEntity.getUser()).thenReturn(employer);
-
-        // when
-        WorkRecordDto.Response result = workRecordCommandService.createWorkRecordByWorker(worker, request);
-
-        // then
-        assertThat(result).isNotNull();
-        verify(workRecordRepository).save(any(WorkRecord.class));
-    }
-
-    @Test
     @DisplayName("근무 기록 업데이트 실패 - 기록 없음")
     void updateWorkRecord_NotFound() {
         // given
@@ -159,56 +123,6 @@ class WorkRecordCommandServiceTest {
         // when & then
         assertThatThrownBy(() -> workRecordCommandService.updateWorkRecord(1L, request))
                 .isInstanceOf(NotFoundException.class);
-    }
-
-    @Test
-    @DisplayName("근무 일정 승인 성공")
-    void approveWorkRecord_Success() {
-        // given
-        testWorkRecord = mock(WorkRecord.class);
-        testContract = mock(WorkerContract.class);
-        User worker = mock(User.class);
-        com.example.wagemanager.domain.worker.entity.Worker workerEntity = mock(com.example.wagemanager.domain.worker.entity.Worker.class);
-
-        when(workRecordRepository.findById(anyLong())).thenReturn(Optional.of(testWorkRecord));
-        when(testWorkRecord.getStatus()).thenReturn(WorkRecordStatus.PENDING_APPROVAL);
-        when(testWorkRecord.getWorkDate()).thenReturn(LocalDate.now());
-        when(testWorkRecord.getContract()).thenReturn(testContract);
-        when(testContract.getWorker()).thenReturn(workerEntity);
-        when(workerEntity.getUser()).thenReturn(worker);
-
-        // when
-        WorkRecordDto.Response result = workRecordCommandService.approveWorkRecord(1L);
-
-        // then
-        assertThat(result).isNotNull();
-        verify(testWorkRecord).approve();
-    }
-
-    @Test
-    @DisplayName("근무 일정 승인 실패 - 잘못된 상태")
-    void approveWorkRecord_Fail_InvalidStatus() {
-        // given
-        testWorkRecord = mock(WorkRecord.class);
-        when(workRecordRepository.findById(anyLong())).thenReturn(Optional.of(testWorkRecord));
-        when(testWorkRecord.getStatus()).thenReturn(WorkRecordStatus.COMPLETED);
-
-        // when & then
-        assertThatThrownBy(() -> workRecordCommandService.approveWorkRecord(1L))
-                .isInstanceOf(BadRequestException.class);
-    }
-
-    @Test
-    @DisplayName("근무 일정 거절 실패 - 잘못된 상태")
-    void rejectWorkRecord_Fail_InvalidStatus() {
-        // given
-        testWorkRecord = mock(WorkRecord.class);
-        when(workRecordRepository.findById(anyLong())).thenReturn(Optional.of(testWorkRecord));
-        when(testWorkRecord.getStatus()).thenReturn(WorkRecordStatus.SCHEDULED);
-
-        // when & then
-        assertThatThrownBy(() -> workRecordCommandService.rejectWorkRecord(1L))
-                .isInstanceOf(BadRequestException.class);
     }
 
     @Test

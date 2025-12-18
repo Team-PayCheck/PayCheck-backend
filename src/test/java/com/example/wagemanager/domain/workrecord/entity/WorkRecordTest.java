@@ -124,87 +124,24 @@ class WorkRecordTest {
     }
 
     @Test
-    @DisplayName("승인 처리 - 과거 날짜 (COMPLETED)")
-    void approve_PastDate() {
-        // given
-        workRecord = WorkRecord.builder()
-                .contract(mockContract)
-                .workDate(LocalDate.now().minusDays(1))
-                .startTime(LocalTime.of(9, 0))
-                .endTime(LocalTime.of(18, 0))
-                .status(WorkRecordStatus.PENDING_APPROVAL)
-                .build();
-
+    @DisplayName("소프트 삭제")
+    void markAsDeleted() {
         // when
-        workRecord.approve();
+        workRecord.markAsDeleted();
 
         // then
-        assertThat(workRecord.getStatus()).isEqualTo(WorkRecordStatus.COMPLETED);
+        assertThat(workRecord.getStatus()).isEqualTo(WorkRecordStatus.DELETED);
     }
 
     @Test
-    @DisplayName("승인 처리 - 미래 날짜 (SCHEDULED)")
-    void approve_FutureDate() {
+    @DisplayName("소프트 삭제 실패 - 이미 삭제된 기록")
+    void markAsDeleted_AlreadyDeleted() {
         // given
-        workRecord = WorkRecord.builder()
-                .contract(mockContract)
-                .workDate(LocalDate.now().plusDays(1))
-                .startTime(LocalTime.of(9, 0))
-                .endTime(LocalTime.of(18, 0))
-                .status(WorkRecordStatus.PENDING_APPROVAL)
-                .build();
-
-        // when
-        workRecord.approve();
-
-        // then
-        assertThat(workRecord.getStatus()).isEqualTo(WorkRecordStatus.SCHEDULED);
-    }
-
-    @Test
-    @DisplayName("승인 처리 실패 - 잘못된 상태")
-    void approve_InvalidStatus() {
-        // given
-        workRecord = WorkRecord.builder()
-                .contract(mockContract)
-                .workDate(LocalDate.now())
-                .startTime(LocalTime.of(9, 0))
-                .endTime(LocalTime.of(18, 0))
-                .status(WorkRecordStatus.COMPLETED)
-                .build();
+        workRecord.markAsDeleted();
 
         // when & then
-        assertThatThrownBy(() -> workRecord.approve())
+        assertThatThrownBy(() -> workRecord.markAsDeleted())
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("승인 대기 상태만 승인할 수 있습니다");
-    }
-
-    @Test
-    @DisplayName("상태 확인 - PENDING_APPROVAL")
-    void isPendingApproval_True() {
-        // given
-        workRecord = WorkRecord.builder()
-                .contract(mockContract)
-                .workDate(LocalDate.now())
-                .startTime(LocalTime.of(9, 0))
-                .endTime(LocalTime.of(18, 0))
-                .status(WorkRecordStatus.PENDING_APPROVAL)
-                .build();
-
-        // when
-        boolean result = workRecord.isPendingApproval();
-
-        // then
-        assertThat(result).isTrue();
-    }
-
-    @Test
-    @DisplayName("상태 확인 - Not PENDING_APPROVAL")
-    void isPendingApproval_False() {
-        // when
-        boolean result = workRecord.isPendingApproval();
-
-        // then
-        assertThat(result).isFalse();
+                .hasMessageContaining("이미 삭제된 근무 기록입니다");
     }
 }

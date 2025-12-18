@@ -1,15 +1,9 @@
 package com.example.wagemanager.domain.workrecord.service;
 
 import com.example.wagemanager.common.exception.NotFoundException;
-import com.example.wagemanager.domain.correction.entity.CorrectionRequest;
-import com.example.wagemanager.domain.correction.enums.CorrectionStatus;
 import com.example.wagemanager.domain.correction.repository.CorrectionRequestRepository;
-import com.example.wagemanager.domain.worker.entity.Worker;
 import com.example.wagemanager.domain.worker.repository.WorkerRepository;
-import com.example.wagemanager.domain.workrecord.dto.PendingApprovalDto;
 import com.example.wagemanager.domain.workrecord.dto.WorkRecordDto;
-import com.example.wagemanager.domain.workrecord.entity.WorkRecord;
-import com.example.wagemanager.domain.workrecord.enums.WorkRecordStatus;
 import com.example.wagemanager.domain.workrecord.repository.WorkRecordRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,7 +19,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
@@ -45,8 +38,6 @@ class WorkRecordQueryServiceTest {
     @InjectMocks
     private WorkRecordQueryService workRecordQueryService;
 
-    private WorkRecord testWorkRecord;
-    private Worker testWorker;
 
     @BeforeEach
     void setUp() {
@@ -110,65 +101,4 @@ class WorkRecordQueryServiceTest {
                 .isInstanceOf(NotFoundException.class);
     }
 
-    @Test
-    @DisplayName("승인 대기 요청 조회 - ALL 필터")
-    void getAllPendingApprovalsByWorkplace_AllFilter() {
-        // given
-        Long workplaceId = 1L;
-        when(correctionRequestRepository.findByWorkplaceIdAndStatus(workplaceId, CorrectionStatus.PENDING))
-                .thenReturn(Arrays.asList());
-        when(workRecordRepository.findByWorkplaceAndStatus(workplaceId, WorkRecordStatus.PENDING_APPROVAL))
-                .thenReturn(Arrays.asList());
-
-        // when
-        PendingApprovalDto.Response result = workRecordQueryService
-                .getAllPendingApprovalsByWorkplace(workplaceId, PendingApprovalDto.FilterType.ALL);
-
-        // then
-        assertThat(result).isNotNull();
-        assertThat(result.getCorrectionRequests()).isNotNull();
-        assertThat(result.getWorkRecordCreations()).isNotNull();
-        verify(correctionRequestRepository).findByWorkplaceIdAndStatus(workplaceId, CorrectionStatus.PENDING);
-        verify(workRecordRepository).findByWorkplaceAndStatus(workplaceId, WorkRecordStatus.PENDING_APPROVAL);
-    }
-
-    @Test
-    @DisplayName("승인 대기 요청 조회 - CORRECTION 필터")
-    void getAllPendingApprovalsByWorkplace_CorrectionFilter() {
-        // given
-        Long workplaceId = 1L;
-        when(correctionRequestRepository.findByWorkplaceIdAndStatus(workplaceId, CorrectionStatus.PENDING))
-                .thenReturn(Arrays.asList());
-
-        // when
-        PendingApprovalDto.Response result = workRecordQueryService
-                .getAllPendingApprovalsByWorkplace(workplaceId, PendingApprovalDto.FilterType.CORRECTION);
-
-        // then
-        assertThat(result).isNotNull();
-        assertThat(result.getCorrectionRequests()).isNotNull();
-        assertThat(result.getWorkRecordCreations()).isEmpty();
-        verify(correctionRequestRepository).findByWorkplaceIdAndStatus(workplaceId, CorrectionStatus.PENDING);
-        verify(workRecordRepository, never()).findByWorkplaceAndStatus(any(), any());
-    }
-
-    @Test
-    @DisplayName("승인 대기 요청 조회 - CREATION 필터")
-    void getAllPendingApprovalsByWorkplace_CreationFilter() {
-        // given
-        Long workplaceId = 1L;
-        when(workRecordRepository.findByWorkplaceAndStatus(workplaceId, WorkRecordStatus.PENDING_APPROVAL))
-                .thenReturn(Arrays.asList());
-
-        // when
-        PendingApprovalDto.Response result = workRecordQueryService
-                .getAllPendingApprovalsByWorkplace(workplaceId, PendingApprovalDto.FilterType.CREATION);
-
-        // then
-        assertThat(result).isNotNull();
-        assertThat(result.getCorrectionRequests()).isEmpty();
-        assertThat(result.getWorkRecordCreations()).isNotNull();
-        verify(workRecordRepository).findByWorkplaceAndStatus(workplaceId, WorkRecordStatus.PENDING_APPROVAL);
-        verify(correctionRequestRepository, never()).findByWorkplaceIdAndStatus(any(), any());
-    }
 }

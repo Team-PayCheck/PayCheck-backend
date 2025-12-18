@@ -46,18 +46,18 @@ class WeeklyAllowanceTest {
     }
 
     @Test
-    @DisplayName("주간 총 근무 시간 계산 - PENDING_APPROVAL 제외")
-    void calculateTotalWorkHours_ExcludePendingApproval() {
+    @DisplayName("주간 총 근무 시간 계산 - DELETED 제외")
+    void calculateTotalWorkHours_ExcludeDeleted() {
         // given
         WorkRecord completedRecord = mock(WorkRecord.class);
         when(completedRecord.getStatus()).thenReturn(WorkRecordStatus.COMPLETED);
         when(completedRecord.getTotalHours()).thenReturn(BigDecimal.valueOf(8));
 
-        WorkRecord pendingRecord = mock(WorkRecord.class);
-        when(pendingRecord.getStatus()).thenReturn(WorkRecordStatus.PENDING_APPROVAL);
-        when(pendingRecord.getTotalHours()).thenReturn(BigDecimal.valueOf(5));
+        WorkRecord deletedRecord = mock(WorkRecord.class);
+        when(deletedRecord.getStatus()).thenReturn(WorkRecordStatus.DELETED);
+        when(deletedRecord.getTotalHours()).thenReturn(BigDecimal.valueOf(5));
 
-        weeklyAllowance.getWorkRecords().addAll(Arrays.asList(completedRecord, pendingRecord));
+        weeklyAllowance.getWorkRecords().addAll(Arrays.asList(completedRecord, deletedRecord));
 
         // when
         weeklyAllowance.calculateTotalWorkHours();

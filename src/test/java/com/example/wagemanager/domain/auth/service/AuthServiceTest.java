@@ -8,6 +8,10 @@ import com.example.wagemanager.domain.user.entity.User;
 import com.example.wagemanager.domain.user.enums.UserType;
 import com.example.wagemanager.domain.user.repository.UserRepository;
 import com.example.wagemanager.domain.user.service.UserService;
+import com.example.wagemanager.domain.employer.repository.EmployerRepository;
+import com.example.wagemanager.domain.worker.repository.WorkerRepository;
+import com.example.wagemanager.domain.worker.entity.Worker;
+import com.example.wagemanager.domain.employer.entity.Employer;
 import com.example.wagemanager.global.oauth.kakao.dto.KakaoUserInfo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +42,12 @@ class AuthServiceTest {
 
     @Mock
     private UserService userService;
+
+    @Mock
+    private EmployerRepository employerRepository;
+
+    @Mock
+    private WorkerRepository workerRepository;
 
     @InjectMocks
     private AuthService authService;
@@ -272,7 +282,8 @@ class AuthServiceTest {
                 .userType("WORKER")
                 .build();
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.findByKakaoId("dev_1")).thenReturn(Optional.of(testUser));
+        when(workerRepository.findByUserId(1L)).thenReturn(Optional.of(mock(Worker.class)));
         when(tokenService.generateTokenPair(1L)).thenReturn(tokenPair);
 
         // when
@@ -283,7 +294,7 @@ class AuthServiceTest {
         assertThat(result.getLoginResponse().getUserId()).isEqualTo(1L);
         assertThat(result.getLoginResponse().getName()).isEqualTo("테스트 사용자");
 
-        verify(userRepository).findById(1L);
+        verify(userRepository).findByKakaoId("dev_1");
         verify(tokenService).generateTokenPair(1L);
     }
 
@@ -304,8 +315,10 @@ class AuthServiceTest {
                 .userType(UserType.EMPLOYER)
                 .build();
 
-        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+        when(userRepository.findByKakaoId("dev_999")).thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenReturn(newUser);
+        when(employerRepository.save(any(Employer.class)))
+                .thenReturn(mock(Employer.class));
         when(tokenService.generateTokenPair(999L)).thenReturn(tokenPair);
 
         // when
@@ -315,7 +328,7 @@ class AuthServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getLoginResponse().getUserId()).isEqualTo(999L);
 
-        verify(userRepository).findById(999L);
+        verify(userRepository).findByKakaoId("dev_999");
         verify(userRepository).save(any(User.class));
         verify(tokenService).generateTokenPair(999L);
     }

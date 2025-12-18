@@ -2,14 +2,14 @@ package com.example.wagemanager.domain.correction.service;
 
 import com.example.wagemanager.common.exception.BadRequestException;
 import com.example.wagemanager.common.exception.NotFoundException;
-import com.example.wagemanager.common.exception.UnauthorizedException;
 import com.example.wagemanager.domain.correction.dto.CorrectionRequestDto;
-import com.example.wagemanager.domain.correction.entity.CorrectionRequest;
 import com.example.wagemanager.domain.correction.enums.CorrectionStatus;
 import com.example.wagemanager.domain.correction.repository.CorrectionRequestRepository;
 import com.example.wagemanager.domain.user.entity.User;
 import com.example.wagemanager.domain.workrecord.entity.WorkRecord;
 import com.example.wagemanager.domain.workrecord.repository.WorkRecordRepository;
+import com.example.wagemanager.domain.correction.enums.RequestType;
+import com.example.wagemanager.domain.workrecord.enums.WorkRecordStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,12 +41,16 @@ class CorrectionRequestServiceTest {
     private CorrectionRequestService correctionRequestService;
 
     @Test
-    @DisplayName("정정요청 생성 실패 - 근무 기록 없음")
+    @DisplayName("정정요청 생성 실패 - 근무 기록 없음 (UPDATE 타입)")
     void createCorrectionRequest_Fail_WorkRecordNotFound() {
         // given
         User requester = mock(User.class);
         CorrectionRequestDto.CreateRequest request = CorrectionRequestDto.CreateRequest.builder()
+                .type(RequestType.UPDATE)
                 .workRecordId(999L)
+                .requestedWorkDate(LocalDate.now())
+                .requestedStartTime(LocalTime.of(9, 0))
+                .requestedEndTime(LocalTime.of(18, 0))
                 .build();
 
         when(workRecordRepository.findById(999L)).thenReturn(Optional.empty());
@@ -57,14 +61,20 @@ class CorrectionRequestServiceTest {
     }
 
     @Test
-    @DisplayName("정정요청 생성 실패 - 중복 요청")
+    @DisplayName("정정요청 생성 실패 - 중복 요청 (UPDATE 타입)")
     void createCorrectionRequest_Fail_DuplicateRequest() {
         // given
         User requester = mock(User.class);
         WorkRecord workRecord = mock(WorkRecord.class);
 
+        when(workRecord.getStatus()).thenReturn(WorkRecordStatus.COMPLETED);
+
         CorrectionRequestDto.CreateRequest request = CorrectionRequestDto.CreateRequest.builder()
+                .type(RequestType.UPDATE)
                 .workRecordId(1L)
+                .requestedWorkDate(LocalDate.now())
+                .requestedStartTime(LocalTime.of(9, 0))
+                .requestedEndTime(LocalTime.of(18, 0))
                 .build();
 
         when(workRecordRepository.findById(1L)).thenReturn(Optional.of(workRecord));

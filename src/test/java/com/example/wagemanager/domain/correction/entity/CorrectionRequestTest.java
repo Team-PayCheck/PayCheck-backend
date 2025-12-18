@@ -48,11 +48,6 @@ class CorrectionRequestTest {
         // then
         assertThat(correctionRequest.getStatus()).isEqualTo(CorrectionStatus.APPROVED);
         assertThat(correctionRequest.getReviewedAt()).isNotNull();
-        verify(mockWorkRecord).updateWorkTime(
-                LocalTime.of(10, 0),
-                LocalTime.of(19, 0),
-                null
-        );
     }
 
     @Test
@@ -64,7 +59,6 @@ class CorrectionRequestTest {
         // then
         assertThat(correctionRequest.getStatus()).isEqualTo(CorrectionStatus.REJECTED);
         assertThat(correctionRequest.getReviewedAt()).isNotNull();
-        verify(mockWorkRecord, never()).updateWorkTime(any(), any(), any());
     }
 
     @Test
