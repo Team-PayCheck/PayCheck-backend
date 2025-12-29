@@ -1,0 +1,153 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+# 기본 언어 설정
+language: "ko-KR"
+
+# 베타 기능 사용 여부
+early_access: false
+
+# 코드 리뷰 설정
+reviews:
+  # 리뷰 강도: "chill" (느긋한), "assertive" (적극적)
+  profile: "chill"
+
+  # 변경 요청 워크플로우 활성화
+  request_changes_workflow: false
+
+  # 고수준 요약 제공
+  high_level_summary: true
+
+  # 리뷰에 시 추가 (선택사항)
+  poem: false
+
+  # 리뷰 상태 표시
+  review_status: true
+
+  # 워크스루 접기
+  collapse_walkthrough: false
+
+  # 자동 리뷰 설정
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+
+  # 무시할 파일 패턴
+  path_filters:
+    - "!build/**"
+    - "!gradle/**"
+    - "!.gradle/**"
+    - "!*.log"
+    - "!*.class"
+    - "!target/**"
+    - "!.gitignore"
+    - "!gradlew"
+    - "!gradlew.bat"
+
+  # 경로별 상세 리뷰 지침
+  path_instructions:
+    - path: "src/main/java/**/domain/**/*.java"
+      instructions: |
+        **데이터 무결성 및 엔티티 설계 검증:**
+        - JPA 엔티티 매핑이 ERD.md와 일치하는지 확인
+        - @NotNull, @Column(nullable=false) 등 제약조건이 적절히 설정되었는지 검증
+        - 연관관계 매핑(OneToMany, ManyToOne 등)의 방향성과 cascade 옵션이 올바른지 확인
+        - 외래키 제약조건과 고아 객체 제거(orphanRemoval) 설정 검토
+        - equals(), hashCode() 구현이 적절한지 확인 (특히 ID 기반)
+        - 불변성이 필요한 필드는 final로 선언되었는지 확인
+        - 생성자, 빌더 패턴 사용이 적절한지 검토
+
+    - path: "src/main/java/**/service/**/*Salary*.java"
+      instructions: |
+        **급여 계산 로직 정확성 검증:**
+        - 시급, 근무시간, 주휴수당 계산 로직의 정확성 확인
+        - BigDecimal 사용 여부 확인 (금액 계산 시 부동소수점 오류 방지)
+        - 음수 값 검증 (근무시간, 급여 등이 음수가 될 수 없음)
+        - 경계값 테스트 케이스 필요 여부 제안 (0원, 최대값 등)
+        - 세금, 공제 항목 계산이 누락되지 않았는지 확인
+        - 날짜/시간 계산 시 타임존 고려 여부 확인
+        - 반올림 규칙이 명확하고 일관적인지 검증
+        - 계산 로직에 대한 단위 테스트 존재 여부 확인
+
+    - path: "src/main/java/**/service/**/*Work*.java"
+      instructions: |
+        **근무 기록 및 시간 계산 검증:**
+        - 출퇴근 시간 유효성 검증 (퇴근시간 > 출근시간)
+        - 중복 근무 기록 방지 로직 확인
+        - 근무시간 계산 로직의 정확성 (휴게시간 제외 등)
+        - LocalDateTime 사용 시 타임존 처리 확인
+        - 과거/미래 날짜 제한 검증
+        - NULL 안전성 확인 (Optional 사용 또는 명시적 null 체크)
+
+    - path: "src/main/java/**/service/**/*Contract*.java"
+      instructions: |
+        **계약 관리 로직 검증:**
+        - 계약 기간 유효성 검증 (시작일 <= 종료일)
+        - 시급 범위 검증 (최저임금 이상)
+        - 계약 상태 변경 로직의 적절성 확인
+        - 계약 종료 시 관련 데이터 처리 확인 (급여 정산 등)
+        - 동일 직원의 중복 계약 방지 로직
+
+    - path: "src/main/java/**/controller/**/*.java"
+      instructions: |
+        **API 설계 및 보안 검증:**
+        - API_SPECIFICATION.md와 일치하는지 확인
+        - @Valid, @Validated를 통한 입력 검증 확인
+        - DTO 사용 여부 (엔티티 직접 노출 금지)
+        - 적절한 HTTP 상태 코드 사용 확인
+        - 에러 응답 형식의 일관성 확인
+        - 인증/인가 처리 확인 (@PreAuthorize 등)
+        - CSRF, XSS 등 보안 취약점 검토
+
+    - path: "src/main/java/**/dto/**/*.java"
+      instructions: |
+        **DTO 설계 검증:**
+        - Bean Validation 어노테이션 적절성 확인 (@NotNull, @Size, @Min, @Max 등)
+        - 민감 정보(비밀번호 등) 제외 확인
+        - 불필요한 필드 노출 방지
+        - Request/Response DTO 분리 여부 확인
+        - API 문서와 일치하는지 검증
+
+    - path: "src/main/java/**/repository/**/*.java"
+      instructions: |
+        **데이터 접근 계층 검증:**
+        - JPQL/QueryDSL 쿼리의 효율성 확인
+        - N+1 문제 가능성 검토 (fetch join 필요 여부)
+        - 인덱스가 필요한 쿼리 조건 식별
+        - 페이징 처리 확인
+        - 불필요한 데이터 조회 방지
+
+    - path: "src/test/**/*.java"
+      instructions: |
+        **테스트 코드 품질 검증:**
+        - Given-When-Then 패턴 준수 확인
+        - 테스트 메서드명이 명확한지 확인 (한글 메서드명 권장)
+        - 단위 테스트와 통합 테스트 구분 확인
+        - Mock 사용이 적절한지 확인
+        - 경계값 테스트 포함 여부
+        - 예외 케이스 테스트 확인
+        - 테스트 데이터 격리 확인 (@Transactional, @DirtiesContext 등)
+
+    - path: "src/main/java/**/config/Security*.java"
+      instructions: |
+        **보안 설정 검증:**
+        - CORS 설정의 적절성 (운영 환경에서 allowedOrigins 제한)
+        - CSRF 보호 설정 확인
+        - 인증/인가 규칙의 명확성
+        - 비밀번호 암호화 확인 (BCrypt 등)
+        - JWT 토큰 설정의 안전성 (만료시간, 서명 알고리즘)
+
+# 채팅 설정
+chat:
+  auto_reply: true
+
+# 지식 베이스 - 프로젝트 문서 참조
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "ERD.md"
+      - "API_SPECIFICATION.md"
+      - "USER_FLOW.md"
+      - "README.md"
