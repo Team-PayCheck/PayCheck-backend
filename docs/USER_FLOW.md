@@ -9,17 +9,21 @@
 
 ## 핵심 개념
 
-### WorkRecord의 이중 역할과 4가지 상태
+### WorkRecord의 이중 역할과 상태 관리
 - **예정 (SCHEDULED)**: 고용주가 미리 등록한 근무 예정 상태 (근무 전)
-- **수정 (MODIFIED_BEFORE)**: 근무 시작 전에 시간이 변경된 상태 (근무 전)
 - **완료 (COMPLETED)**: 근무가 완료되고 확정된 상태 (근무 후)
-- **수정 (MODIFIED_AFTER)**: 근무 완료 후 시간이 수정된 상태 (근무 후, 정정 요청 승인 시)
+- **삭제 (DELETED)**: 소프트 삭제된 상태 (급여 계산에서 제외)
+- **is_modified**: 수정 여부를 나타내는 플래그 (근무 전/후 상관없이 시간 변경 시 true)
 - 하나의 엔티티로 일정과 기록을 모두 관리하여 데이터 일관성 유지
+- 당일 급여(base_salary, night_salary, holiday_salary, total_salary)를 자동 계산하여 저장
 
-### 시간 필드 단순화
-- **start_time / end_time**: 하나의 시간 필드로 통합
+### 시간 및 급여 필드
+- **start_time / end_time**: 근무 시작/종료 시간
+- **break_minutes**: 휴식 시간 (분 단위)
+- **total_work_minutes**: 실제 근무 시간 (분) = (end_time - start_time) - break_minutes
+- **total_hours**: 총 근무 시간 (시간 단위, 소수점)
 - 예정 시간으로 등록 → 필요시 실제 시간으로 수정
-- actual 필드 불필요 (어차피 수정하면 start/end 자체를 업데이트)
+- WorkRecord 레벨에서 당일 급여(base_salary, night_salary, holiday_salary)를 자동 계산
 
 ---
 
@@ -162,9 +166,10 @@ VALUES
 
 상태별 스타일:
 - SCHEDULED: 기본 스타일 (실선 테두리)
-- MODIFIED_BEFORE: 수정된 스타일 (점선 테두리)
+- SCHEDULED + is_modified: 수정된 스타일 (점선 테두리)
 - COMPLETED: 진하게 표시 (채워진 배경)
-- MODIFIED_AFTER: 진하게 표시 + 수정 표시 (채워진 배경 + 별표)
+- COMPLETED + is_modified: 진하게 표시 + 수정 표시 (채워진 배경 + 별표)
+- DELETED: 표시하지 않거나 회색 처리
 ```
 
 **API 호출:**
@@ -497,9 +502,9 @@ VALUES
 
 상태 표시:
 - (예정): SCHEDULED - 아직 근무 안 함
-- (수정): MODIFIED_BEFORE - 근무 전 시간 변경됨
+- (예정*): SCHEDULED + is_modified - 근무 전 시간 변경됨
 - (완료): COMPLETED - 근무 완료
-- (수정*): MODIFIED_AFTER - 근무 완료 후 시간 수정됨
+- (완료*): COMPLETED + is_modified - 근무 완료 후 시간 수정됨
 ```
 
 **API 호출:**
@@ -749,29 +754,31 @@ Response:
    - 일괄 등록 기능으로 한 번에 여러 일정 등록
 
 2. ✅ 근무 전 일정 변경
-   - SCHEDULED → MODIFIED_BEFORE 상태 변경
+   - SCHEDULED 상태 유지, is_modified = true 설정
    - 근로자에게 자동 알림
 
 3. ✅ 근무 완료 처리
-   - SCHEDULED/MODIFIED_BEFORE → COMPLETED 상태 변경
+   - SCHEDULED → COMPLETED 상태 변경
 
 4. ✅ 정정 요청 승인/반려 (근무 후)
-   - COMPLETED → MODIFIED_AFTER 상태 변경
+   - COMPLETED 상태 유지, is_modified = true 설정
 
 5. ✅ 급여 송금
-   - COMPLETED/MODIFIED_AFTER 기록 기반 자동 계산된 급여 확인
+   - COMPLETED 상태 기록 기반 자동 계산된 급여 확인
    - 송금 처리
 
 ### 근로자 핵심 기능
 1. ✅ 근무 일정 확인
    - SCHEDULED: 예정된 근무
-   - MODIFIED_BEFORE: 수정된 예정 근무
+   - SCHEDULED + is_modified: 수정된 예정 근무
    - COMPLETED: 완료된 근무
-   - MODIFIED_AFTER: 수정된 완료 근무
+   - COMPLETED + is_modified: 수정된 완료 근무
+   - DELETED: 삭제된 근무 (표시되지 않음)
 
 2. ✅ 정정 요청
-   - COMPLETED 기록에 대해 수정 요청
-   - 승인 시 MODIFIED_AFTER로 변경
+   - COMPLETED 기록에 대해 수정/삭제 요청
+   - 또는 새로운 근무 기록 생성 요청 (CREATE)
+   - 승인 시 is_modified = true로 변경
 
 3. ✅ 급여 통계 확인
    - 월별 급여 차트
@@ -783,12 +790,16 @@ Response:
    - 급여 입금
 
 ### 시스템 자동화
-1. ✅ WorkRecord 상태 관리
-   - SCHEDULED → MODIFIED_BEFORE → COMPLETED → MODIFIED_AFTER 흐름
+1. ✅ WorkRecord 상태 및 급여 관리
+   - SCHEDULED → COMPLETED 흐름
+   - is_modified 플래그로 수정 여부 추적
+   - 당일 급여(base_salary, night_salary, holiday_salary) 자동 계산
+   - DELETED 상태로 소프트 삭제 지원
 
 2. ✅ 급여 자동 계산
-   - COMPLETED, MODIFIED_AFTER 상태 레코드만 집계
-   - 연장/야간/휴일 수당 자동 계산
+   - COMPLETED 상태 레코드만 집계 (DELETED 제외)
+   - 주휴수당/연장수당은 WeeklyAllowance에서 주 단위로 계산
+   - 야간/휴일 수당은 WorkRecord에서 계산하여 합산
 
 3. ✅ 실시간 알림
    - 일정 변경, 정정 요청, 송금 완료
@@ -844,10 +855,8 @@ Response:
          v
     SCHEDULED ────────────┐
          │                │
-         │          [근무 전 수정]
-         │                │
-         │                v
-         │        MODIFIED_BEFORE
+         │       [is_modified = true]
+         │       (근무 전 수정)
          │                │
          │                │
          └────────┬───────┘
@@ -857,11 +866,8 @@ Response:
                   v
              COMPLETED ──────────┐
                   │              │
-                  │        [근무 후 수정]
-                  │        (정정 요청 승인)
-                  │              │
-                  │              v
-                  │      MODIFIED_AFTER
+                  │     [is_modified = true]
+                  │     (근무 후 수정 - 정정 요청 승인)
                   │              │
                   │              │
                   └──────┬───────┘
@@ -871,10 +877,16 @@ Response:
                          v
                    [Salary 생성]
 
+
+    (언제든지)
+         │
+         v
+      DELETED ───→ [급여 계산에서 제외]
+
 상태 전이 규칙:
-1. SCHEDULED → MODIFIED_BEFORE: 근무 전 시간 수정
+1. SCHEDULED → SCHEDULED (is_modified=true): 근무 전 시간 수정
 2. SCHEDULED → COMPLETED: 근무 완료 (시간 변경 없음)
-3. MODIFIED_BEFORE → COMPLETED: 근무 완료
-4. COMPLETED → MODIFIED_AFTER: 정정 요청 승인 (근무 후 수정)
-5. 급여 계산: COMPLETED 또는 MODIFIED_AFTER 상태만 집계
+3. COMPLETED → COMPLETED (is_modified=true): 정정 요청 승인 (근무 후 수정)
+4. * → DELETED: 소프트 삭제 (급여 계산 및 수당 집계에서 제외)
+5. 급여 계산: COMPLETED 상태만 집계 (DELETED는 제외)
 ```

@@ -1930,3 +1930,10 @@ data: {
 - v1.3 (2025-12-09): 회원가입 API 제거 (카카오 로그인에서 자동 처리), 카카오 로그인 설명 보강
 - v1.4 (2025-12-10): 사용자 설정 API 구현 완료 (12.1-12.2), 알림 설정 관리 기능 추가
 - v1.5 (2025-12-11): 정정 요청 API 간소화 - reviewComment와 reason 필드 제거, 승인/반려 시 요청 본문 불필요, UserSettings 회원가입 시 자동 생성
+- v1.6 (2025-12-29): 엔티티 구조 업데이트 반영
+  - WorkRecord에 breakMinutes, totalWorkMinutes, 급여 필드(baseSalary, nightSalary, holidaySalary, totalSalary) 추가
+  - WorkRecordStatus에 DELETED 상태 추가
+  - CorrectionRequest에 type 필드 추가 (CREATE, UPDATE, DELETE)
+  - Notification에 actionType, actionData 필드 추가
+  - Workplace에 isLessThanFiveEmployees 필드 추가
+  - WorkerContract에 payrollDeductionType 필드 추가

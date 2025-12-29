@@ -62,6 +62,7 @@ erDiagram
         string name "지점명/별칭"
         string address "주소"
         string color_code "캘린더 색상 코드 (#RRGGBB)"
+        boolean is_less_than_five_employees "5인 미만 사업장 여부"
         boolean is_active "활성화 상태"
         datetime created_at
         datetime updated_at
@@ -72,10 +73,11 @@ erDiagram
         bigint workplace_id FK "Workplace ID"
         bigint worker_id FK "Worker ID"
         decimal hourly_wage "시급"
-        string work_days "근무요일 (JSON: [1,2,3,4,5,6,7] 1=월~7=일)"
+        string work_schedules "근무 스케줄 (JSON: [{dayOfWeek, startTime, endTime}, ...])"
         date contract_start_date "계약 시작일"
         date contract_end_date "계약 종료일 (nullable)"
         int payment_day "급여 지급일(매월 N일)"
+        enum payroll_deduction_type "급여공제유형 (FREELANCER, PART_TIME_NONE 등)"
         boolean is_active "활성화 상태"
         datetime created_at
         datetime updated_at
@@ -88,12 +90,17 @@ erDiagram
         date work_date "근무 날짜"
         time start_time "시작 시간"
         time end_time "종료 시간"
+        int break_minutes "휴식 시간 (분)"
+        int total_work_minutes "실제 근무 시간 (분)"
         decimal total_hours "총 근무 시간"
         decimal regular_hours "일반 근무 시간"
-        decimal overtime_hours "연장 근무 시간"
         decimal night_hours "야간 근무 시간"
         decimal holiday_hours "휴일 근무 시간"
-        enum status "STATUS(SCHEDULED, COMPLETED)"
+        decimal base_salary "당일 기본급"
+        decimal night_salary "당일 야간수당"
+        decimal holiday_salary "당일 휴일수당"
+        decimal total_salary "당일 총급여"
+        enum status "STATUS(SCHEDULED, COMPLETED, DELETED)"
         boolean is_modified "수정 여부"
         string memo "메모"
         datetime created_at
@@ -113,16 +120,21 @@ erDiagram
 
     CorrectionRequest {
         bigint id PK
-        bigint work_record_id FK "WorkRecord ID"
+        enum type "TYPE(CREATE, UPDATE, DELETE)"
+        bigint work_record_id FK "WorkRecord ID (UPDATE/DELETE용, nullable)"
+        bigint contract_id FK "WorkerContract ID (CREATE용, nullable)"
         bigint requester_id FK "User ID (요청자)"
+        date original_work_date "원본 근무 날짜 (UPDATE/DELETE용)"
+        time original_start_time "원본 시작 시간 (UPDATE/DELETE용)"
+        time original_end_time "원본 종료 시간 (UPDATE/DELETE용)"
         date requested_work_date "요청 근무 날짜"
         time requested_start_time "요청 시작 시간"
         time requested_end_time "요청 종료 시간"
-        string reason "사유"
+        int requested_break_minutes "요청 휴식시간 (분)"
+        string requested_memo "요청 메모"
         enum status "STATUS(PENDING, APPROVED, REJECTED)"
         bigint reviewer_id FK "User ID (검토자, nullable)"
         datetime reviewed_at "검토 일시"
-        string review_comment "검토 코멘트"
         datetime created_at
         datetime updated_at
     }
@@ -150,7 +162,7 @@ erDiagram
 
     Payment {
         bigint id PK
-        bigint salary_id FK "Salary ID"
+        bigint salary_id FK UK "Salary ID (1:1 관계)"
         enum payment_method "METHOD(KAKAO_PAY, BANK_TRANSFER, CASH)"
         enum status "STATUS(PENDING, COMPLETED, FAILED)"
         datetime payment_date "송금 일시"
@@ -163,10 +175,10 @@ erDiagram
     Notification {
         bigint id PK
         bigint user_id FK "User ID"
-        enum type "TYPE(SCHEDULE_CHANGE, CORRECTION_REQUEST, CORRECTION_RESPONSE, PAYMENT_DUE, PAYMENT_SUCCESS, PAYMENT_FAILED)"
+        enum type "TYPE(SCHEDULE_CREATED, CORRECTION_REQUEST, CORRECTION_RESPONSE, PAYMENT_SUCCESS 등)"
         string title "제목"
-        string message "내용"
-        string link_url "관련 링크"
+        enum action_type "ACTION_TYPE(NONE, VIEW_WORK_RECORD, VIEW_CORRECTION 등)"
+        string action_data "액션 데이터 (JSON 형식)"
         boolean is_read "읽음 여부"
         datetime read_at "읽은 일시"
         datetime created_at
@@ -211,23 +223,36 @@ erDiagram
 - **business_name**: 사업장명 (법인명 등)
 - **name**: 지점명 또는 별칭 (예: "홍대점", "강남점")
 - **color_code**: 캘린더에서 근무지별 색상 구분을 위한 필드
+- **is_less_than_five_employees**: 5인 미만 사업장 여부 (4대보험 가입 의무가 다름)
 - 한 고용주가 여러 사업장을 운영할 수 있음
 
 ### 5. WorkerContract (근로 계약)
 - 사업장과 근로자 간의 근로 계약
 - 시급, 근무요일, 지급일 등 계약 조건
-- **work_days**: JSON 배열로 저장 (예: [1,2,3,4,5] = 월~금, 1=월요일~7=일요일)
+- **work_schedules**: JSON 형식으로 저장 (예: [{"dayOfWeek": 1, "startTime": "09:00", "endTime": "18:00"}, ...])
+  - dayOfWeek: 1=월요일 ~ 7=일요일
+  - 요일별로 다른 시작/종료 시간 설정 가능
+- **payroll_deduction_type**: 급여 공제 유형
+  - FREELANCER: 소득세만 (3.3%)
+  - PART_TIME_NONE: 공제 없음
+  - PART_TIME_TAX_ONLY: 소득세만
+  - PART_TIME_TAX_AND_INSURANCE: 소득세 + 4대보험
 
 ### 6. WorkRecord (근무 기록 및 일정)
 - **WorkSchedule 통합**: 예정된 근무 일정과 실제 근무 기록을 하나의 엔티티로 관리
 - **start_time/end_time**: 근무 시간 (등록 시 예정 시간, 수정 시 실제 시간으로 업데이트)
-- **total_hours**: 총 근무 시간 (start_time ~ end_time 기준으로 자동 계산)
-- 일반/연장/야간/휴일 근무 시간 자동 계산
+- **break_minutes**: 휴식 시간 (분 단위)
+- **total_work_minutes**: 실제 근무 시간 (분 단위)
+- **total_hours**: 총 근무 시간 (start_time ~ end_time - break_minutes 기준으로 자동 계산)
+- 일반/야간/휴일 근무 시간 자동 계산
+- **급여 필드**: base_salary(기본급), night_salary(야간수당), holiday_salary(휴일수당), total_salary(당일 총급여)
 - **STATUS**:
   - SCHEDULED: 예정 (근무 전)
   - COMPLETED: 완료 (근무 후)
+  - DELETED: 삭제됨 (소프트 삭제)
 - **is_modified**: 수정 여부 (근무 전/후 상관없이 시간 변경 시 true)
 - **weekly_allowance_id**: 주간 수당 집계를 위한 WeeklyAllowance 참조
+- **주의**: 연장수당(overtime)은 WorkRecord가 아닌 WeeklyAllowance에서 주 단위로 계산됨
 
 ### 7. WeeklyAllowance (주간 수당)
 - 주 단위로 근무 기록을 집계하여 주휴수당 및 연장수당 계산
@@ -241,10 +266,15 @@ erDiagram
 - WorkRecord와 1:N 관계로 해당 주의 모든 근무 기록을 참조
 
 ### 8. CorrectionRequest (정정 요청)
-- 근로자가 근무 기록 수정을 요청
+- 근무 기록의 생성/수정/삭제를 요청하는 통합 시스템
+- **type**: 요청 유형
+  - CREATE: 근무 기록 생성 요청 (workRecord가 없을 때)
+  - UPDATE: 근무 기록 수정 요청 (기존 workRecord 수정)
+  - DELETE: 근무 기록 삭제 요청
+- **work_record_id**: UPDATE/DELETE 요청의 대상 근무 기록
+- **contract_id**: CREATE 요청 시 사용 (workRecord가 아직 없으므로 계약 참조)
+- 원본 정보(original_*)와 요청 정보(requested_*)를 모두 저장하여 변경사항 추적
 - 고용주가 승인/반려 처리
-- **requested_work_date**: 수정 요청 날짜 추가
-- 화면에서 보이는 "시작 시간", "종료 시간", "사유" 필드 포함
 
 ### 9. Salary (급여)
 - 월별 급여 정산 내역
@@ -264,8 +294,17 @@ erDiagram
 
 ### 11. Notification (알림)
 - 사용자별 알림 내역
-- **CORRECTION_RESPONSE**: 정정 요청 응답 알림 타입 추가
-- 일정 변경, 정정 요청, 송금 등 다양한 이벤트
+- **type**: 알림 유형
+  - SCHEDULE_CREATED, SCHEDULE_APPROVAL_REQUEST, SCHEDULE_APPROVED, SCHEDULE_REJECTED, SCHEDULE_DELETED
+  - CORRECTION_REQUEST, CORRECTION_RESPONSE
+  - PAYMENT_SUCCESS, PAYMENT_FAILED
+- **action_type**: 알림 클릭 시 수행할 액션 유형
+  - NONE: 액션 없음
+  - VIEW_WORK_RECORD: 근무 기록 상세 보기
+  - VIEW_CORRECTION: 정정 요청 상세 보기
+  - 등
+- **action_data**: 액션 수행에 필요한 데이터를 JSON 형식으로 저장
+  - 예: `{"workRecordId": 123}`, `{"correctionRequestId": 456}`
 
 ### 12. UserSettings (사용자 설정)
 - 사용자별 알림 설정 관리
