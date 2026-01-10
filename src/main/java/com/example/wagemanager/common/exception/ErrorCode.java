@@ -68,6 +68,12 @@ public class ErrorCode {
     public static final String KAKAO_USER_INFO_FAILED = "KAKAO_USER_INFO_FAILED";
     public static final String KAKAO_SERVER_ERROR = "KAKAO_SERVER_ERROR";
 
+    // Database Integrity
+    public static final String DATA_INTEGRITY_VIOLATION = "DATA_INTEGRITY_VIOLATION";
+    public static final String DUPLICATE_KAKAO_ID = "DUPLICATE_KAKAO_ID";
+    public static final String DUPLICATE_WORKER_CODE = "DUPLICATE_WORKER_CODE";
+    public static final String DUPLICATE_BUSINESS_NUMBER = "DUPLICATE_BUSINESS_NUMBER";
+
     private ErrorCode() {
         // 인스턴스화 방지
     }
