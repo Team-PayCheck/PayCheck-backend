@@ -56,7 +56,7 @@ public class AuthDto {
         private String profileImageUrl = "https://via.placeholder.com/150/CCCCCC/FFFFFF?text=User";
 
         @AssertTrue(message = "근로자 타입은 은행명과 계좌번호가 필수입니다.")
-        private boolean isBankInfoProvidedForWorker() {
+        public boolean isBankInfoProvidedForWorker() {
             if (!StringUtils.hasText(userType)) {
                 return true;
             }

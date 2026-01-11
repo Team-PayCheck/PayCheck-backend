@@ -72,7 +72,7 @@ public class UserDto {
         private String accountNumber;
 
         @AssertTrue(message = "근로자 타입은 은행명과 계좌번호가 필수입니다.")
-        private boolean isValidBankInfoForWorker() {
+        public boolean isValidBankInfoForWorker() {
             if (userType != UserType.WORKER) {
                 return true;
             }
