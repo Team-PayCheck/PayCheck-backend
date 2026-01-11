@@ -163,7 +163,7 @@ public class PaymentService {
     private String buildTossLink(Salary salary) {
         Worker worker = salary.getContract().getWorker();
         if (worker == null) {
-            throw new BadRequestException(ErrorCode.WORKER_NOT_FOUND, "근로자 정보를 찾을 수 없습니다.");
+            throw new NotFoundException(ErrorCode.WORKER_NOT_FOUND, "근로자 정보를 찾을 수 없습니다.");
         }
 
         if (salary.getNetPay() == null || salary.getNetPay().compareTo(java.math.BigDecimal.ZERO) <= 0) {

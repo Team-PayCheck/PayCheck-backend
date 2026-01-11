@@ -31,7 +31,7 @@ public final class TossLinkGenerator {
     }
 
     private static String normalizeAmount(BigDecimal amount) {
-        BigDecimal normalized = amount.setScale(0, RoundingMode.DOWN);
+        BigDecimal normalized = amount.setScale(0, RoundingMode.HALF_UP);
         return normalized.toPlainString();
     }
 
