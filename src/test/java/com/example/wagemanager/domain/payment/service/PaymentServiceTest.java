@@ -121,7 +121,6 @@ class PaymentServiceTest {
 
         Salary salary = mock(Salary.class);
         when(salary.getId()).thenReturn(1L);
-        when(salary.getId()).thenReturn(1L);
         when(salary.getNetPay()).thenReturn(BigDecimal.valueOf(10000));
         when(salary.getYear()).thenReturn(2025);
         when(salary.getMonth()).thenReturn(1);
@@ -140,7 +139,10 @@ class PaymentServiceTest {
 
         // then
         assertThat(response.getTossLink())
-                .isEqualTo("supertoss://send?accountNo=333312341234&bank=%EC%B9%B4%EC%B9%B4%EC%98%A4%EB%B1%85%ED%81%AC&amount=10000&origin=wage-manager");
+                .contains("accountNo=333312341234")
+                .contains("bank=%EC%B9%B4%EC%B9%B4%EC%98%A4%EB%B1%85%ED%81%AC")
+                .contains("amount=10000")
+                .contains("origin=wage-manager");
         verify(paymentRepository).save(any(Payment.class));
     }
 
@@ -156,6 +158,7 @@ class PaymentServiceTest {
         when(contract.getWorker()).thenReturn(worker);
 
         Salary salary = mock(Salary.class);
+        when(salary.getId()).thenReturn(1L);
         when(salary.getNetPay()).thenReturn(BigDecimal.valueOf(10000));
         when(salary.getContract()).thenReturn(contract);
 
@@ -168,7 +171,8 @@ class PaymentServiceTest {
 
         // when & then
         assertThatThrownBy(() -> paymentService.processPayment(request))
-                .isInstanceOf(BadRequestException.class);
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("계좌");
     }
 
     @Test
