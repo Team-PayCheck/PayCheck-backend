@@ -30,9 +30,6 @@ public class Worker extends BaseEntity {
     @Column(name = "bank_name")
     private String bankName;
 
-    @Column(name = "toss_deep_link")
-    private String tossDeepLink;
-
     public void updateAccount(String accountNumber, String bankName) {
         if (accountNumber != null) this.accountNumber = accountNumber;
         if (bankName != null) this.bankName = bankName;

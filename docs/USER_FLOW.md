@@ -468,9 +468,9 @@ VALUES ('kakao_67890', '김민지', '010-9876-5432', 'WORKER', 'https://...');
 
 -- Worker 테이블
 INSERT INTO Worker
-  (user_id, worker_code, account_number, bank_name, toss_deep_link)
+  (user_id, worker_code, account_number, bank_name)
 VALUES
-  (2, 'ABC123', 'ENCRYPTED(3333-12-1234567)', '카카오뱅크', NULL);
+  (2, 'ABC123', 'ENCRYPTED(3333-12-1234567)', '카카오뱅크');
 ```
 
 ---

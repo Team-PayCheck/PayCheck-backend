@@ -234,7 +234,6 @@ public class AuthService {
                     .workerCode("DEV" + String.format("%03d", userId % 1000)) // 개발용 임시 근로자 코드
                     .bankName("카카오뱅크")
                     .accountNumber("3333000" + userId)
-                    .tossDeepLink("toss://send?bank=088&account=12345678901234&amount=0") // 개발용 임시 토스 딥링크
                     .build();
             workerRepository.save(worker);
         }
@@ -272,7 +271,6 @@ public class AuthService {
                     .workerCode("DEV" + String.format("%03d", requestedUserId % 1000))
                     .bankName("카카오뱅크")
                     .accountNumber("3333000" + requestedUserId)
-                    .tossDeepLink("toss://send?bank=088&account=12345678901234&amount=0")
                     .build();
             workerRepository.save(worker);
         }

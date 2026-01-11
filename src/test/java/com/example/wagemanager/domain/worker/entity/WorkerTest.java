@@ -26,13 +26,15 @@ class WorkerTest {
                 .id(1L)
                 .user(user)
                 .workerCode("ABC123")
-                .tossDeepLink("toss://send?bank=088&account=12345678901234&amount=0")
+                .accountNumber("1111-2222-3333")
+                .bankName("카카오뱅크")
                 .build();
 
         // then
         assertThat(worker).isNotNull();
         assertThat(worker.getWorkerCode()).isEqualTo("ABC123");
-        assertThat(worker.getTossDeepLink()).isEqualTo("toss://send?bank=088&account=12345678901234&amount=0");
+        assertThat(worker.getAccountNumber()).isEqualTo("1111-2222-3333");
+        assertThat(worker.getBankName()).isEqualTo("카카오뱅크");
     }
 
     @Test

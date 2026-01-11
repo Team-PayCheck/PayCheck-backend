@@ -49,7 +49,7 @@ erDiagram
         string worker_code UK "근로자 고유 6자리 코드"
         string account_number "계좌번호 (암호화)"
         string bank_name "은행명"
-        string toss_deep_link "토스 딥링크 송금 링크 (계좌 정보 기반 자동 생성)"
+        -- 더 이상 저장하지 않음 (송금 시 계좌 정보로 즉시 생성)
         datetime created_at
         datetime updated_at
     }

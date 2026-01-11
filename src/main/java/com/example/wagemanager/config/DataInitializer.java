@@ -82,98 +82,31 @@ public class DataInitializer implements CommandLineRunner {
         worker1User = userRepository.save(worker1User);
         log.info("테스트 근로자1 User 생성: {}", worker1User.getName());
 
-        Worker worker1 = Worker.builder()
-                .user(worker1User)
-                .workerCode("WK001")
-                .bankName("카카오뱅크")
-                .accountNumber("333311110001")
-                .tossDeepLink("toss://send?bank=088&account=000000000001&amount=0")
-                .build();
-        workerRepository.save(worker1);
-        log.info("테스트 Worker1 생성 완료 (코드: {})", worker1.getWorkerCode());
+        createTestWorker("dev_2", "김민준", "010-1111-1111", "WK001", "333311110001");
+        createTestWorker("dev_3", "이서연", "010-2222-2222", "WK002", "333311110002");
+        createTestWorker("dev_4", "박지훈", "010-3333-3333", "WK003", "333311110003");
+        createTestWorker("dev_5", "정수빈", "010-4444-4444", "WK004", "333311110004");
+        createTestWorker("dev_6", "최유진", "010-5555-5555", "WK005", "333311110005");
+    }
 
-        // 근로자 2
-        User worker2User = User.builder()
-                .kakaoId("dev_3")
-                .name("이서연")
-                .phone("010-2222-2222")
+    private void createTestWorker(String kakaoId, String name, String phone, String workerCode, String accountNumber) {
+        User workerUser = User.builder()
+                .kakaoId(kakaoId)
+                .name(name)
+                .phone(phone)
                 .userType(UserType.WORKER)
                 .profileImageUrl("")
                 .build();
-        worker2User = userRepository.save(worker2User);
-        log.info("테스트 근로자2 User 생성: {}", worker2User.getName());
+        workerUser = userRepository.save(workerUser);
+        log.info("테스트 근로자 User 생성: {}", workerUser.getName());
 
-        Worker worker2 = Worker.builder()
-                .user(worker2User)
-                .workerCode("WK002")
+        Worker worker = Worker.builder()
+                .user(workerUser)
+                .workerCode(workerCode)
                 .bankName("카카오뱅크")
-                .accountNumber("333311110002")
-                .tossDeepLink("toss://send?bank=088&account=000000000002&amount=0")
+                .accountNumber(accountNumber)
                 .build();
-        workerRepository.save(worker2);
-        log.info("테스트 Worker2 생성 완료 (코드: {})", worker2.getWorkerCode());
-
-        // 근로자 3
-        User worker3User = User.builder()
-                .kakaoId("dev_4")
-                .name("박지훈")
-                .phone("010-3333-3333")
-                .userType(UserType.WORKER)
-                .profileImageUrl("")
-                .build();
-        worker3User = userRepository.save(worker3User);
-        log.info("테스트 근로자3 User 생성: {}", worker3User.getName());
-
-        Worker worker3 = Worker.builder()
-                .user(worker3User)
-                .workerCode("WK003")
-                .bankName("카카오뱅크")
-                .accountNumber("333311110003")
-                .tossDeepLink("toss://send?bank=088&account=000000000003&amount=0")
-                .build();
-        workerRepository.save(worker3);
-        log.info("테스트 Worker3 생성 완료 (코드: {})", worker3.getWorkerCode());
-
-        // 근로자 4
-        User worker4User = User.builder()
-                .kakaoId("dev_5")
-                .name("정수빈")
-                .phone("010-4444-4444")
-                .userType(UserType.WORKER)
-                .profileImageUrl("")
-                .build();
-        worker4User = userRepository.save(worker4User);
-        log.info("테스트 근로자4 User 생성: {}", worker4User.getName());
-
-        Worker worker4 = Worker.builder()
-                .user(worker4User)
-                .workerCode("WK004")
-                .bankName("카카오뱅크")
-                .accountNumber("333311110004")
-                .tossDeepLink("toss://send?bank=088&account=000000000004&amount=0")
-                .build();
-        workerRepository.save(worker4);
-        log.info("테스트 Worker4 생성 완료 (코드: {})", worker4.getWorkerCode());
-
-        // 근로자 5
-        User worker5User = User.builder()
-                .kakaoId("dev_6")
-                .name("최유진")
-                .phone("010-5555-5555")
-                .userType(UserType.WORKER)
-                .profileImageUrl("")
-                .build();
-        worker5User = userRepository.save(worker5User);
-        log.info("테스트 근로자5 User 생성: {}", worker5User.getName());
-
-        Worker worker5 = Worker.builder()
-                .user(worker5User)
-                .workerCode("WK005")
-                .bankName("카카오뱅크")
-                .accountNumber("333311110005")
-                .tossDeepLink("toss://send?bank=088&account=000000000005&amount=0")
-                .build();
-        workerRepository.save(worker5);
-        log.info("테스트 Worker5 생성 완료 (코드: {})", worker5.getWorkerCode());
+        workerRepository.save(worker);
+        log.info("테스트 Worker 생성 완료 (코드: {})", worker.getWorkerCode());
     }
 }

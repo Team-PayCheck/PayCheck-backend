@@ -20,9 +20,8 @@ public class WorkerDto {
         private String name;
         private String phone;
         private String workerCode;
-        // private String accountNumber;
-        // private String bankName;
-        private String tossDeepLink;
+        private String accountNumber;
+        private String bankName;
 
         public static Response from(Worker worker) {
             return Response.builder()
@@ -31,9 +30,8 @@ public class WorkerDto {
                     .name(worker.getUser().getName())
                     .phone(worker.getUser().getPhone())
                     .workerCode(worker.getWorkerCode())
-                    // .accountNumber(worker.getAccountNumber())
-                    // .bankName(worker.getBankName())
-                    .tossDeepLink(worker.getTossDeepLink())
+                    .accountNumber(worker.getAccountNumber())
+                    .bankName(worker.getBankName())
                     .build();
         }
     }
