@@ -1,12 +1,14 @@
 package com.example.wagemanager.domain.auth.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.util.StringUtils;
 
 /**
  * 인증 관련 DTO 모음
@@ -52,6 +54,17 @@ public class AuthDto {
 
         @Builder.Default
         private String profileImageUrl = "https://via.placeholder.com/150/CCCCCC/FFFFFF?text=User";
+
+        @AssertTrue(message = "근로자 타입은 은행명과 계좌번호가 필수입니다.")
+        private boolean isBankInfoProvidedForWorker() {
+            if (!StringUtils.hasText(userType)) {
+                return true;
+            }
+            boolean isWorker = "WORKER".equalsIgnoreCase(userType);
+            boolean hasBankName = StringUtils.hasText(bankName);
+            boolean hasAccountNumber = StringUtils.hasText(accountNumber);
+            return !isWorker || (hasBankName && hasAccountNumber);
+        }
     }
 
     /**

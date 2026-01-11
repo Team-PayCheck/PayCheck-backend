@@ -3,6 +3,7 @@ package com.example.wagemanager.domain.user.dto;
 import com.example.wagemanager.domain.user.entity.User;
 import com.example.wagemanager.domain.user.enums.UserType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -69,6 +70,16 @@ public class UserDto {
         private String profileImageUrl;
         private String bankName;
         private String accountNumber;
+
+        @AssertTrue(message = "근로자 타입은 은행명과 계좌번호가 필수입니다.")
+        private boolean isValidBankInfoForWorker() {
+            if (userType != UserType.WORKER) {
+                return true;
+            }
+            boolean hasBankName = bankName != null && !bankName.isBlank();
+            boolean hasAccountNumber = accountNumber != null && !accountNumber.isBlank();
+            return hasBankName && hasAccountNumber;
+        }
     }
 
     @Getter

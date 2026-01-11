@@ -81,7 +81,7 @@ public class PaymentService {
     public PaymentDto.Response getPaymentById(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.PAYMENT_NOT_FOUND, "송금 기록을 찾을 수 없습니다."));
-        String tossLink = buildTossLink(payment.getSalary());
+        String tossLink = buildTossLinkSafely(payment.getSalary());
         return PaymentDto.Response.from(payment, tossLink);
     }
 
@@ -180,6 +180,14 @@ public class PaymentService {
         }
 
         return TossLinkGenerator.generateSupertossLink(bankName, accountNumber, salary.getNetPay());
+    }
+
+    private String buildTossLinkSafely(Salary salary) {
+        try {
+            return buildTossLink(salary);
+        } catch (RuntimeException ex) {
+            return null;
+        }
     }
 
 }
