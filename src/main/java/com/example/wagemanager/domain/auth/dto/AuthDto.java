@@ -1,5 +1,6 @@
 package com.example.wagemanager.domain.auth.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
@@ -56,11 +57,14 @@ public class AuthDto {
         private String profileImageUrl = "https://via.placeholder.com/150/CCCCCC/FFFFFF?text=User";
 
         @AssertTrue(message = "근로자 타입은 은행명과 계좌번호가 필수입니다.")
+        @JsonIgnore
+        @Schema(hidden = true)
         public boolean isBankInfoProvidedForWorker() {
             if (!StringUtils.hasText(userType)) {
                 return true;
             }
-            boolean isWorker = "WORKER".equalsIgnoreCase(userType);
+            String normalizedUserType = userType.trim();
+            boolean isWorker = "WORKER".equalsIgnoreCase(normalizedUserType);
             boolean hasBankName = StringUtils.hasText(bankName);
             boolean hasAccountNumber = StringUtils.hasText(accountNumber);
             return !isWorker || (hasBankName && hasAccountNumber);

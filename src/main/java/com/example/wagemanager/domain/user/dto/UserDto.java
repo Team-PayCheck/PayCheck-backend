@@ -2,6 +2,7 @@ package com.example.wagemanager.domain.user.dto;
 
 import com.example.wagemanager.domain.user.entity.User;
 import com.example.wagemanager.domain.user.enums.UserType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Pattern;
@@ -72,6 +73,7 @@ public class UserDto {
         private String accountNumber;
 
         @AssertTrue(message = "근로자 타입은 은행명과 계좌번호가 필수입니다.")
+        @JsonIgnore
         public boolean isValidBankInfoForWorker() {
             if (userType != UserType.WORKER) {
                 return true;
