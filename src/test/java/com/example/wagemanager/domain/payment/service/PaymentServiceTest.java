@@ -8,6 +8,10 @@ import com.example.wagemanager.domain.payment.enums.PaymentStatus;
 import com.example.wagemanager.domain.payment.repository.PaymentRepository;
 import com.example.wagemanager.domain.salary.entity.Salary;
 import com.example.wagemanager.domain.salary.repository.SalaryRepository;
+import com.example.wagemanager.domain.worker.entity.Worker;
+import com.example.wagemanager.domain.contract.entity.WorkerContract;
+import com.example.wagemanager.domain.workplace.entity.Workplace;
+import com.example.wagemanager.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -88,6 +92,79 @@ class PaymentServiceTest {
 
         when(salaryRepository.findById(1L)).thenReturn(Optional.of(salary));
         when(paymentRepository.findBySalaryId(1L)).thenReturn(Optional.of(existingPayment));
+
+        // when & then
+        assertThatThrownBy(() -> paymentService.processPayment(request))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    @DisplayName("급여 지급 처리 성공 - 토스 딥링크 생성")
+    void processPayment_Success_GeneratesTossLink() {
+        // given
+        User user = mock(User.class);
+        when(user.getName()).thenReturn("근로자A");
+
+        Worker worker = mock(Worker.class);
+        when(worker.getId()).thenReturn(5L);
+        when(worker.getBankName()).thenReturn("카카오뱅크");
+        when(worker.getAccountNumber()).thenReturn("3333-1234-1234");
+        when(worker.getUser()).thenReturn(user);
+
+        Workplace workplace = mock(Workplace.class);
+        when(workplace.getId()).thenReturn(20L);
+        when(workplace.getName()).thenReturn("테스트매장");
+
+        WorkerContract contract = mock(WorkerContract.class);
+        when(contract.getWorker()).thenReturn(worker);
+        when(contract.getWorkplace()).thenReturn(workplace);
+
+        Salary salary = mock(Salary.class);
+        when(salary.getId()).thenReturn(1L);
+        when(salary.getId()).thenReturn(1L);
+        when(salary.getNetPay()).thenReturn(BigDecimal.valueOf(10000));
+        when(salary.getYear()).thenReturn(2025);
+        when(salary.getMonth()).thenReturn(1);
+        when(salary.getContract()).thenReturn(contract);
+
+        PaymentDto.PaymentRequest request = PaymentDto.PaymentRequest.builder()
+                .salaryId(1L)
+                .build();
+
+        when(salaryRepository.findById(1L)).thenReturn(Optional.of(salary));
+        when(paymentRepository.findBySalaryId(anyLong())).thenReturn(Optional.empty());
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        PaymentDto.Response response = paymentService.processPayment(request);
+
+        // then
+        assertThat(response.getTossLink())
+                .isEqualTo("supertoss://send?accountNo=333312341234&bank=%EC%B9%B4%EC%B9%B4%EC%98%A4%EB%B1%85%ED%81%AC&amount=10000&origin=wage-manager");
+        verify(paymentRepository).save(any(Payment.class));
+    }
+
+    @Test
+    @DisplayName("급여 지급 처리 실패 - 근로자 계좌 정보 없음")
+    void processPayment_Fail_NoWorkerBankInfo() {
+        // given
+        Worker worker = mock(Worker.class);
+        when(worker.getBankName()).thenReturn(null);
+        when(worker.getAccountNumber()).thenReturn(null);
+
+        WorkerContract contract = mock(WorkerContract.class);
+        when(contract.getWorker()).thenReturn(worker);
+
+        Salary salary = mock(Salary.class);
+        when(salary.getNetPay()).thenReturn(BigDecimal.valueOf(10000));
+        when(salary.getContract()).thenReturn(contract);
+
+        PaymentDto.PaymentRequest request = PaymentDto.PaymentRequest.builder()
+                .salaryId(1L)
+                .build();
+
+        when(salaryRepository.findById(1L)).thenReturn(Optional.of(salary));
+        when(paymentRepository.findBySalaryId(anyLong())).thenReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> paymentService.processPayment(request))
