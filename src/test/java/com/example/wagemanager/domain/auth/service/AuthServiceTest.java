@@ -130,7 +130,8 @@ class AuthServiceTest {
                 .phone("010-1234-5678")
                 .userType("WORKER")
                 .profileImageUrl("https://example.com/profile.jpg")
-                .kakaoPayLink("https://qr.kakaopay.com/test")
+                .bankName("카카오뱅크")
+                .accountNumber("3333123456789")
                 .build();
 
         UserDto.RegisterResponse registerResponse = UserDto.RegisterResponse.builder()
@@ -170,7 +171,8 @@ class AuthServiceTest {
                 .kakaoAccessToken("kakao_access_token")
                 .phone("010-1234-5678")
                 .userType("WORKER")
-                .kakaoPayLink("https://qr.kakaopay.com/test")
+                .bankName("카카오뱅크")
+                .accountNumber("3333123456789")
                 .build();
 
         when(oAuthService.getKakaoUserInfo(request.getKakaoAccessToken())).thenReturn(kakaoUserInfo);
@@ -186,14 +188,15 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("카카오 회원가입 실패 - WORKER 타입인데 카카오페이 링크 없음")
-    void registerWithKakao_WorkerWithoutKakaoPayLink() {
+    @DisplayName("카카오 회원가입 실패 - WORKER 타입인데 은행 정보 없음")
+    void registerWithKakao_WorkerWithoutBankInfo() {
         // given
         AuthDto.KakaoRegisterRequest request = AuthDto.KakaoRegisterRequest.builder()
                 .kakaoAccessToken("kakao_access_token")
                 .phone("010-1234-5678")
                 .userType("WORKER")
-                .kakaoPayLink(null) // 카카오페이 링크 없음
+                .bankName(null) // 은행 정보 없음
+                .accountNumber(null)
                 .build();
 
         when(oAuthService.getKakaoUserInfo(request.getKakaoAccessToken())).thenReturn(kakaoUserInfo);
@@ -202,7 +205,7 @@ class AuthServiceTest {
         // when & then
         assertThatThrownBy(() -> authService.registerWithKakao(request))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("근로자 타입은 카카오페이 링크가 필수입니다");
+                .hasMessageContaining("근로자 타입은 은행명과 계좌번호가 필수입니다");
 
         verify(userService, never()).register(any());
     }

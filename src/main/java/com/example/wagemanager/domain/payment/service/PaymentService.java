@@ -10,9 +10,12 @@ import com.example.wagemanager.domain.payment.repository.PaymentRepository;
 import com.example.wagemanager.domain.salary.entity.Salary;
 import com.example.wagemanager.domain.salary.repository.SalaryRepository;
 import com.example.wagemanager.domain.payment.enums.PaymentMethod;
+import com.example.wagemanager.domain.payment.util.TossLinkGenerator;
+import com.example.wagemanager.domain.worker.entity.Worker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -28,7 +31,7 @@ public class PaymentService {
     private final SalaryRepository salaryRepository;
 
     /**
-     * 급여 지급 처리 (카카오페이 고정)
+     * 급여 지급 처리 (토스 딥링크 고정)
      * - 급여가 계산되었는지 확인
      * - Payment 레코드 생성 또는 기존 레코드 업데이트
      * - 상태를 COMPLETED로 변경
@@ -55,10 +58,10 @@ public class PaymentService {
                 throw new BadRequestException(ErrorCode.PAYMENT_ALREADY_COMPLETED, "이미 송금이 완료된 급여입니다.");
             }
         } else {
-            // 새로운 Payment 생성 (카카오페이 고정)
+            // 새로운 Payment 생성 (토스 딥링크 고정)
             payment = Payment.builder()
                     .salary(salary)
-                    .paymentMethod(PaymentMethod.KAKAO_PAY)
+                    .paymentMethod(PaymentMethod.TOSS_DEEP_LINK)
                     .status(PaymentStatus.PENDING)
                     .build();
         }
@@ -67,7 +70,9 @@ public class PaymentService {
         payment.complete(UUID.randomUUID().toString());
         paymentRepository.save(payment);
 
-        return PaymentDto.Response.from(payment);
+        String tossLink = buildTossLink(salary);
+
+        return PaymentDto.Response.from(payment, tossLink);
     }
 
     /**
@@ -76,7 +81,8 @@ public class PaymentService {
     public PaymentDto.Response getPaymentById(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.PAYMENT_NOT_FOUND, "송금 기록을 찾을 수 없습니다."));
-        return PaymentDto.Response.from(payment);
+        String tossLink = buildTossLink(payment.getSalary());
+        return PaymentDto.Response.from(payment, tossLink);
     }
 
     /**
@@ -152,6 +158,28 @@ public class PaymentService {
                 paymentRepository.save(payment);
             }
         }
+    }
+
+    private String buildTossLink(Salary salary) {
+        Worker worker = salary.getContract().getWorker();
+        if (worker == null) {
+            throw new BadRequestException(ErrorCode.WORKER_NOT_FOUND, "근로자 정보를 찾을 수 없습니다.");
+        }
+
+        if (salary.getNetPay() == null || salary.getNetPay().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException(ErrorCode.SALARY_NOT_CALCULATED, "송금 금액이 유효하지 않아 토스 링크를 생성할 수 없습니다.");
+        }
+
+        String bankName = worker.getBankName();
+        String accountNumber = worker.getAccountNumber();
+        if (!StringUtils.hasText(bankName) || !StringUtils.hasText(accountNumber)) {
+            throw new BadRequestException(
+                    ErrorCode.WORKER_BANK_INFO_REQUIRED,
+                    "근로자 계좌 정보가 없어 토스 링크를 생성할 수 없습니다."
+            );
+        }
+
+        return TossLinkGenerator.generateSupertossLink(bankName, accountNumber, salary.getNetPay());
     }
 
 }

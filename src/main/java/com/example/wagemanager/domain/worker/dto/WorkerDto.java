@@ -2,7 +2,6 @@ package com.example.wagemanager.domain.worker.dto;
 
 import com.example.wagemanager.domain.worker.entity.Worker;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -23,7 +22,7 @@ public class WorkerDto {
         private String workerCode;
         // private String accountNumber;
         // private String bankName;
-        private String kakaoPayLink;
+        private String tossDeepLink;
 
         public static Response from(Worker worker) {
             return Response.builder()
@@ -34,7 +33,7 @@ public class WorkerDto {
                     .workerCode(worker.getWorkerCode())
                     // .accountNumber(worker.getAccountNumber())
                     // .bankName(worker.getBankName())
-                    .kakaoPayLink(worker.getKakaoPayLink())
+                    .tossDeepLink(worker.getTossDeepLink())
                     .build();
         }
     }
@@ -45,9 +44,7 @@ public class WorkerDto {
     @AllArgsConstructor
     @Schema(name = "WorkerUpdateRequest")
     public static class UpdateRequest {
-        // private String accountNumber;
-        // private String bankName;
-        @Pattern(regexp = "^https://qr\\.kakaopay\\.com/.*$", message = "카카오페이 링크 형식이 올바르지 않습니다.")
-        private String kakaoPayLink;
+        private String accountNumber;
+        private String bankName;
     }
 }

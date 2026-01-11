@@ -49,7 +49,7 @@ erDiagram
         string worker_code UK "근로자 고유 6자리 코드"
         string account_number "계좌번호 (암호화)"
         string bank_name "은행명"
-        string kakao_pay_link "카카오페이 송금 링크"
+        string toss_deep_link "토스 딥링크 송금 링크 (계좌 정보 기반 자동 생성)"
         datetime created_at
         datetime updated_at
     }
@@ -163,7 +163,7 @@ erDiagram
     Payment {
         bigint id PK
         bigint salary_id FK UK "Salary ID (1:1 관계)"
-        enum payment_method "METHOD(KAKAO_PAY, BANK_TRANSFER, CASH)"
+        enum payment_method "METHOD(TOSS_DEEP_LINK, BANK_TRANSFER, CASH)"
         enum status "STATUS(PENDING, COMPLETED, FAILED)"
         datetime payment_date "송금 일시"
         string transaction_id "거래 ID"
@@ -214,7 +214,7 @@ erDiagram
 ### 3. Worker (근로자)
 - User를 상속받는 근로자 전용 정보
 - 6자리 고유 식별코드 자동 생성
-- 급여 수령을 위한 계좌/카카오페이 정보
+- 급여 수령을 위한 계좌 정보 (토스 딥링크는 서버에서 계좌 정보를 바탕으로 자동 생성)
 - 계좌번호는 AES-256 암호화 저장
 
 ### 4. Workplace (사업장)
@@ -288,7 +288,7 @@ erDiagram
 
 ### 10. Payment (송금)
 - 급여 송금 내역 및 상태 관리
-- 카카오페이, 계좌이체 등 다양한 방식 지원
+- 토스 딥링크, 계좌이체 등 다양한 방식 지원
 - **상태**: PENDING(대기), COMPLETED(완료), FAILED(실패)
 - **자동 실패 처리**: 매일 자정 스케줄러(`PaymentAutoFailScheduler`)가 실행되어 지급 예정일(payment_due_date)이 경과한 PENDING 상태의 결제를 자동으로 FAILED 처리
 

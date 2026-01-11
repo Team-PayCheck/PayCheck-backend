@@ -147,9 +147,13 @@ public class AuthService {
         // 사용자 타입 파싱
         UserType userType = parseUserType(request.getUserType());
 
-        // WORKER 타입인 경우 카카오페이 링크 필수 검증
-        if (userType == UserType.WORKER && !StringUtils.hasText(request.getKakaoPayLink())) {
-            throw new BadRequestException(ErrorCode.KAKAOPAY_LINK_REQUIRED, "근로자 타입은 카카오페이 링크가 필수입니다.");
+        // WORKER 타입인 경우 은행/계좌 정보 필수 검증
+        if (userType == UserType.WORKER &&
+                (!StringUtils.hasText(request.getBankName()) || !StringUtils.hasText(request.getAccountNumber()))) {
+            throw new BadRequestException(
+                    ErrorCode.WORKER_BANK_INFO_REQUIRED,
+                    "근로자 타입은 은행명과 계좌번호가 필수입니다."
+            );
         }
 
         // 회원가입 요청 DTO 생성
@@ -159,7 +163,8 @@ public class AuthService {
                 .phone(request.getPhone())
                 .userType(userType)
                 .profileImageUrl(request.getProfileImageUrl())
-                .kakaoPayLink(request.getKakaoPayLink())
+                .bankName(request.getBankName())
+                .accountNumber(request.getAccountNumber())
                 .build();
 
         // 회원가입 처리
@@ -227,7 +232,9 @@ public class AuthService {
             Worker worker = Worker.builder()
                     .user(savedUser)
                     .workerCode("DEV" + String.format("%03d", userId % 1000)) // 개발용 임시 근로자 코드
-                    .kakaoPayLink("https://qr.kakaopay.com/dev_test") // 개발용 임시 카카오페이 링크
+                    .bankName("카카오뱅크")
+                    .accountNumber("3333000" + userId)
+                    .tossDeepLink("toss://send?bank=088&account=12345678901234&amount=0") // 개발용 임시 토스 딥링크
                     .build();
             workerRepository.save(worker);
         }
@@ -263,7 +270,9 @@ public class AuthService {
             Worker worker = Worker.builder()
                     .user(user)
                     .workerCode("DEV" + String.format("%03d", requestedUserId % 1000))
-                    .kakaoPayLink("https://qr.kakaopay.com/dev_test")
+                    .bankName("카카오뱅크")
+                    .accountNumber("3333000" + requestedUserId)
+                    .tossDeepLink("toss://send?bank=088&account=12345678901234&amount=0")
                     .build();
             workerRepository.save(worker);
         }

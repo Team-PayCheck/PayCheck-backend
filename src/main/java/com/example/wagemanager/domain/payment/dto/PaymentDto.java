@@ -21,7 +21,7 @@ public class PaymentDto {
     public static class PaymentRequest {
         @NotNull(message = "급여 ID는 필수입니다.")
         private Long salaryId;
-        // 지급 방법은 항상 카카오페이로 고정
+        // 지급 방법은 항상 토스 딥링크로 고정
     }
 
     @Getter
@@ -44,8 +44,9 @@ public class PaymentDto {
         private String transactionId;
         private String failureReason;
         private Boolean isPaid; // 송금 여부
+        private String tossLink;
 
-        public static Response from(Payment payment) {
+        public static Response from(Payment payment, String tossLink) {
             return Response.builder()
                     .id(payment.getId())
                     .salaryId(payment.getSalary().getId())
@@ -61,6 +62,7 @@ public class PaymentDto {
                     .transactionId(payment.getTransactionId())
                     .failureReason(payment.getFailureReason())
                     .isPaid(payment.getStatus() == PaymentStatus.COMPLETED)
+                    .tossLink(tossLink)
                     .build();
         }
     }

@@ -26,29 +26,31 @@ class WorkerTest {
                 .id(1L)
                 .user(user)
                 .workerCode("ABC123")
-                .kakaoPayLink("https://qr.kakaopay.com/test")
+                .tossDeepLink("toss://send?bank=088&account=12345678901234&amount=0")
                 .build();
 
         // then
         assertThat(worker).isNotNull();
         assertThat(worker.getWorkerCode()).isEqualTo("ABC123");
-        assertThat(worker.getKakaoPayLink()).isEqualTo("https://qr.kakaopay.com/test");
+        assertThat(worker.getTossDeepLink()).isEqualTo("toss://send?bank=088&account=12345678901234&amount=0");
     }
 
     @Test
-    @DisplayName("Worker 카카오페이 링크 업데이트")
-    void updateKakaoPayLink_Success() {
+    @DisplayName("Worker 계좌 정보 업데이트")
+    void updateAccount_Success() {
         // given
         Worker worker = Worker.builder()
                 .id(1L)
                 .workerCode("ABC123")
-                .kakaoPayLink("https://qr.kakaopay.com/old")
+                .accountNumber("1111-2222-3333")
+                .bankName("카카오뱅크")
                 .build();
 
         // when
-        worker.updateKakaoPayLink("https://qr.kakaopay.com/new");
+        worker.updateAccount("9999-8888-7777", "토스뱅크");
 
         // then
-        assertThat(worker.getKakaoPayLink()).isEqualTo("https://qr.kakaopay.com/new");
+        assertThat(worker.getAccountNumber()).isEqualTo("9999-8888-7777");
+        assertThat(worker.getBankName()).isEqualTo("토스뱅크");
     }
 }

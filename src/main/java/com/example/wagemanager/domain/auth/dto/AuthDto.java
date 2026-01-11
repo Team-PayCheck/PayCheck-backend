@@ -47,8 +47,8 @@ public class AuthDto {
         @Pattern(regexp = "^01[0-9]-\\d{4}-\\d{4}$", message = "전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)")
         private String phone;
 
-        @Pattern(regexp = "^https://qr\\.kakaopay\\.com/.*$", message = "카카오페이 링크 형식이 올바르지 않습니다.")
-        private String kakaoPayLink; // WORKER 타입인 경우 필수
+        private String bankName; // WORKER 타입인 경우 필수
+        private String accountNumber; // WORKER 타입인 경우 필수
 
         @Builder.Default
         private String profileImageUrl = "https://via.placeholder.com/150/CCCCCC/FFFFFF?text=User";

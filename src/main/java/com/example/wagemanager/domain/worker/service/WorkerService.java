@@ -45,7 +45,7 @@ public class WorkerService {
         Worker worker = workerRepository.findById(workerId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.WORKER_NOT_FOUND, "근로자를 찾을 수 없습니다."));
 
-        worker.updateKakaoPayLink(request.getKakaoPayLink());
+        worker.updateAccount(request.getAccountNumber(), request.getBankName());
 
         return WorkerDto.Response.from(worker);
     }
@@ -55,19 +55,20 @@ public class WorkerService {
         Worker worker = workerRepository.findByUserId(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.WORKER_NOT_FOUND, "근로자 정보를 찾을 수 없습니다."));
 
-        worker.updateKakaoPayLink(request.getKakaoPayLink());
+        worker.updateAccount(request.getAccountNumber(), request.getBankName());
 
         return WorkerDto.Response.from(worker);
     }
 
     @Transactional
-    public Worker createWorker(User user, String kakaoPayLink) {
+    public Worker createWorker(User user, String bankName, String accountNumber) {
         String workerCode = generateUniqueWorkerCode();
 
         Worker worker = Worker.builder()
                 .user(user)
                 .workerCode(workerCode)
-                .kakaoPayLink(kakaoPayLink)
+                .bankName(bankName)
+                .accountNumber(accountNumber)
                 .build();
 
         return workerRepository.save(worker);

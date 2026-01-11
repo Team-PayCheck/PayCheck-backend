@@ -67,7 +67,8 @@ public class UserDto {
         private String phone;
         private UserType userType;
         private String profileImageUrl;
-        private String kakaoPayLink; // WORKER 타입인 경우에만 사용
+        private String bankName;
+        private String accountNumber;
     }
 
     @Getter

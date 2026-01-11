@@ -85,7 +85,9 @@ public class DataInitializer implements CommandLineRunner {
         Worker worker1 = Worker.builder()
                 .user(worker1User)
                 .workerCode("WK001")
-                .kakaoPayLink("https://qr.kakaopay.com/dev_worker1")
+                .bankName("카카오뱅크")
+                .accountNumber("333311110001")
+                .tossDeepLink("toss://send?bank=088&account=000000000001&amount=0")
                 .build();
         workerRepository.save(worker1);
         log.info("테스트 Worker1 생성 완료 (코드: {})", worker1.getWorkerCode());
@@ -104,7 +106,9 @@ public class DataInitializer implements CommandLineRunner {
         Worker worker2 = Worker.builder()
                 .user(worker2User)
                 .workerCode("WK002")
-                .kakaoPayLink("https://qr.kakaopay.com/dev_worker2")
+                .bankName("카카오뱅크")
+                .accountNumber("333311110002")
+                .tossDeepLink("toss://send?bank=088&account=000000000002&amount=0")
                 .build();
         workerRepository.save(worker2);
         log.info("테스트 Worker2 생성 완료 (코드: {})", worker2.getWorkerCode());
@@ -123,7 +127,9 @@ public class DataInitializer implements CommandLineRunner {
         Worker worker3 = Worker.builder()
                 .user(worker3User)
                 .workerCode("WK003")
-                .kakaoPayLink("https://qr.kakaopay.com/dev_worker3")
+                .bankName("카카오뱅크")
+                .accountNumber("333311110003")
+                .tossDeepLink("toss://send?bank=088&account=000000000003&amount=0")
                 .build();
         workerRepository.save(worker3);
         log.info("테스트 Worker3 생성 완료 (코드: {})", worker3.getWorkerCode());
@@ -142,7 +148,9 @@ public class DataInitializer implements CommandLineRunner {
         Worker worker4 = Worker.builder()
                 .user(worker4User)
                 .workerCode("WK004")
-                .kakaoPayLink("https://qr.kakaopay.com/dev_worker4")
+                .bankName("카카오뱅크")
+                .accountNumber("333311110004")
+                .tossDeepLink("toss://send?bank=088&account=000000000004&amount=0")
                 .build();
         workerRepository.save(worker4);
         log.info("테스트 Worker4 생성 완료 (코드: {})", worker4.getWorkerCode());
@@ -161,7 +169,9 @@ public class DataInitializer implements CommandLineRunner {
         Worker worker5 = Worker.builder()
                 .user(worker5User)
                 .workerCode("WK005")
-                .kakaoPayLink("https://qr.kakaopay.com/dev_worker5")
+                .bankName("카카오뱅크")
+                .accountNumber("333311110005")
+                .tossDeepLink("toss://send?bank=088&account=000000000005&amount=0")
                 .build();
         workerRepository.save(worker5);
         log.info("테스트 Worker5 생성 완료 (코드: {})", worker5.getWorkerCode());

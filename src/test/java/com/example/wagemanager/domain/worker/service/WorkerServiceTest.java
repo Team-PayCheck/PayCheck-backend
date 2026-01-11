@@ -46,7 +46,8 @@ class WorkerServiceTest {
                 .id(1L)
                 .user(testUser)
                 .workerCode("ABC123")
-                .kakaoPayLink("https://qr.kakaopay.com/test")
+                .bankName("카카오뱅크")
+                .accountNumber("333312341234")
                 .build();
     }
 
@@ -109,7 +110,8 @@ class WorkerServiceTest {
     void updateWorker_Success() {
         // given
         WorkerDto.UpdateRequest request = WorkerDto.UpdateRequest.builder()
-                .kakaoPayLink("https://qr.kakaopay.com/new")
+                .accountNumber("999988887777")
+                .bankName("토스뱅크")
                 .build();
 
         when(workerRepository.findById(1L)).thenReturn(Optional.of(testWorker));
@@ -130,7 +132,7 @@ class WorkerServiceTest {
         when(workerRepository.save(any(Worker.class))).thenReturn(testWorker);
 
         // when
-        Worker result = workerService.createWorker(testUser, "https://qr.kakaopay.com/test");
+        Worker result = workerService.createWorker(testUser, "카카오뱅크", "333312341234");
 
         // then
         assertThat(result).isNotNull();

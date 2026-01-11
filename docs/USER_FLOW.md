@@ -394,15 +394,15 @@ VALUES
 │ 실수령액: 1,008,000원               │
 │                                     │
 │ 송금 방법:                          │
-│ ○ 카카오페이                        │
+│ ○ 토스 딥링크                       │
 │ ○ 계좌이체                          │
 │ ○ 현금                              │
 │                                     │
-│ [카카오페이로 송금하기]              │
+│ [토스로 송금하기]                    │
 └─────────────────────────────────────┘
 
-카카오페이 선택 시:
-→ 김민지의 카카오페이 링크 자동 열림
+토스 송금 선택 시:
+→ 김민지의 토스 딥링크 자동 열림
 → 금액 자동 입력: 1,008,000원
 ```
 
@@ -412,7 +412,7 @@ VALUES
 INSERT INTO Payment
   (salary_id, payment_method, status, payment_date, transaction_id)
 VALUES
-  (1, 'KAKAO_PAY', 'COMPLETED', NOW(), 'KP20251125ABC123');
+  (1, 'TOSS_DEEP_LINK', 'COMPLETED', NOW(), 'TS20251125ABC123');
 
 -- Notification 생성
 INSERT INTO Notification
@@ -454,10 +454,10 @@ VALUES
    │ [코드 복사] [카카오톡 공유]          │
    └─────────────────────────────────────┘
 
-3. 계좌 정보 입력 (선택)
+3. 계좌 정보 입력 (WORKER 필수)
    - 은행: 카카오뱅크
    - 계좌번호: 3333-12-1234567
-   - 카카오페이 링크: https://qr.kakaopay.com/abc123
+   - 토스 딥링크는 서버가 금액을 기준으로 자동 생성 (사용자는 입력하지 않음)
 ```
 
 **데이터베이스 변화:**
@@ -468,10 +468,9 @@ VALUES ('kakao_67890', '김민지', '010-9876-5432', 'WORKER', 'https://...');
 
 -- Worker 테이블
 INSERT INTO Worker
-  (user_id, worker_code, account_number, bank_name, kakao_pay_link)
+  (user_id, worker_code, account_number, bank_name, toss_deep_link)
 VALUES
-  (2, 'ABC123', 'ENCRYPTED(3333-12-1234567)', '카카오뱅크',
-   'https://qr.kakaopay.com/abc123');
+  (2, 'ABC123', 'ENCRYPTED(3333-12-1234567)', '카카오뱅크', NULL);
 ```
 
 ---

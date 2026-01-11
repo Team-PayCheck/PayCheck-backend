@@ -54,7 +54,7 @@ public class ErrorCode {
 
     // Business Validation
     public static final String DUPLICATE_KAKAO_ACCOUNT = "DUPLICATE_KAKAO_ACCOUNT";
-    public static final String KAKAOPAY_LINK_REQUIRED = "KAKAOPAY_LINK_REQUIRED";
+    public static final String WORKER_BANK_INFO_REQUIRED = "WORKER_BANK_INFO_REQUIRED";
     public static final String KAKAO_NAME_NOT_FOUND = "KAKAO_NAME_NOT_FOUND";
     public static final String INVALID_USER_TYPE = "INVALID_USER_TYPE";
     public static final String DUPLICATE_CONTRACT = "DUPLICATE_CONTRACT";

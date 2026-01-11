@@ -22,7 +22,7 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
-    @Operation(summary = "급여 송금 처리", description = "근로자에게 급여를 송금합니다. (카카오페이)")
+    @Operation(summary = "급여 송금 처리", description = "근로자에게 토스 딥링크로 급여를 송금합니다.")
     @PreAuthorize("@salaryPermission.canAccess(#request.salaryId)")
     @PostMapping
     public ApiResponse<PaymentDto.Response> processPayment(

@@ -97,7 +97,8 @@ class UserServiceTest {
                 .name("신규 근로자")
                 .phone("010-1111-2222")
                 .userType(UserType.WORKER)
-                .kakaoPayLink("https://qr.kakaopay.com/test")
+                .bankName("카카오뱅크")
+                .accountNumber("333312341234")
                 .build();
 
         User savedUser = User.builder()
@@ -112,7 +113,7 @@ class UserServiceTest {
         when(worker.getWorkerCode()).thenReturn("WRK123");
 
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
-        when(workerService.createWorker(any(User.class), any())).thenReturn(worker);
+        when(workerService.createWorker(any(User.class), any(), any())).thenReturn(worker);
 
         // when
         UserDto.RegisterResponse result = userService.register(request);
@@ -121,7 +122,7 @@ class UserServiceTest {
         assertThat(result).isNotNull();
         verify(userRepository).save(any(User.class));
         verify(userSettingsService).createDefaultSettings(2L);
-        verify(workerService).createWorker(any(User.class), eq("https://qr.kakaopay.com/test"));
+        verify(workerService).createWorker(any(User.class), eq("카카오뱅크"), eq("333312341234"));
         verify(employerService, never()).createEmployer(any(), any());
     }
 
@@ -157,6 +158,6 @@ class UserServiceTest {
         verify(userRepository).save(any(User.class));
         verify(userSettingsService).createDefaultSettings(3L);
         verify(employerService).createEmployer(any(User.class), eq("010-3333-4444"));
-        verify(workerService, never()).createWorker(any(), any());
+        verify(workerService, never()).createWorker(any(), any(), any());
     }
 }
