@@ -284,6 +284,12 @@ public class WorkRecordCommandService {
             WorkRecord savedRecord = workRecordRepository.save(workRecord);
             createdCount++;
 
+            // COMPLETED 상태면 정확한 휴일 정보와 사업장 규모를 반영하여 재계산
+            if (status == WorkRecordStatus.COMPLETED) {
+                calculationService.calculateWorkRecordDetails(savedRecord);
+                workRecordRepository.save(savedRecord);
+            }
+
             // 도메인 간 협력 처리
             if (status == WorkRecordStatus.COMPLETED) {
                 coordinatorService.handleWorkRecordCreation(savedRecord);

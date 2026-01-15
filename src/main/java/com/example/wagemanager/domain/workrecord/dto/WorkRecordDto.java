@@ -3,6 +3,7 @@ package com.example.wagemanager.domain.workrecord.dto;
 import com.example.wagemanager.domain.workrecord.entity.WorkRecord;
 import com.example.wagemanager.domain.workrecord.enums.WorkRecordStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -145,6 +146,12 @@ public class WorkRecordDto {
 
         @Size(max = 500, message = "메모는 500자 이하로 입력해주세요.")
         private String memo;
+
+        @AssertTrue(message = "종료 시간은 시작 시간과 달라야 합니다.")
+        public boolean isValidTimeRange() {
+            if (startTime == null || endTime == null) return true; // null 체크는 @NotNull이 담당
+            return !startTime.equals(endTime);
+        }
     }
 
     @Getter
@@ -170,6 +177,12 @@ public class WorkRecordDto {
 
         @Size(max = 500, message = "메모는 500자 이하로 입력해주세요.")
         private String memo;
+
+        @AssertTrue(message = "종료 시간은 시작 시간과 달라야 합니다.")
+        public boolean isValidTimeRange() {
+            if (startTime == null || endTime == null) return true; // null 체크는 @NotNull이 담당
+            return !startTime.equals(endTime);
+        }
     }
 
     @Getter
@@ -187,6 +200,12 @@ public class WorkRecordDto {
 
         @Size(max = 500, message = "메모는 500자 이하로 입력해주세요.")
         private String memo;
+
+        @AssertTrue(message = "종료 시간은 시작 시간과 달라야 합니다.")
+        public boolean isValidTimeRange() {
+            if (startTime == null || endTime == null) return true; // null 허용 필드이므로 검증 생략
+            return !startTime.equals(endTime);
+        }
     }
 
     @Getter

@@ -161,7 +161,7 @@ public class WorkRecord extends BaseEntity {
     public void calculateHoursWithHolidayInfo(boolean isHoliday, boolean isSmallWorkplace) {
         // 전체 근무 시간 계산 (자정을 넘는 경우 처리)
         long minutes = java.time.Duration.between(startTime, endTime).toMinutes();
-        if (endTime.isBefore(startTime) || endTime.equals(startTime)) {
+        if (endTime.isBefore(startTime)) {
             minutes += 24 * 60; // 자정을 넘는 경우 24시간 추가
         }
         this.totalHours = BigDecimal.valueOf(minutes).divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP);
@@ -176,7 +176,7 @@ public class WorkRecord extends BaseEntity {
         LocalTime nightStart = NIGHT_SHIFT_START; // 22:00
         LocalTime nightEnd = NIGHT_SHIFT_END;     // 06:00
 
-        boolean crossesMidnight = endTime.isBefore(startTime) || endTime.equals(startTime);
+        boolean crossesMidnight = endTime.isBefore(startTime);
 
         if (crossesMidnight) {
             // 자정을 넘는 경우 (예: 22:00-06:00)
