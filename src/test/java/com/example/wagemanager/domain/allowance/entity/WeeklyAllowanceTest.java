@@ -75,7 +75,7 @@ class WeeklyAllowanceTest {
         when(record1.getTotalHours()).thenReturn(BigDecimal.valueOf(8));
 
         WorkRecord record2 = mock(WorkRecord.class);
-        when(record2.getStatus()).thenReturn(WorkRecordStatus.SCHEDULED);
+        when(record2.getStatus()).thenReturn(WorkRecordStatus.COMPLETED); // COMPLETED만 수당 계산에 포함
         when(record2.getTotalHours()).thenReturn(BigDecimal.valueOf(7));
 
         weeklyAllowance.getWorkRecords().addAll(Arrays.asList(record1, record2));
@@ -155,7 +155,7 @@ class WeeklyAllowanceTest {
                 .build();
 
         // when
-        weeklyAllowance.calculateOvertime();
+        weeklyAllowance.calculateOvertime(false); // large workplace
 
         // then
         assertThat(weeklyAllowance.getOvertimeHours()).isEqualTo(BigDecimal.ZERO);
@@ -174,7 +174,7 @@ class WeeklyAllowanceTest {
                 .build();
 
         // when
-        weeklyAllowance.calculateOvertime();
+        weeklyAllowance.calculateOvertime(false); // large workplace
 
         // then
         // 초과 시간: 5시간
@@ -195,7 +195,7 @@ class WeeklyAllowanceTest {
                 .build();
 
         // when
-        weeklyAllowance.calculateOvertime();
+        weeklyAllowance.calculateOvertime(false); // large workplace
 
         // then
         assertThat(weeklyAllowance.getOvertimeHours()).isEqualTo(BigDecimal.ZERO);
@@ -219,7 +219,7 @@ class WeeklyAllowanceTest {
         // when
         weeklyAllowance.calculateTotalWorkHours();
         weeklyAllowance.calculateWeeklyPaidLeave();
-        weeklyAllowance.calculateOvertime();
+        weeklyAllowance.calculateOvertime(false); // large workplace
 
         // then
         assertThat(weeklyAllowance.getTotalWorkHours()).isEqualTo(BigDecimal.valueOf(45));

@@ -69,9 +69,13 @@ public class WeeklyAllowanceService {
         WeeklyAllowance allowance = weeklyAllowanceRepository.findById(weeklyAllowanceId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.WEEKLY_ALLOWANCE_NOT_FOUND, "주간 수당 정보를 찾을 수 없습니다."));
 
+        // 사업장 규모 확인
+        boolean isSmallWorkplace = allowance.getContract().getWorkplace().getIsLessThanFiveEmployees();
+
+        // 수당 재계산 (사업장 규모 고려)
         allowance.calculateTotalWorkHours();
         allowance.calculateWeeklyPaidLeave();
-        allowance.calculateOvertime();
+        allowance.calculateOvertime(isSmallWorkplace);
 
         return weeklyAllowanceRepository.save(allowance);
     }

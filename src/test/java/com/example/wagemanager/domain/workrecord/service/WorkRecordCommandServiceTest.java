@@ -44,6 +44,15 @@ class WorkRecordCommandServiceTest {
     private WorkRecordCoordinatorService coordinatorService;
 
     @Mock
+    private WorkRecordCalculationService calculationService;
+
+    @Mock
+    private WorkRecordGenerationService workRecordGenerationService;
+
+    @Mock
+    private com.example.wagemanager.domain.correction.repository.CorrectionRequestRepository correctionRequestRepository;
+
+    @Mock
     private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks

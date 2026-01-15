@@ -37,6 +37,7 @@ public class WorkRecordCommandService {
     private final CorrectionRequestRepository correctionRequestRepository;
     private final WorkRecordCoordinatorService coordinatorService;
     private final WorkRecordGenerationService workRecordGenerationService;
+    private final WorkRecordCalculationService calculationService;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
@@ -76,6 +77,12 @@ public class WorkRecordCommandService {
                 .build();
 
         WorkRecord savedRecord = workRecordRepository.save(workRecord);
+
+        // COMPLETED 상태면 정확한 휴일 정보와 사업장 규모를 반영하여 재계산
+        if (status == WorkRecordStatus.COMPLETED) {
+            calculationService.calculateWorkRecordDetails(savedRecord);
+            workRecordRepository.save(savedRecord);
+        }
 
         // 도메인 간 협력 처리
         if (status == WorkRecordStatus.COMPLETED) {
@@ -149,6 +156,12 @@ public class WorkRecordCommandService {
 
             workRecordRepository.save(workRecord);
 
+            // COMPLETED 상태면 정확한 휴일 정보와 사업장 규모를 반영하여 재계산
+            if (workRecord.getStatus() == WorkRecordStatus.COMPLETED) {
+                calculationService.calculateWorkRecordDetails(workRecord);
+                workRecordRepository.save(workRecord);
+            }
+
             // 도메인 간 협력 처리
             coordinatorService.handleWorkRecordUpdate(workRecord, oldWeeklyAllowance, newWeeklyAllowance);
 
@@ -175,6 +188,11 @@ public class WorkRecordCommandService {
         WorkRecord workRecord = workRecordRepository.findById(workRecordId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.WORK_RECORD_NOT_FOUND, "근무 기록을 찾을 수 없습니다."));
         workRecord.complete();
+        workRecordRepository.save(workRecord);
+
+        // 정확한 휴일 정보와 사업장 규모를 반영하여 재계산
+        calculationService.calculateWorkRecordDetails(workRecord);
+        workRecordRepository.save(workRecord);
 
         // 근무 완료 시 급여 재계산 (COMPLETED 상태가 되어야 급여에 포함됨)
         coordinatorService.handleWorkRecordCompletion(workRecord);

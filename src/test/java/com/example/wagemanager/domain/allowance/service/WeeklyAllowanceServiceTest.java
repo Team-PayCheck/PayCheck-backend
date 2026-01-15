@@ -108,11 +108,18 @@ class WeeklyAllowanceServiceTest {
     void recalculateAllowances_Success() {
         // given
         WeeklyAllowance allowance = mock(WeeklyAllowance.class);
+        WorkerContract mockContract = mock(WorkerContract.class);
+        com.example.wagemanager.domain.workplace.entity.Workplace mockWorkplace = mock(com.example.wagemanager.domain.workplace.entity.Workplace.class);
+
+        when(allowance.getContract()).thenReturn(mockContract);
+        when(mockContract.getWorkplace()).thenReturn(mockWorkplace);
+        when(mockWorkplace.getIsLessThanFiveEmployees()).thenReturn(false);
+
         when(weeklyAllowanceRepository.findById(1L)).thenReturn(Optional.of(allowance));
         when(weeklyAllowanceRepository.save(allowance)).thenReturn(allowance);
         doNothing().when(allowance).calculateTotalWorkHours();
         doNothing().when(allowance).calculateWeeklyPaidLeave();
-        doNothing().when(allowance).calculateOvertime();
+        doNothing().when(allowance).calculateOvertime(anyBoolean());
 
         // when
         WeeklyAllowance result = weeklyAllowanceService.recalculateAllowances(1L);
@@ -121,7 +128,7 @@ class WeeklyAllowanceServiceTest {
         assertThat(result).isEqualTo(allowance);
         verify(allowance).calculateTotalWorkHours();
         verify(allowance).calculateWeeklyPaidLeave();
-        verify(allowance).calculateOvertime();
+        verify(allowance).calculateOvertime(anyBoolean());
     }
 
     @Test
