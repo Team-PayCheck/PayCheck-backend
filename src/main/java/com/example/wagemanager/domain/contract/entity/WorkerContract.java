@@ -59,7 +59,12 @@ public class WorkerContract extends BaseEntity {
         if (hourlyWage != null) this.hourlyWage = hourlyWage;
         if (workSchedules != null) this.workSchedules = workSchedules;
         if (contractEndDate != null) this.contractEndDate = contractEndDate;
-        if (paymentDay != null) this.paymentDay = paymentDay;
+        if (paymentDay != null) {
+            if (paymentDay < 1 || paymentDay > 31) {
+                throw new IllegalArgumentException("paymentDay must be between 1 and 31");
+            }
+            this.paymentDay = paymentDay;
+        }
         if (payrollDeductionType != null) this.payrollDeductionType = payrollDeductionType;
     }
 

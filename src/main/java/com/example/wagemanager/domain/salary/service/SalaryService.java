@@ -252,7 +252,7 @@ public class SalaryService {
 
     private LocalDate adjustDayOfMonth(LocalDate baseDate, int desiredDay) {
         int lastDayOfMonth = baseDate.lengthOfMonth();
-        int day = Math.min(desiredDay, lastDayOfMonth);
+        int day = Math.max(1, Math.min(desiredDay, lastDayOfMonth));
         return baseDate.withDayOfMonth(day);
     }
 }
