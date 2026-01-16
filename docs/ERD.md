@@ -47,6 +47,7 @@ erDiagram
         bigint id PK
         bigint user_id FK "User ID"
         string worker_code UK "근로자 고유 6자리 코드"
+        string bank_name "은행명"
         string account_number "계좌번호 (암호화)"
         datetime created_at
         datetime updated_at
