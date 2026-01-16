@@ -13,6 +13,7 @@ import com.example.wagemanager.domain.payment.enums.PaymentMethod;
 import com.example.wagemanager.domain.payment.util.TossLinkGenerator;
 import com.example.wagemanager.domain.worker.entity.Worker;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -23,6 +24,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class PaymentService {
@@ -81,7 +83,7 @@ public class PaymentService {
     public PaymentDto.Response getPaymentById(Long paymentId) {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.PAYMENT_NOT_FOUND, "송금 기록을 찾을 수 없습니다."));
-        String tossLink = buildTossLinkSafely(payment.getSalary());
+        String tossLink = buildTossLink(payment.getSalary());
         return PaymentDto.Response.from(payment, tossLink);
     }
 
@@ -174,20 +176,11 @@ public class PaymentService {
         String accountNumber = worker.getAccountNumber();
         if (!StringUtils.hasText(bankName) || !StringUtils.hasText(accountNumber)) {
             throw new BadRequestException(
-                    ErrorCode.WORKER_BANK_INFO_REQUIRED,
-                    "근로자 계좌 정보가 없어 토스 링크를 생성할 수 없습니다."
+                    ErrorCode.WORKER_BANK_INFO_REQUIRED, "근로자 계좌 정보가 없어 토스 링크를 생성할 수 없습니다."
             );
         }
 
         return TossLinkGenerator.generateSupertossLink(bankName, accountNumber, salary.getNetPay());
-    }
-
-    private String buildTossLinkSafely(Salary salary) {
-        try {
-            return buildTossLink(salary);
-        } catch (RuntimeException ex) {
-            return null;
-        }
     }
 
 }
