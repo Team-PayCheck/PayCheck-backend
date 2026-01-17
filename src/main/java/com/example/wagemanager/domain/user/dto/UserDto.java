@@ -5,7 +5,6 @@ import com.example.wagemanager.domain.user.enums.UserType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -70,12 +69,12 @@ public class UserDto {
         private String phone;
         private UserType userType;
         private String profileImageUrl;
-        @NotBlank(message = "은행명은 필수입니다.")
-        @Size(min = 2, max = 50, message = "은행명은 2자 이상 50자 이하로 입력해주세요.")
+
+        @Size(max = 50, message = "은행명은 50자 이하로 입력해주세요.")
         @Schema(description = "은행명 (근로자 타입 필수)", example = "KB국민은행")
         private String bankName;
         
-        @NotBlank(message = "계좌번호는 필수입니다.")
+
         @Size(max = 50, message = "계좌번호는 50자 이하로 입력해주세요.")
         @Schema(description = "계좌번호 (근로자 타입 필수)", example = "12345678901234")
         private String accountNumber;
