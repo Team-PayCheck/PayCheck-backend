@@ -3,9 +3,15 @@ package com.example.wagemanager.domain.salary.service;
 import com.example.wagemanager.common.exception.NotFoundException;
 import com.example.wagemanager.domain.contract.entity.WorkerContract;
 import com.example.wagemanager.domain.contract.repository.WorkerContractRepository;
+import com.example.wagemanager.domain.allowance.repository.WeeklyAllowanceRepository;
 import com.example.wagemanager.domain.salary.entity.Salary;
 import com.example.wagemanager.domain.salary.repository.SalaryRepository;
+import com.example.wagemanager.domain.salary.util.DeductionCalculator;
+import com.example.wagemanager.domain.workplace.entity.Workplace;
+import com.example.wagemanager.domain.workrecord.entity.WorkRecord;
 import com.example.wagemanager.domain.workrecord.repository.WorkRecordRepository;
+import com.example.wagemanager.domain.worker.entity.Worker;
+import com.example.wagemanager.domain.user.entity.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +41,9 @@ class SalaryServiceSimpleTest {
 
     @Mock
     private WorkerContractRepository workerContractRepository;
+
+    @Mock
+    private WeeklyAllowanceRepository weeklyAllowanceRepository;
 
     @InjectMocks
     private SalaryService salaryService;
@@ -112,5 +121,62 @@ class SalaryServiceSimpleTest {
 
         verify(workerContractRepository).findById(contractId);
         verify(workRecordRepository).findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class));
+    }
+
+    @Test
+    @DisplayName("월급날이 말일을 초과하면 해당 월의 마지막 날로 보정된다")
+    void calculateSalaryByWorkRecords_AdjustsPaymentDayWhenExceedingMonthLength() {
+        // given
+        Long contractId = 2L;
+        Integer year = 2024;
+        Integer month = 2;
+
+        WorkerContract contract = mock(WorkerContract.class);
+        when(contract.getId()).thenReturn(contractId);
+        when(contract.getPaymentDay()).thenReturn(31);
+        when(contract.getPayrollDeductionType()).thenReturn(DeductionCalculator.PayrollDeductionType.PART_TIME_NONE);
+
+        User workerUser = mock(User.class);
+        when(workerUser.getName()).thenReturn("홍길동");
+
+        Worker worker = mock(Worker.class);
+        when(worker.getId()).thenReturn(100L);
+        when(worker.getUser()).thenReturn(workerUser);
+
+        Workplace workplace = mock(Workplace.class);
+        when(workplace.getId()).thenReturn(200L);
+        when(workplace.getName()).thenReturn("테스트 사업장");
+
+        when(contract.getWorker()).thenReturn(worker);
+        when(contract.getWorkplace()).thenReturn(workplace);
+
+        when(workerContractRepository.findById(contractId)).thenReturn(Optional.of(contract));
+
+        LocalDate febStart = LocalDate.of(2024, 1, 31);
+        LocalDate febEnd = LocalDate.of(2024, 2, 29).minusDays(1);
+
+        WorkRecord workRecord = mock(WorkRecord.class);
+        when(workRecord.getTotalHours()).thenReturn(BigDecimal.ONE);
+        when(workRecord.getBaseSalary()).thenReturn(BigDecimal.ONE);
+        when(workRecord.getNightSalary()).thenReturn(BigDecimal.ZERO);
+        when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+
+        when(workRecordRepository.findByContractAndDateRange(eq(contractId), eq(febStart), eq(febEnd)))
+                .thenReturn(Collections.singletonList(workRecord));
+
+        when(weeklyAllowanceRepository.findByContractIdAndYearMonth(eq(contractId), anyInt(), anyInt()))
+                .thenReturn(Collections.emptyList());
+        when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
+                .thenReturn(Collections.emptyList());
+        when(salaryRepository.save(any(Salary.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        salaryService.calculateSalaryByWorkRecords(contractId, year, month);
+
+        // then
+        verify(workRecordRepository).findByContractAndDateRange(eq(contractId), eq(febStart), eq(febEnd));
+        verify(weeklyAllowanceRepository).findByContractIdAndYearMonth(eq(contractId), eq(2024), eq(2));
+        verify(salaryRepository).save(argThat(saved ->
+                saved.getPaymentDueDate().equals(LocalDate.of(2024, 2, 29))));
     }
 }

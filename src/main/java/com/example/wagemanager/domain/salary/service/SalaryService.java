@@ -96,8 +96,8 @@ public class SalaryService {
         // 월급날 기준으로 급여 계산 기간 설정
         // 예: 월급날이 21일이면, 전월 21일 ~ 당월 20일까지
         Integer paymentDay = contract.getPaymentDay();
-        LocalDate startDate = LocalDate.of(year, month, 1).minusMonths(1).withDayOfMonth(paymentDay);
-        LocalDate endDate = LocalDate.of(year, month, 1).withDayOfMonth(paymentDay).minusDays(1);
+        LocalDate startDate = adjustDayOfMonth(LocalDate.of(year, month, 1).minusMonths(1), paymentDay);
+        LocalDate endDate = adjustDayOfMonth(LocalDate.of(year, month, 1), paymentDay).minusDays(1);
 
         List<WorkRecord> workRecords = workRecordRepository.findByContractAndDateRange(
                 contractId, startDate, endDate);
@@ -130,7 +130,7 @@ public class SalaryService {
         BigDecimal totalOvertimePay = BigDecimal.ZERO;
 
         // 월급날 계산 (당월 paymentDay)
-        LocalDate paymentDayDate = LocalDate.of(year, month, paymentDay);
+        LocalDate paymentDayDate = adjustDayOfMonth(LocalDate.of(year, month, 1), paymentDay);
 
         // 당월 WeeklyAllowance 처리
         for (WeeklyAllowance allowance : weeklyAllowances) {
@@ -151,7 +151,7 @@ public class SalaryService {
         List<WeeklyAllowance> previousMonthAllowances = weeklyAllowanceRepository.findByContractIdAndYearMonth(
                 contractId, previousMonth.getYear(), previousMonth.getMonthValue());
 
-        LocalDate previousPaymentDayDate = LocalDate.of(previousMonth.getYear(), previousMonth.getMonthValue(), paymentDay);
+        LocalDate previousPaymentDayDate = adjustDayOfMonth(LocalDate.of(previousMonth.getYear(), previousMonth.getMonthValue(), 1), paymentDay);
 
         for (WeeklyAllowance allowance : previousMonthAllowances) {
             // 전월의 마지막 주차(전월 월급날이 포함된 주)를 찾아서 현재 월 급여에 포함
@@ -234,7 +234,7 @@ public class SalaryService {
                     .localIncomeTax(localIncomeTax)
                     .totalDeduction(totalDeduction)
                     .netPay(netPay)
-                    .paymentDueDate(LocalDate.of(year, month, contract.getPaymentDay()))
+                    .paymentDueDate(adjustDayOfMonth(LocalDate.of(year, month, 1), contract.getPaymentDay()))
                     .build();
         }
 
@@ -248,5 +248,11 @@ public class SalaryService {
     @Transactional
     public SalaryDto.Response recalculateSalaryAfterWorkRecordUpdate(Long contractId, Integer year, Integer month) {
         return calculateSalaryByWorkRecords(contractId, year, month);
+    }
+
+    private LocalDate adjustDayOfMonth(LocalDate baseDate, int desiredDay) {
+        int lastDayOfMonth = baseDate.lengthOfMonth();
+        int day = Math.max(1, Math.min(desiredDay, lastDayOfMonth));
+        return baseDate.withDayOfMonth(day);
     }
 }
