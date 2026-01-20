@@ -4,11 +4,14 @@ import com.example.paycheck.common.dto.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
@@ -40,6 +43,23 @@ public class GlobalExceptionHandler {
     public ApiResponse<Void> handleIllegalArgumentException(IllegalArgumentException e) {
         log.error("IllegalArgumentException: {}", e.getMessage());
         return ApiResponse.error("BAD_REQUEST", e.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        log.error("MethodArgumentNotValidException: {}", e.getMessage());
+
+        List<ApiResponse.ErrorResponse.FieldErrorDetail> fieldErrors = e.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error -> ApiResponse.ErrorResponse.FieldErrorDetail.builder()
+                        .field(error.getField())
+                        .message(error.getDefaultMessage())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE, "요청 값이 올바르지 않습니다.", fieldErrors);
     }
 
     @ExceptionHandler({DataIntegrityViolationException.class, SQLIntegrityConstraintViolationException.class})
