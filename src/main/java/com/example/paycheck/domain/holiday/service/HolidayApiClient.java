@@ -157,6 +157,7 @@ public class HolidayApiClient {
                         .type(determineHolidayType(item.getDateName()))
                         .originalDate(item.getLocdate())
                         .remarks(item.getRemarks())
+                        .isPublicHoliday(item.isPublicHoliday())
                         .build();
 
                 holidays.add(holiday);

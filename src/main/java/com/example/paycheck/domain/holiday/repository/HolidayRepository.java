@@ -64,4 +64,16 @@ public interface HolidayRepository extends JpaRepository<Holiday, Long> {
      * 특정 연도의 공휴일 삭제 (업데이트 시 사용)
      */
     void deleteByYear(Integer year);
+
+    /**
+     * 특정 날짜가 공공기관 휴일인지 확인
+     * (isPublicHoliday = true인 경우만)
+     */
+    boolean existsByHolidayDateAndIsPublicHolidayTrue(LocalDate date);
+
+    /**
+     * 특정 연도의 공공기관 휴일 날짜만 조회
+     */
+    @Query("SELECT h.holidayDate FROM Holiday h WHERE h.year = :year AND h.isPublicHoliday = true")
+    List<LocalDate> findAllPublicHolidayDatesByYear(@Param("year") Integer year);
 }

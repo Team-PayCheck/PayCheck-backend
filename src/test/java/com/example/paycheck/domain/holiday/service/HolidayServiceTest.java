@@ -44,6 +44,7 @@ class HolidayServiceTest {
                 .holidayName("신정")
                 .year(2024)
                 .month(1)
+                .isPublicHoliday(true)
                 .build();
     }
 
@@ -103,6 +104,64 @@ class HolidayServiceTest {
         // then
         assertThat(result).isFalse();
         verify(holidayRepository).existsByHolidayDate(weekday);
+    }
+
+    @Test
+    @DisplayName("공공기관 휴일 확인 - 토요일은 공공기관 휴일")
+    void isPublicHoliday_Saturday() {
+        // given
+        LocalDate saturday = LocalDate.of(2024, 1, 6); // 토요일
+
+        // when
+        boolean result = holidayService.isPublicHoliday(saturday);
+
+        // then
+        assertThat(result).isTrue();
+        verify(holidayRepository, never()).existsByHolidayDateAndIsPublicHolidayTrue(any());
+    }
+
+    @Test
+    @DisplayName("공공기관 휴일 확인 - 일요일은 공공기관 휴일")
+    void isPublicHoliday_Sunday() {
+        // given
+        LocalDate sunday = LocalDate.of(2024, 1, 7); // 일요일
+
+        // when
+        boolean result = holidayService.isPublicHoliday(sunday);
+
+        // then
+        assertThat(result).isTrue();
+        verify(holidayRepository, never()).existsByHolidayDateAndIsPublicHolidayTrue(any());
+    }
+
+    @Test
+    @DisplayName("공공기관 휴일 확인 - DB에 등록된 공공기관 휴일")
+    void isPublicHoliday_RegisteredPublicHoliday() {
+        // given
+        LocalDate weekday = LocalDate.of(2024, 1, 1); // 월요일 (신정)
+        when(holidayRepository.existsByHolidayDateAndIsPublicHolidayTrue(weekday)).thenReturn(true);
+
+        // when
+        boolean result = holidayService.isPublicHoliday(weekday);
+
+        // then
+        assertThat(result).isTrue();
+        verify(holidayRepository).existsByHolidayDateAndIsPublicHolidayTrue(weekday);
+    }
+
+    @Test
+    @DisplayName("공공기관 휴일 확인 - 기념일(isPublicHoliday=false)은 공공기관 휴일 아님")
+    void isPublicHoliday_MemorialDay_NotPublicHoliday() {
+        // given
+        LocalDate weekday = LocalDate.of(2024, 4, 5); // 식목일
+        when(holidayRepository.existsByHolidayDateAndIsPublicHolidayTrue(weekday)).thenReturn(false);
+
+        // when
+        boolean result = holidayService.isPublicHoliday(weekday);
+
+        // then
+        assertThat(result).isFalse();
+        verify(holidayRepository).existsByHolidayDateAndIsPublicHolidayTrue(weekday);
     }
 
     @Test
