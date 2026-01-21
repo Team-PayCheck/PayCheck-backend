@@ -18,6 +18,7 @@ import com.example.paycheck.domain.workrecord.entity.WorkRecord;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import com.example.paycheck.domain.workrecord.service.WorkRecordCommandService;
 import com.example.paycheck.domain.workrecord.service.WorkRecordCoordinatorService;
+import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +57,11 @@ public class CorrectionRequestService {
     }
 
     private CorrectionRequestDto.Response createCreateRequest(User requester, CorrectionRequestDto.CreateRequest request) {
+        // CREATE 타입에서는 contractId가 필수
+        if (request.getContractId() == null) {
+            throw new BadRequestException(ErrorCode.CONTRACT_ID_REQUIRED, "계약 ID는 필수입니다.");
+        }
+
         // 계약 조회 및 권한 확인
         WorkerContract contract = workerContractRepository.findById(request.getContractId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.CONTRACT_NOT_FOUND, "계약을 찾을 수 없습니다."));
@@ -69,8 +75,20 @@ public class CorrectionRequestService {
                 request.getContractId(),
                 request.getRequestedWorkDate(),
                 request.getRequestedStartTime(),
-                request.getRequestedEndTime())) {
+                request.getRequestedEndTime(),
+                RequestType.CREATE,
+                CorrectionStatus.PENDING)) {
             throw new BadRequestException(ErrorCode.DUPLICATE_CORRECTION_REQUEST, "해당 시간대에 이미 생성 요청이 있습니다.");
+        }
+
+        // 중복 근무 기록 확인 - 이미 등록된 근무 기록이 있는지 확인
+        if (workRecordRepository.existsOverlappingWorkRecord(
+                request.getContractId(),
+                request.getRequestedWorkDate(),
+                request.getRequestedStartTime(),
+                request.getRequestedEndTime(),
+                WorkRecordStatus.DELETED)) {
+            throw new BadRequestException(ErrorCode.DUPLICATE_WORK_RECORD, "해당 시간대에 이미 등록된 근무 기록이 있습니다.");
         }
 
         CorrectionRequest correctionRequest = CorrectionRequest.builder()
@@ -94,6 +112,11 @@ public class CorrectionRequestService {
     }
 
     private CorrectionRequestDto.Response createUpdateRequest(User requester, CorrectionRequestDto.CreateRequest request) {
+        // UPDATE 타입에서는 workRecordId가 필수
+        if (request.getWorkRecordId() == null) {
+            throw new BadRequestException(ErrorCode.WORK_RECORD_ID_REQUIRED, "근무 기록 ID는 필수입니다.");
+        }
+
         WorkRecord workRecord = workRecordRepository.findById(request.getWorkRecordId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.WORK_RECORD_NOT_FOUND, "근무 기록을 찾을 수 없습니다."));
 
@@ -133,6 +156,11 @@ public class CorrectionRequestService {
     }
 
     private CorrectionRequestDto.Response createDeleteRequest(User requester, CorrectionRequestDto.CreateRequest request) {
+        // DELETE 타입에서는 workRecordId가 필수
+        if (request.getWorkRecordId() == null) {
+            throw new BadRequestException(ErrorCode.WORK_RECORD_ID_REQUIRED, "근무 기록 ID는 필수입니다.");
+        }
+
         WorkRecord workRecord = workRecordRepository.findById(request.getWorkRecordId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.WORK_RECORD_NOT_FOUND, "근무 기록을 찾을 수 없습니다."));
 
@@ -286,8 +314,7 @@ public class CorrectionRequestService {
                 .workDate(correctionRequest.getRequestedWorkDate())
                 .startTime(correctionRequest.getRequestedStartTime())
                 .endTime(correctionRequest.getRequestedEndTime())
-                .breakMinutes(correctionRequest.getRequestedBreakMinutes() != null ?
-                        correctionRequest.getRequestedBreakMinutes() : 0)
+                .breakMinutes(correctionRequest.getRequestedBreakMinutes() != null ? correctionRequest.getRequestedBreakMinutes() : 0)
                 .build();
 
         workRecordCommandService.createWorkRecordByEmployer(createRequest);
@@ -303,8 +330,7 @@ public class CorrectionRequestService {
         workRecord.updateWorkTime(
                 correctionRequest.getRequestedStartTime(),
                 correctionRequest.getRequestedEndTime(),
-                correctionRequest.getRequestedMemo()
-        );
+                correctionRequest.getRequestedMemo());
 
         // WeeklyAllowance 및 Salary 재계산
         coordinatorService.handleWorkRecordUpdate(workRecord, oldWeeklyAllowance, workRecord.getWeeklyAllowance());
@@ -321,8 +347,7 @@ public class CorrectionRequestService {
             coordinatorService.handleWorkRecordDeletion(
                     workRecord.getWeeklyAllowance(),
                     workRecord,
-                    workRecord.getStatus()
-            );
+                    workRecord.getStatus());
         }
     }
 

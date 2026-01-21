@@ -58,11 +58,14 @@ public class ErrorCode {
     public static final String KAKAO_NAME_NOT_FOUND = "KAKAO_NAME_NOT_FOUND";
     public static final String INVALID_USER_TYPE = "INVALID_USER_TYPE";
     public static final String DUPLICATE_CONTRACT = "DUPLICATE_CONTRACT";
+    public static final String DUPLICATE_WORK_RECORD = "DUPLICATE_WORK_RECORD";
     public static final String WORK_DAY_CONVERSION_ERROR = "WORK_DAY_CONVERSION_ERROR";
     public static final String INVALID_WORK_RECORD_STATUS = "INVALID_WORK_RECORD_STATUS";
     public static final String DUPLICATE_CORRECTION_REQUEST = "DUPLICATE_CORRECTION_REQUEST";
     public static final String INVALID_CORRECTION_STATUS = "INVALID_CORRECTION_STATUS";
     public static final String INVALID_REQUEST_TYPE = "INVALID_REQUEST_TYPE";
+    public static final String CONTRACT_ID_REQUIRED = "CONTRACT_ID_REQUIRED";
+    public static final String WORK_RECORD_ID_REQUIRED = "WORK_RECORD_ID_REQUIRED";
     public static final String SALARY_NOT_CALCULATED = "SALARY_NOT_CALCULATED";
     public static final String PAYMENT_ALREADY_COMPLETED = "PAYMENT_ALREADY_COMPLETED";
     public static final String KAKAO_USER_INFO_FAILED = "KAKAO_USER_INFO_FAILED";
