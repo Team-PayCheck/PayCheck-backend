@@ -18,7 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/worker/contracts")
 @RequiredArgsConstructor
-@PreAuthorize("@userPermission.isWorker()")
+@PreAuthorize("@permissionEvaluator.isWorker()")
 public class WorkerContractController {
 
     private final ContractService contractService;
@@ -31,7 +31,7 @@ public class WorkerContractController {
     }
 
     @Operation(summary = "계약 상세 조회", description = "특정 근로 계약의 상세 정보를 조회합니다.")
-    @PreAuthorize("@contractPermission.canAccessAsWorker(#id)")
+    @PreAuthorize("@permissionEvaluator.canAccessContractAsWorker(#id)")
     @GetMapping("/{id}")
     public ApiResponse<ContractDto.Response> getContract(
             @Parameter(description = "계약 ID", required = true) @PathVariable Long id) {
