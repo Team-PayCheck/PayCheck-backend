@@ -80,8 +80,7 @@ public class Holiday extends BaseEntity {
      * false: 기념일 (평일 근무로 처리)
      */
     @Column(name = "is_public_holiday", nullable = false)
-    @Builder.Default
-    private Boolean isPublicHoliday = true;
+    private Boolean isPublicHoliday;
 
     /**
      * 공휴일 타입

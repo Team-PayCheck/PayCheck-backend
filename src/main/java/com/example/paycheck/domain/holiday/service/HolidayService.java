@@ -27,24 +27,6 @@ public class HolidayService {
     private final HolidayApiClient holidayApiClient;
 
     /**
-     * 특정 날짜가 공휴일인지 확인 (캐싱)
-     * DB에 등록된 모든 특일(공휴일, 기념일) 포함
-     *
-     * @param date 확인할 날짜
-     * @return 공휴일 여부
-     */
-    @Cacheable(value = "holiday-check", key = "#date")
-    public boolean isHoliday(LocalDate date) {
-        // 1. 토요일/일요일 체크
-        if (date.getDayOfWeek().getValue() >= 6) {
-            return true;
-        }
-
-        // 2. DB에서 공휴일 확인
-        return holidayRepository.existsByHolidayDate(date);
-    }
-
-    /**
      * 특정 날짜가 공공기관 휴일인지 확인 (캐싱)
      * 휴일근로 수당 적용 대상 판단에 사용
      * - 주말(토/일)
@@ -115,7 +97,7 @@ public class HolidayService {
      * @return 저장된 공휴일 개수
      */
     @Transactional
-    @CacheEvict(value = {"holiday-check", "public-holiday-check", "holidays-by-year"}, allEntries = true)
+    @CacheEvict(value = {"public-holiday-check", "holidays-by-year"}, allEntries = true)
     public int updateHolidays(int year) {
         log.info("{}년 공휴일 정보 업데이트 시작", year);
 

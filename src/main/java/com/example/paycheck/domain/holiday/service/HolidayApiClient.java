@@ -25,8 +25,8 @@ import java.util.Map;
 public class HolidayApiClient {
 
     private static final String API_BASE_URL = "http://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService";
-    private static final String GET_REST_DE_INFO = "/getRestDeInfo"; // 국경일 정보
-    private static final String GET_HOL_DE_INFO = "/getHoliDeInfo";   // 공휴일 정보
+    private static final String GET_REST_DE_INFO = "/getRestDeInfo"; // 공휴일 정보
+    private static final String GET_HOL_DE_INFO = "/getHoliDeInfo";   // 국경일 정보
     private static final String GET_ANNIVERSARY_INFO = "/getAnniversaryInfo"; // 기념일 정보
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -48,20 +48,20 @@ public class HolidayApiClient {
         Map<LocalDate, Holiday> holidayMap = new LinkedHashMap<>();
 
         try {
-            // 1. 국경일 정보 조회 (신정, 삼일절, 광복절, 개천절, 한글날)
+            // 1. 공휴일 정보 조회 (설날, 석가탄신일, 어린이날, 현충일, 추석, 성탄절, 대체공휴일)
             List<Holiday> restDays = fetchRestDeInfo(year);
             for (Holiday holiday : restDays) {
                 holidayMap.put(holiday.getHolidayDate(), holiday);
             }
-            log.info("{}년 국경일 {}개 조회 완료", year, restDays.size());
+            log.info("{}년 공휴일 {}개 조회 완료", year, restDays.size());
 
-            // 2. 공휴일 정보 조회 (설날, 석가탄신일, 어린이날, 현충일, 추석, 성탄절, 대체공휴일)
+            // 2. 국경일 정보 조회 (신정, 삼일절, 광복절, 개천절, 한글날)
             List<Holiday> holDays = fetchHoliDeInfo(year);
             for (Holiday holiday : holDays) {
-                // 중복된 날짜는 나중에 조회된 것으로 덮어쓰기 (공휴일 정보가 더 정확할 가능성)
+                // 중복된 날짜는 나중에 조회된 것으로 덮어쓰기
                 holidayMap.put(holiday.getHolidayDate(), holiday);
             }
-            log.info("{}년 공휴일 {}개 조회 완료", year, holDays.size());
+            log.info("{}년 국경일 {}개 조회 완료", year, holDays.size());
 
             List<Holiday> holidays = new ArrayList<>(holidayMap.values());
             log.info("{}년 총 공휴일 {}개 조회 완료 (중복 제거 후)", year, holidays.size());
@@ -74,7 +74,7 @@ public class HolidayApiClient {
     }
 
     /**
-     * 국경일 정보 조회
+     * 공휴일 정보 조회
      */
     private List<Holiday> fetchRestDeInfo(int year) throws Exception {
         String url = buildApiUrl(GET_REST_DE_INFO, year);
@@ -82,7 +82,7 @@ public class HolidayApiClient {
     }
 
     /**
-     * 공휴일 정보 조회
+     * 국경일 정보 조회
      */
     private List<Holiday> fetchHoliDeInfo(int year) throws Exception {
         String url = buildApiUrl(GET_HOL_DE_INFO, year);

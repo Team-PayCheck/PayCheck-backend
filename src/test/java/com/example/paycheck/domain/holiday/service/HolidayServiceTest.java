@@ -10,7 +10,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -46,64 +45,6 @@ class HolidayServiceTest {
                 .month(1)
                 .isPublicHoliday(true)
                 .build();
-    }
-
-    @Test
-    @DisplayName("공휴일 확인 - 토요일은 공휴일")
-    void isHoliday_Saturday() {
-        // given
-        LocalDate saturday = LocalDate.of(2024, 1, 6); // 토요일
-
-        // when
-        boolean result = holidayService.isHoliday(saturday);
-
-        // then
-        assertThat(result).isTrue();
-        verify(holidayRepository, never()).existsByHolidayDate(any());
-    }
-
-    @Test
-    @DisplayName("공휴일 확인 - 일요일은 공휴일")
-    void isHoliday_Sunday() {
-        // given
-        LocalDate sunday = LocalDate.of(2024, 1, 7); // 일요일
-
-        // when
-        boolean result = holidayService.isHoliday(sunday);
-
-        // then
-        assertThat(result).isTrue();
-        verify(holidayRepository, never()).existsByHolidayDate(any());
-    }
-
-    @Test
-    @DisplayName("공휴일 확인 - DB에 등록된 공휴일")
-    void isHoliday_RegisteredHoliday() {
-        // given
-        LocalDate weekday = LocalDate.of(2024, 1, 1); // 월요일
-        when(holidayRepository.existsByHolidayDate(weekday)).thenReturn(true);
-
-        // when
-        boolean result = holidayService.isHoliday(weekday);
-
-        // then
-        assertThat(result).isTrue();
-        verify(holidayRepository).existsByHolidayDate(weekday);
-    }
-
-    @Test
-    @DisplayName("공휴일 확인 - 평일이고 공휴일 아님")
-    void isHoliday_NotHoliday() {
-        // given
-        LocalDate weekday = LocalDate.of(2024, 1, 2); // 화요일
-        when(holidayRepository.existsByHolidayDate(weekday)).thenReturn(false);
-
-        // when
-        boolean result = holidayService.isHoliday(weekday);
-
-        // then
-        assertThat(result).isFalse();
-        verify(holidayRepository).existsByHolidayDate(weekday);
     }
 
     @Test
