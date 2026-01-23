@@ -14,11 +14,6 @@ import java.util.Optional;
 public interface HolidayRepository extends JpaRepository<Holiday, Long> {
 
     /**
-     * 특정 날짜가 공휴일인지 확인
-     */
-    boolean existsByHolidayDate(LocalDate date);
-
-    /**
      * 특정 날짜의 공휴일 정보 조회
      */
     Optional<Holiday> findByHolidayDate(LocalDate date);
@@ -64,4 +59,10 @@ public interface HolidayRepository extends JpaRepository<Holiday, Long> {
      * 특정 연도의 공휴일 삭제 (업데이트 시 사용)
      */
     void deleteByYear(Integer year);
+
+    /**
+     * 특정 날짜가 공공기관 휴일인지 확인
+     * (isPublicHoliday = true인 경우만)
+     */
+    boolean existsByHolidayDateAndIsPublicHolidayTrue(LocalDate date);
 }

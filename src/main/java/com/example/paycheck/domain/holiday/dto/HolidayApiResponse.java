@@ -87,5 +87,21 @@ public class HolidayApiResponse {
          */
         @JacksonXmlProperty(localName = "seq")
         private Integer seq;
+
+        /**
+         * 공공기관 휴일 여부 (Y/N)
+         * Y: 공공기관 쉬는 날 (실제 휴일)
+         * N: 기념일이지만 출근일 (예: 24절기, 식목일)
+         */
+        @JacksonXmlProperty(localName = "isHoliday")
+        private String isHoliday;
+
+        /**
+         * 공공기관 휴일 여부를 boolean으로 반환
+         * @return Y이면 true, 그 외 false
+         */
+        public boolean isPublicHoliday() {
+            return "Y".equalsIgnoreCase(isHoliday);
+        }
     }
 }
