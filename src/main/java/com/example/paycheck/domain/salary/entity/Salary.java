@@ -68,4 +68,30 @@ public class Salary extends BaseEntity {
 
     @Column(name = "payment_due_date")
     private LocalDate paymentDueDate;
+
+    public void updateCalculatedFields(
+            BigDecimal totalWorkHours,
+            BigDecimal basePay,
+            BigDecimal overtimePay,
+            BigDecimal nightPay,
+            BigDecimal holidayPay,
+            BigDecimal totalGrossPay,
+            BigDecimal fourMajorInsurance,
+            BigDecimal incomeTax,
+            BigDecimal localIncomeTax,
+            BigDecimal totalDeduction,
+            BigDecimal netPay
+    ) {
+        this.totalWorkHours = totalWorkHours;
+        this.basePay = basePay;
+        this.overtimePay = overtimePay;
+        this.nightPay = nightPay;
+        this.holidayPay = holidayPay;
+        this.totalGrossPay = totalGrossPay;
+        this.fourMajorInsurance = fourMajorInsurance;
+        this.incomeTax = incomeTax;
+        this.localIncomeTax = localIncomeTax;
+        this.totalDeduction = totalDeduction;
+        this.netPay = netPay;
+    }
 }
