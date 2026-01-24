@@ -70,6 +70,7 @@ public class ErrorCode {
     public static final String PAYMENT_ALREADY_COMPLETED = "PAYMENT_ALREADY_COMPLETED";
     public static final String KAKAO_USER_INFO_FAILED = "KAKAO_USER_INFO_FAILED";
     public static final String KAKAO_SERVER_ERROR = "KAKAO_SERVER_ERROR";
+    public static final String INVALID_INPUT_VALUE = "INVALID_INPUT_VALUE";
 
     // Database Integrity
     public static final String DATA_INTEGRITY_VIOLATION = "DATA_INTEGRITY_VIOLATION";
