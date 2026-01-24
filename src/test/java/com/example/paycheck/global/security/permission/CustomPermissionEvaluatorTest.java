@@ -14,6 +14,7 @@ import com.example.paycheck.domain.workplace.entity.Workplace;
 import com.example.paycheck.domain.workplace.repository.WorkplaceRepository;
 import com.example.paycheck.domain.workrecord.entity.WorkRecord;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
+import com.example.paycheck.domain.salary.entity.Salary;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -273,6 +274,111 @@ class CustomPermissionEvaluatorTest {
             when(workerRepository.findById(1L)).thenReturn(Optional.of(worker));
 
             assertThat(permissionEvaluator.canAccessWorker(1L)).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("SALARY 권한 검증")
+    class SalaryPermissionTest {
+
+        @Test
+        @DisplayName("고용주가 자신의 사업장 급여에 접근하면 true 반환")
+        void canAccessSalary_Employer_ReturnsTrue() {
+            setSecurityContext(employerUser);
+            Employer employer = Employer.builder().id(1L).user(employerUser).build();
+            Workplace workplace = Workplace.builder().id(1L).employer(employer).build();
+            WorkerContract contract = WorkerContract.builder().id(1L).workplace(workplace).build();
+            Salary salary = Salary.builder().id(1L).contract(contract).build();
+
+            when(salaryRepository.findById(1L)).thenReturn(Optional.of(salary));
+
+            assertThat(permissionEvaluator.canAccessSalary(1L)).isTrue();
+        }
+
+        @Test
+        @DisplayName("근로자가 자신의 급여에 접근하면 true 반환")
+        void canAccessSalaryAsWorker_Worker_ReturnsTrue() {
+            setSecurityContext(workerUser);
+            Worker worker = Worker.builder().id(1L).user(workerUser).build();
+            Employer employer = Employer.builder().id(1L).user(employerUser).build();
+            Workplace workplace = Workplace.builder().id(1L).employer(employer).build();
+            WorkerContract contract = WorkerContract.builder().id(1L).workplace(workplace).worker(worker).build();
+            Salary salary = Salary.builder().id(1L).contract(contract).build();
+
+            when(salaryRepository.findById(1L)).thenReturn(Optional.of(salary));
+
+            assertThat(permissionEvaluator.canAccessSalaryAsWorker(1L)).isTrue();
+        }
+
+        @Test
+        @DisplayName("계약에 대한 급여 계산 권한 - 고용주 true")
+        void canCalculateSalaryForContract_Employer_ReturnsTrue() {
+            setSecurityContext(employerUser);
+            Employer employer = Employer.builder().id(1L).user(employerUser).build();
+            Workplace workplace = Workplace.builder().id(1L).employer(employer).build();
+            WorkerContract contract = WorkerContract.builder().id(1L).workplace(workplace).build();
+
+            when(contractRepository.findById(1L)).thenReturn(Optional.of(contract));
+
+            assertThat(permissionEvaluator.canCalculateSalaryForContract(1L)).isTrue();
+        }
+    }
+
+    @Nested
+    @DisplayName("PAYMENT 권한 검증")
+    class PaymentPermissionTest {
+
+        @Test
+        @DisplayName("고용주가 자신의 송금 내역에 접근하면 true 반환")
+        void canAccessPayment_Employer_ReturnsTrue() {
+            setSecurityContext(employerUser);
+            Employer employer = Employer.builder().id(1L).user(employerUser).build();
+            Workplace workplace = Workplace.builder().id(1L).employer(employer).build();
+            WorkerContract contract = WorkerContract.builder().id(1L).workplace(workplace).build();
+            Salary salary = Salary.builder().id(1L).contract(contract).build();
+            com.example.paycheck.domain.payment.entity.Payment payment = com.example.paycheck.domain.payment.entity.Payment
+                    .builder()
+                    .id(1L).salary(salary).build();
+
+            when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
+
+            assertThat(permissionEvaluator.canAccessPayment(1L)).isTrue();
+        }
+    }
+
+    @Nested
+    @DisplayName("CORRECTION_REQUEST 권한 검증")
+    class CorrectionRequestPermissionTest {
+
+        @Test
+        @DisplayName("고용주가 자신의 사업장 정정요청에 접근하면 true 반환")
+        void canAccessCorrectionRequestAsEmployer_Employer_ReturnsTrue() {
+            setSecurityContext(employerUser);
+            Employer employer = Employer.builder().id(1L).user(employerUser).build();
+            Workplace workplace = Workplace.builder().id(1L).employer(employer).build();
+            WorkerContract contract = WorkerContract.builder().id(1L).workplace(workplace).build();
+            WorkRecord workRecord = WorkRecord.builder().id(1L).contract(contract).build();
+            com.example.paycheck.domain.correction.entity.CorrectionRequest request = com.example.paycheck.domain.correction.entity.CorrectionRequest
+                    .builder()
+                    .id(1L).workRecord(workRecord).build();
+
+            when(correctionRequestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+            assertThat(permissionEvaluator.canAccessCorrectionRequestAsEmployer(1L)).isTrue();
+        }
+
+        @Test
+        @DisplayName("근로자가 자신의 정정요청에 접근하면 true 반환")
+        void canAccessCorrectionRequestAsWorker_Worker_ReturnsTrue() {
+            setSecurityContext(workerUser);
+
+            com.example.paycheck.domain.correction.entity.CorrectionRequest request = com.example.paycheck.domain.correction.entity.CorrectionRequest
+                    .builder()
+                    .id(1L).requester(workerUser).build();
+
+            when(correctionRequestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+            assertThat(permissionEvaluator.canAccessCorrectionRequestAsWorker(1L)).isTrue();
         }
     }
 }
