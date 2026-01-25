@@ -344,6 +344,67 @@ class CustomPermissionEvaluatorTest {
 
             assertThat(permissionEvaluator.canAccessPayment(1L)).isTrue();
         }
+
+        @Test
+        @DisplayName("비소유자가 송금 내역에 접근하면 false 반환")
+        void canAccessPayment_NotOwner_ReturnsFalse() {
+            setSecurityContext(employerUser);
+            User otherUser = User.builder().id(999L).build();
+            Employer employer = Employer.builder().id(1L).user(otherUser).build();
+            Workplace workplace = Workplace.builder().id(1L).employer(employer).build();
+            WorkerContract contract = WorkerContract.builder().id(1L).workplace(workplace).build();
+            Salary salary = Salary.builder().id(1L).contract(contract).build();
+            com.example.paycheck.domain.payment.entity.Payment payment = com.example.paycheck.domain.payment.entity.Payment
+                    .builder()
+                    .id(1L).salary(salary).build();
+
+            when(paymentRepository.findById(1L)).thenReturn(Optional.of(payment));
+
+            assertThat(permissionEvaluator.canAccessPayment(1L)).isFalse();
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 송금 내역에 접근하면 false 반환")
+        void canAccessPayment_NotFound_ReturnsFalse() {
+            setSecurityContext(employerUser);
+            when(paymentRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThat(permissionEvaluator.canAccessPayment(999L)).isFalse();
+        }
+
+        @Test
+        @DisplayName("사업장 소유자가 사업장 송금 내역에 접근하면 true 반환")
+        void canAccessWorkplacePayments_Owner_ReturnsTrue() {
+            setSecurityContext(employerUser);
+            Employer employer = Employer.builder().id(1L).user(employerUser).build();
+            Workplace workplace = Workplace.builder().id(1L).employer(employer).build();
+
+            when(workplaceRepository.findById(1L)).thenReturn(Optional.of(workplace));
+
+            assertThat(permissionEvaluator.canAccessWorkplacePayments(1L)).isTrue();
+        }
+
+        @Test
+        @DisplayName("비소유자가 사업장 송금 내역에 접근하면 false 반환")
+        void canAccessWorkplacePayments_NotOwner_ReturnsFalse() {
+            setSecurityContext(employerUser);
+            User otherUser = User.builder().id(999L).build();
+            Employer employer = Employer.builder().id(1L).user(otherUser).build();
+            Workplace workplace = Workplace.builder().id(1L).employer(employer).build();
+
+            when(workplaceRepository.findById(1L)).thenReturn(Optional.of(workplace));
+
+            assertThat(permissionEvaluator.canAccessWorkplacePayments(1L)).isFalse();
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 사업장의 송금 내역에 접근하면 false 반환")
+        void canAccessWorkplacePayments_NotFound_ReturnsFalse() {
+            setSecurityContext(employerUser);
+            when(workplaceRepository.findById(999L)).thenReturn(Optional.empty());
+
+            assertThat(permissionEvaluator.canAccessWorkplacePayments(999L)).isFalse();
+        }
     }
 
     @Nested
