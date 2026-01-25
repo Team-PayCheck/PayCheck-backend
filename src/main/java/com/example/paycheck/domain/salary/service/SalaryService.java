@@ -199,24 +199,19 @@ public class SalaryService {
         if (!existingSalaries.isEmpty()) {
             // 기존 급여 정보 업데이트
             salary = existingSalaries.get(0);
-            salary = Salary.builder()
-                    .id(salary.getId())
-                    .contract(contract)
-                    .year(year)
-                    .month(month)
-                    .totalWorkHours(totalWorkHours)
-                    .basePay(totalBasePay)
-                    .overtimePay(totalOvertimePay)
-                    .nightPay(totalNightPay)
-                    .holidayPay(totalHolidayPay)
-                    .totalGrossPay(totalGrossPay)
-                    .fourMajorInsurance(fourMajorInsurance)
-                    .incomeTax(incomeTax)
-                    .localIncomeTax(localIncomeTax)
-                    .totalDeduction(totalDeduction)
-                    .netPay(netPay)
-                    .paymentDueDate(salary.getPaymentDueDate())
-                    .build();
+            salary.updateCalculatedFields(
+                    totalWorkHours,
+                    totalBasePay,
+                    totalOvertimePay,
+                    totalNightPay,
+                    totalHolidayPay,
+                    totalGrossPay,
+                    fourMajorInsurance,
+                    incomeTax,
+                    localIncomeTax,
+                    totalDeduction,
+                    netPay
+            );
         } else {
             // 새로운 급여 생성
             salary = Salary.builder()
@@ -236,9 +231,9 @@ public class SalaryService {
                     .netPay(netPay)
                     .paymentDueDate(adjustDayOfMonth(LocalDate.of(year, month, 1), contract.getPaymentDay()))
                     .build();
+            salaryRepository.save(salary);
         }
 
-        salaryRepository.save(salary);
         return SalaryDto.Response.from(salary);
     }
 
