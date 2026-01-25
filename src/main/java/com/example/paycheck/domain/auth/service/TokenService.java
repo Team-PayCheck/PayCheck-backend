@@ -47,7 +47,7 @@ public class TokenService {
     }
 
     /**
-     * Refresh Token 생성 및 DB에 저장 (Upsert 방식 - 기존 토큰이 있으면 UPDATE, 없으면 INSERT)
+     * Refresh Token 생성 및 DB에 저장 (DB 레벨 Upsert - 원자적 연산으로 Race Condition 방지)
      *
      * @param userId 사용자 ID
      * @return Refresh Token 문자열
@@ -59,19 +59,9 @@ public class TokenService {
         LocalDateTime expiresAt = LocalDateTime.now()
                 .plusSeconds(jwtTokenProvider.getRefreshExpirationTime() / 1000);
 
-        // 기존 토큰이 있으면 UPDATE, 없으면 INSERT (Upsert 방식)
-        RefreshToken refreshToken = refreshTokenRepository.findByUserId(userId)
-                .map(existing -> {
-                    existing.updateToken(refreshTokenString, expiresAt);
-                    return existing;
-                })
-                .orElseGet(() -> RefreshToken.builder()
-                        .userId(userId)
-                        .token(refreshTokenString)
-                        .expiresAt(expiresAt)
-                        .build());
+        // DB 레벨 Upsert: 단일 쿼리로 INSERT 또는 UPDATE (원자적 연산)
+        refreshTokenRepository.upsertRefreshToken(userId, refreshTokenString, expiresAt);
 
-        refreshTokenRepository.save(refreshToken);
         return refreshTokenString;
     }
 
