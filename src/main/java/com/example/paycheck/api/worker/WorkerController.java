@@ -20,7 +20,7 @@ public class WorkerController {
     private final WorkerService workerService;
 
     @Operation(summary = "근로자 조회 (ID)", description = "근로자 ID로 근로자 정보를 조회합니다.")
-    @PreAuthorize("@workerPermission.canAccess(#workerId)")
+    @PreAuthorize("@permissionEvaluator.canAccessWorker(#workerId)")
     @GetMapping("/{workerId}")
     public ApiResponse<WorkerDto.Response> getWorkerById(
             @Parameter(description = "근로자 ID", required = true) @PathVariable Long workerId) {
@@ -28,7 +28,7 @@ public class WorkerController {
     }
 
     @Operation(summary = "근로자 조회 (사용자 ID)", description = "사용자 ID로 근로자 정보를 조회합니다.")
-    @PreAuthorize("@workerPermission.canAccessByUserId(#userId)")
+    @PreAuthorize("@permissionEvaluator.canAccessWorkerByUserId(#userId)")
     @GetMapping("/user/{userId}")
     public ApiResponse<WorkerDto.Response> getWorkerByUserId(
             @Parameter(description = "사용자 ID", required = true) @PathVariable Long userId) {
@@ -43,7 +43,7 @@ public class WorkerController {
     }
 
     @Operation(summary = "근로자 정보 수정", description = "근로자 정보를 수정합니다.")
-    @PreAuthorize("@workerPermission.canAccess(#workerId)")
+    @PreAuthorize("@permissionEvaluator.canAccessWorker(#workerId)")
     @PutMapping("/{workerId}")
     public ApiResponse<WorkerDto.Response> updateWorker(
             @Parameter(description = "근로자 ID", required = true) @PathVariable Long workerId,

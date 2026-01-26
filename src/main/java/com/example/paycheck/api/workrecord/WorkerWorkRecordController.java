@@ -38,7 +38,7 @@ public class WorkerWorkRecordController {
     }
 
     @Operation(summary = "근무 기록 상세 조회", description = "특정 근무 기록의 상세 정보를 조회합니다.")
-    @PreAuthorize("@workRecordPermission.canAccessAsWorker(#id)")
+    @PreAuthorize("@permissionEvaluator.canAccessWorkRecordAsWorker(#id)")
     @GetMapping("/{id}")
     public ApiResponse<WorkRecordDto.DetailedResponse> getWorkRecord(
             @Parameter(description = "근무 기록 ID", required = true) @PathVariable Long id) {
@@ -46,7 +46,7 @@ public class WorkerWorkRecordController {
     }
 
     @Operation(summary = "근무 완료 처리", description = "근무를 완료 상태로 변경합니다.")
-    @PreAuthorize("@workRecordPermission.canAccessAsWorker(#id)")
+    @PreAuthorize("@permissionEvaluator.canAccessWorkRecordAsWorker(#id)")
     @PutMapping("/{id}/complete")
     public ApiResponse<Void> completeWorkRecord(
             @Parameter(description = "근무 기록 ID", required = true) @PathVariable Long id) {

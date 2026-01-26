@@ -27,7 +27,7 @@ public class UserController {
     private final WorkerService workerService;
 
     @Operation(summary = "사용자 정보 수정", description = "특정 사용자의 정보를 수정합니다.")
-    @PreAuthorize("@userPermission.canAccess(#userId)")
+    @PreAuthorize("@permissionEvaluator.canAccessUser(#userId)")
     @PutMapping("/{userId}")
     public ApiResponse<UserDto.Response> updateUser(
             @Parameter(description = "사용자 ID", required = true) @PathVariable Long userId,
