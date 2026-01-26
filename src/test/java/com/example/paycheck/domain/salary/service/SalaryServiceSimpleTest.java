@@ -185,6 +185,85 @@ class SalaryServiceSimpleTest {
     }
 
     @Test
+    @DisplayName("기존 급여가 있으면 save 없이 필드만 갱신한다")
+    void calculateSalaryByWorkRecords_UpdatesExistingSalaryWithoutSave() {
+        // given
+        Long contractId = 1L;
+        Integer year = 2024;
+        Integer month = 5;
+
+        WorkerContract contract = mock(WorkerContract.class);
+        when(contract.getId()).thenReturn(contractId);
+        when(contract.getPaymentDay()).thenReturn(10);
+        when(contract.getPayrollDeductionType()).thenReturn(DeductionCalculator.PayrollDeductionType.PART_TIME_NONE);
+
+        User workerUser = mock(User.class);
+        when(workerUser.getName()).thenReturn("홍길동");
+
+        Worker worker = mock(Worker.class);
+        when(worker.getId()).thenReturn(100L);
+        when(worker.getUser()).thenReturn(workerUser);
+
+        Workplace workplace = mock(Workplace.class);
+        when(workplace.getId()).thenReturn(200L);
+        when(workplace.getName()).thenReturn("테스트 사업장");
+
+        when(contract.getWorker()).thenReturn(worker);
+        when(contract.getWorkplace()).thenReturn(workplace);
+
+        when(workerContractRepository.findById(contractId)).thenReturn(Optional.of(contract));
+
+        WorkRecord workRecord = mock(WorkRecord.class);
+        when(workRecord.getTotalHours()).thenReturn(new BigDecimal("8"));
+        when(workRecord.getBaseSalary()).thenReturn(new BigDecimal("100"));
+        when(workRecord.getNightSalary()).thenReturn(new BigDecimal("20"));
+        when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+
+        when(workRecordRepository.findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Collections.singletonList(workRecord));
+        when(weeklyAllowanceRepository.findByContractIdAndYearMonth(eq(contractId), anyInt(), anyInt()))
+                .thenReturn(Collections.emptyList());
+
+        Salary existingSalary = Salary.builder()
+                .id(10L)
+                .contract(contract)
+                .year(year)
+                .month(month)
+                .totalWorkHours(BigDecimal.ZERO)
+                .basePay(BigDecimal.ZERO)
+                .overtimePay(BigDecimal.ZERO)
+                .nightPay(BigDecimal.ZERO)
+                .holidayPay(BigDecimal.ZERO)
+                .totalGrossPay(BigDecimal.ZERO)
+                .fourMajorInsurance(BigDecimal.ZERO)
+                .incomeTax(BigDecimal.ZERO)
+                .localIncomeTax(BigDecimal.ZERO)
+                .totalDeduction(BigDecimal.ZERO)
+                .netPay(BigDecimal.ZERO)
+                .paymentDueDate(LocalDate.of(2024, 5, 10))
+                .build();
+
+        when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
+                .thenReturn(Collections.singletonList(existingSalary));
+
+        // when
+        salaryService.calculateSalaryByWorkRecords(contractId, year, month);
+
+        // then
+        verify(salaryRepository, never()).save(any(Salary.class));
+        verify(salaryRepository).findByContractIdAndYearAndMonth(contractId, year, month);
+        verify(workRecordRepository).findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class));
+
+        assertThat(existingSalary.getPaymentDueDate()).isEqualTo(LocalDate.of(2024, 5, 10));
+        assertThat(existingSalary.getTotalWorkHours()).isEqualByComparingTo("8");
+        assertThat(existingSalary.getBasePay()).isEqualByComparingTo("100");
+        assertThat(existingSalary.getNightPay()).isEqualByComparingTo("20");
+        assertThat(existingSalary.getHolidayPay()).isEqualByComparingTo("0");
+        assertThat(existingSalary.getTotalGrossPay()).isEqualByComparingTo("120");
+        assertThat(existingSalary.getNetPay()).isEqualByComparingTo("120");
+    }
+
+    @Test
     @DisplayName("급여 자동 계산 - 주휴/연장 수당 월 경계 이월(마지막 주차 제외)")
     void calculateSalaryByWorkRecords_IncludesPreviousMonthCarryoverExcludesCurrentLastWeek() {
         // given

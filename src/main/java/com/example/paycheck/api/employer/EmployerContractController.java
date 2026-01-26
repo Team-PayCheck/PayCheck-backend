@@ -17,13 +17,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/employer")
 @RequiredArgsConstructor
-@PreAuthorize("@userPermission.isEmployer()")
+@PreAuthorize("@permissionEvaluator.isEmployer()")
 public class EmployerContractController {
 
     private final ContractService contractService;
 
     @Operation(summary = "사업장에 근로자 추가", description = "사업장에 근로자를 추가하고 계약을 생성합니다.")
-    @PreAuthorize("@workplacePermission.canAccess(#workplaceId)")
+    @PreAuthorize("@permissionEvaluator.canAccessWorkplace(#workplaceId)")
     @PostMapping("/workplaces/{workplaceId}/workers")
     public ApiResponse<ContractDto.Response> addWorkerToWorkplace(
             @Parameter(description = "사업장 ID", required = true) @PathVariable Long workplaceId,
@@ -32,7 +32,7 @@ public class EmployerContractController {
     }
 
     @Operation(summary = "사업장의 근로자 목록 조회", description = "특정 사업장에 소속된 근로자 목록을 조회합니다.")
-    @PreAuthorize("@workplacePermission.canAccess(#workplaceId)")
+    @PreAuthorize("@permissionEvaluator.canAccessWorkplace(#workplaceId)")
     @GetMapping("/workplaces/{workplaceId}/workers")
     public ApiResponse<List<ContractDto.ListResponse>> getWorkplaceWorkers(
             @Parameter(description = "사업장 ID", required = true) @PathVariable Long workplaceId) {
@@ -40,7 +40,7 @@ public class EmployerContractController {
     }
 
     @Operation(summary = "계약 상세 조회", description = "특정 근로 계약의 상세 정보를 조회합니다.")
-    @PreAuthorize("@contractPermission.canAccessAsEmployer(#id)")
+    @PreAuthorize("@permissionEvaluator.canAccessContractAsEmployer(#id)")
     @GetMapping("/contracts/{id}")
     public ApiResponse<ContractDto.Response> getContract(
             @Parameter(description = "계약 ID", required = true) @PathVariable Long id) {
@@ -48,7 +48,7 @@ public class EmployerContractController {
     }
 
     @Operation(summary = "계약 정보 수정", description = "근로 계약 정보를 수정합니다.")
-    @PreAuthorize("@contractPermission.canAccessAsEmployer(#id)")
+    @PreAuthorize("@permissionEvaluator.canAccessContractAsEmployer(#id)")
     @PutMapping("/contracts/{id}")
     public ApiResponse<ContractDto.Response> updateContract(
             @Parameter(description = "계약 ID", required = true) @PathVariable Long id,
@@ -57,7 +57,7 @@ public class EmployerContractController {
     }
 
     @Operation(summary = "계약 종료", description = "근로 계약을 종료 처리합니다.")
-    @PreAuthorize("@contractPermission.canAccessAsEmployer(#id)")
+    @PreAuthorize("@permissionEvaluator.canAccessContractAsEmployer(#id)")
     @DeleteMapping("/contracts/{id}")
     public ApiResponse<Void> terminateContract(
             @Parameter(description = "계약 ID", required = true) @PathVariable Long id) {
