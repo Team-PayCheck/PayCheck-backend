@@ -1,0 +1,40 @@
+{
+  "weeklyPaidLeave": [
+    {
+      "name": "paid-leave-15h01m-wage-10003",
+      "hourlyWage": "10003",
+      "totalWorkHours": "15.01",
+      "expectedWon": "30409"
+    },
+    {
+      "name": "paid-leave-40h01m-wage-10000",
+      "hourlyWage": "10000",
+      "totalWorkHours": "40.01",
+      "expectedWon": "80000"
+    }
+  ],
+  "workRecord": [
+    {
+      "name": "weekday-8h01m-overtime-wage-10000",
+      "hourlyWage": "10000",
+      "workDate": "2024-01-16",
+      "startTime": "09:00",
+      "endTime": "17:01",
+      "breakMinutes": 0,
+      "isHoliday": false,
+      "isSmallWorkplace": false,
+      "expectedWon": "80300"
+    },
+    {
+      "name": "weekday-night-overtime-20-0601-wage-10003",
+      "hourlyWage": "10003",
+      "workDate": "2024-01-17",
+      "startTime": "20:00",
+      "endTime": "06:01",
+      "breakMinutes": 0,
+      "isHoliday": false,
+      "isSmallWorkplace": false,
+      "expectedWon": "150345"
+    }
+  ]
+}
