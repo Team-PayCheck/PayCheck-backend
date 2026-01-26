@@ -12,6 +12,10 @@ import java.time.LocalDate;
 @Table(name = "salary",
         indexes = {
                 @Index(name = "idx_contract_year_month", columnList = "contract_id,salary_year,salary_month")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_salary_contract_year_month",
+                        columnNames = {"contract_id", "salary_year", "salary_month"})
         })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -22,6 +26,9 @@ public class Salary extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Version
+    private Long version;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contract_id", nullable = false)
@@ -68,4 +75,25 @@ public class Salary extends BaseEntity {
 
     @Column(name = "payment_due_date")
     private LocalDate paymentDueDate;
+
+    /**
+     * 급여 계산 결과를 업데이트합니다.
+     * JPA 영속성 컨텍스트 추적을 유지하면서 필드를 변경합니다.
+     */
+    public void updateCalculation(BigDecimal totalWorkHours, BigDecimal basePay,
+                                   BigDecimal overtimePay, BigDecimal nightPay, BigDecimal holidayPay,
+                                   BigDecimal totalGrossPay, BigDecimal fourMajorInsurance, BigDecimal incomeTax,
+                                   BigDecimal localIncomeTax, BigDecimal totalDeduction, BigDecimal netPay) {
+        this.totalWorkHours = totalWorkHours;
+        this.basePay = basePay;
+        this.overtimePay = overtimePay;
+        this.nightPay = nightPay;
+        this.holidayPay = holidayPay;
+        this.totalGrossPay = totalGrossPay;
+        this.fourMajorInsurance = fourMajorInsurance;
+        this.incomeTax = incomeTax;
+        this.localIncomeTax = localIncomeTax;
+        this.totalDeduction = totalDeduction;
+        this.netPay = netPay;
+    }
 }

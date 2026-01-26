@@ -166,9 +166,9 @@ class SalaryServiceSimpleTest {
 
         when(weeklyAllowanceRepository.findByContractIdAndYearMonth(eq(contractId), anyInt(), anyInt()))
                 .thenReturn(Collections.emptyList());
-        when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
-                .thenReturn(Collections.emptyList());
-        when(salaryRepository.save(any(Salary.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(salaryRepository.findByContractIdAndYearAndMonthWithLock(contractId, year, month))
+                .thenReturn(Optional.empty());
+        when(salaryRepository.saveAndFlush(any(Salary.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
         salaryService.calculateSalaryByWorkRecords(contractId, year, month);
@@ -176,7 +176,7 @@ class SalaryServiceSimpleTest {
         // then
         verify(workRecordRepository).findByContractAndDateRange(eq(contractId), eq(febStart), eq(febEnd));
         verify(weeklyAllowanceRepository).findByContractIdAndYearMonth(eq(contractId), eq(2024), eq(2));
-        verify(salaryRepository).save(argThat(saved ->
+        verify(salaryRepository).saveAndFlush(argThat(saved ->
                 saved.getPaymentDueDate().equals(LocalDate.of(2024, 2, 29))));
     }
 }

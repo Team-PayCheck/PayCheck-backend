@@ -77,6 +77,9 @@ public class ErrorCode {
     public static final String DUPLICATE_WORKER_CODE = "DUPLICATE_WORKER_CODE";
     public static final String DUPLICATE_BUSINESS_NUMBER = "DUPLICATE_BUSINESS_NUMBER";
 
+    // Concurrency Control
+    public static final String SALARY_CONCURRENT_MODIFICATION = "SALARY_CONCURRENT_MODIFICATION";
+
     private ErrorCode() {
         // 인스턴스화 방지
     }

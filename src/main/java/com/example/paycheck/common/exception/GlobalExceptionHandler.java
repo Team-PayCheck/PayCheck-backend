@@ -1,9 +1,12 @@
 package com.example.paycheck.common.exception;
 
 import com.example.paycheck.common.dto.ApiResponse;
+import jakarta.persistence.OptimisticLockException;
+import jakarta.persistence.PessimisticLockException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -68,6 +71,22 @@ public class GlobalExceptionHandler {
         }
 
         return ApiResponse.error(errorCode, errorMessage);
+    }
+
+    @ExceptionHandler({OptimisticLockException.class, ObjectOptimisticLockingFailureException.class})
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleOptimisticLockException(Exception e) {
+        log.warn("OptimisticLockException: {}", e.getMessage());
+        return ApiResponse.error(ErrorCode.SALARY_CONCURRENT_MODIFICATION,
+                "급여 계산 중 동시 수정이 발생했습니다. 다시 시도해 주세요.");
+    }
+
+    @ExceptionHandler(PessimisticLockException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handlePessimisticLockException(PessimisticLockException e) {
+        log.warn("PessimisticLockException: {}", e.getMessage());
+        return ApiResponse.error(ErrorCode.SALARY_CONCURRENT_MODIFICATION,
+                "급여 계산이 진행 중입니다. 잠시 후 다시 시도해 주세요.");
     }
 
     @ExceptionHandler(Exception.class)

@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -192,33 +193,29 @@ public class SalaryService {
             netPay = BigDecimal.ZERO;
         }
 
-        // 기존 급여 정보 확인 또는 새로 생성
-        List<Salary> existingSalaries = salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month);
+        // 비관적 잠금으로 기존 급여 조회 (동시성 제어)
+        Optional<Salary> lockedSalary = salaryRepository.findByContractIdAndYearAndMonthWithLock(contractId, year, month);
         Salary salary;
 
-        if (!existingSalaries.isEmpty()) {
-            // 기존 급여 정보 업데이트
-            salary = existingSalaries.get(0);
-            salary = Salary.builder()
-                    .id(salary.getId())
-                    .contract(contract)
-                    .year(year)
-                    .month(month)
-                    .totalWorkHours(totalWorkHours)
-                    .basePay(totalBasePay)
-                    .overtimePay(totalOvertimePay)
-                    .nightPay(totalNightPay)
-                    .holidayPay(totalHolidayPay)
-                    .totalGrossPay(totalGrossPay)
-                    .fourMajorInsurance(fourMajorInsurance)
-                    .incomeTax(incomeTax)
-                    .localIncomeTax(localIncomeTax)
-                    .totalDeduction(totalDeduction)
-                    .netPay(netPay)
-                    .paymentDueDate(salary.getPaymentDueDate())
-                    .build();
+        if (lockedSalary.isPresent()) {
+            // 기존 급여 정보 업데이트 (JPA 영속성 컨텍스트 추적 유지)
+            salary = lockedSalary.get();
+            salary.updateCalculation(
+                    totalWorkHours,
+                    totalBasePay,
+                    totalOvertimePay,
+                    totalNightPay,
+                    totalHolidayPay,
+                    totalGrossPay,
+                    fourMajorInsurance,
+                    incomeTax,
+                    localIncomeTax,
+                    totalDeduction,
+                    netPay
+            );
+            // dirty checking으로 자동 저장됨
         } else {
-            // 새로운 급여 생성
+            // 새로운 급여 생성 (saveAndFlush로 중복 즉시 감지)
             salary = Salary.builder()
                     .contract(contract)
                     .year(year)
@@ -236,9 +233,9 @@ public class SalaryService {
                     .netPay(netPay)
                     .paymentDueDate(adjustDayOfMonth(LocalDate.of(year, month, 1), contract.getPaymentDay()))
                     .build();
+            salaryRepository.saveAndFlush(salary);
         }
 
-        salaryRepository.save(salary);
         return SalaryDto.Response.from(salary);
     }
 
