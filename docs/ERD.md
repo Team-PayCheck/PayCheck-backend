@@ -23,6 +23,7 @@ erDiagram
     Salary ||--|| Payment : "paid_through"
 
     User ||--o{ Notification : "receives"
+    User ||--o| RefreshToken : "has"
 
     User {
         bigint id PK
@@ -196,6 +197,15 @@ erDiagram
         datetime created_at
         datetime updated_at
     }
+
+    RefreshToken {
+        bigint id PK
+        bigint user_id FK UK "User ID (사용자당 1개)"
+        string token UK "Refresh Token 값 (length 500)"
+        datetime expires_at "만료 일시"
+        datetime created_at
+        datetime updated_at
+    }
 ```
 
 ## 엔티티 설명
@@ -310,10 +320,19 @@ erDiagram
 - 푸시, 이메일, SMS 알림 개별 설정
 - 알림 유형별 활성화/비활성화 설정
 
+### 13. RefreshToken (리프레시 토큰)
+- JWT 인증을 위한 Refresh Token 저장
+- **user_id**: 사용자당 1개의 토큰만 유지 (UNIQUE 제약)
+- **token**: Refresh Token 값 (UNIQUE 제약)
+- **expires_at**: 토큰 만료 일시
+- RTR(Refresh Token Rotation) 방식으로 토큰 갱신 시 기존 토큰 자동 교체
+- DB 레벨 Upsert(INSERT ... ON DUPLICATE KEY UPDATE)로 원자적 저장
+
 ## 주요 관계
 
 1. **User ↔ Employer/Worker**: 상속 관계 (Single Table or Joined)
 2. **User → UserSettings**: 1:1 (사용자 설정)
+3. **User → RefreshToken**: 1:1 (JWT 인증 토큰)
 3. **Employer → Workplace**: 1:N (한 고용주가 여러 사업장 운영)
 4. **Workplace ↔ Worker → WorkerContract**: N:M (다대다 관계를 계약으로 해소)
 5. **WorkerContract → WorkRecord/Salary/WeeklyAllowance**: 1:N
@@ -351,6 +370,7 @@ erDiagram
 - Payment: salary_id, status
 - Notification: user_id, is_read, created_at
 - UserSettings: user_id (UK)
+- RefreshToken: user_id (UK), token (UK)
 
 ## 보안 고려사항
 
