@@ -3,7 +3,9 @@ package com.example.paycheck.domain.salary.service;
 import com.example.paycheck.common.exception.NotFoundException;
 import com.example.paycheck.domain.contract.entity.WorkerContract;
 import com.example.paycheck.domain.contract.repository.WorkerContractRepository;
+import com.example.paycheck.domain.allowance.entity.WeeklyAllowance;
 import com.example.paycheck.domain.allowance.repository.WeeklyAllowanceRepository;
+import com.example.paycheck.domain.salary.dto.SalaryDto;
 import com.example.paycheck.domain.salary.entity.Salary;
 import com.example.paycheck.domain.salary.repository.SalaryRepository;
 import com.example.paycheck.domain.salary.util.DeductionCalculator;
@@ -23,8 +25,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -178,5 +182,82 @@ class SalaryServiceSimpleTest {
         verify(weeklyAllowanceRepository).findByContractIdAndYearMonth(eq(contractId), eq(2024), eq(2));
         verify(salaryRepository).save(argThat(saved ->
                 saved.getPaymentDueDate().equals(LocalDate.of(2024, 2, 29))));
+    }
+
+    @Test
+    @DisplayName("급여 자동 계산 - 주휴/연장 수당 월 경계 이월(마지막 주차 제외)")
+    void calculateSalaryByWorkRecords_IncludesPreviousMonthCarryoverExcludesCurrentLastWeek() {
+        // given
+        Long contractId = 1L;
+        Integer year = 2024;
+        Integer month = 3;
+
+        WorkerContract contract = mock(WorkerContract.class);
+        when(contract.getPaymentDay()).thenReturn(25);
+        when(contract.getPayrollDeductionType()).thenReturn(DeductionCalculator.PayrollDeductionType.PART_TIME_NONE);
+
+        User workerUser = mock(User.class);
+        when(workerUser.getName()).thenReturn("홍길동");
+
+        Worker worker = mock(Worker.class);
+        when(worker.getId()).thenReturn(100L);
+        when(worker.getUser()).thenReturn(workerUser);
+
+        Workplace workplace = mock(Workplace.class);
+        when(workplace.getId()).thenReturn(200L);
+        when(workplace.getName()).thenReturn("테스트 사업장");
+
+        when(contract.getWorker()).thenReturn(worker);
+        when(contract.getWorkplace()).thenReturn(workplace);
+        when(workerContractRepository.findById(contractId)).thenReturn(Optional.of(contract));
+
+        LocalDate startDate = LocalDate.of(2024, 2, 25);
+        LocalDate endDate = LocalDate.of(2024, 3, 24);
+
+        WorkRecord workRecord = mock(WorkRecord.class);
+        when(workRecord.getTotalHours()).thenReturn(new BigDecimal("8.00"));
+        when(workRecord.getBaseSalary()).thenReturn(new BigDecimal("100000.00"));
+        when(workRecord.getNightSalary()).thenReturn(BigDecimal.ZERO);
+        when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+
+        when(workRecordRepository.findByContractAndDateRange(eq(contractId), eq(startDate), eq(endDate)))
+                .thenReturn(List.of(workRecord));
+
+        WeeklyAllowance includedCurrent = mock(WeeklyAllowance.class);
+        when(includedCurrent.getWeekStartDate()).thenReturn(LocalDate.of(2024, 3, 4));
+        when(includedCurrent.getWeekEndDate()).thenReturn(LocalDate.of(2024, 3, 10));
+        when(includedCurrent.getWeeklyPaidLeaveAmount()).thenReturn(new BigDecimal("30000.00"));
+        when(includedCurrent.getOvertimeAmount()).thenReturn(new BigDecimal("12000.00"));
+
+        WeeklyAllowance excludedCurrentLastWeek = mock(WeeklyAllowance.class);
+        when(excludedCurrentLastWeek.getWeekStartDate()).thenReturn(LocalDate.of(2024, 3, 25));
+        when(excludedCurrentLastWeek.getWeekEndDate()).thenReturn(LocalDate.of(2024, 3, 31));
+
+        WeeklyAllowance includedPreviousLastWeek = mock(WeeklyAllowance.class);
+        when(includedPreviousLastWeek.getWeekStartDate()).thenReturn(LocalDate.of(2024, 2, 19));
+        when(includedPreviousLastWeek.getWeekEndDate()).thenReturn(LocalDate.of(2024, 2, 25));
+        when(includedPreviousLastWeek.getWeeklyPaidLeaveAmount()).thenReturn(new BigDecimal("40000.00"));
+        when(includedPreviousLastWeek.getOvertimeAmount()).thenReturn(new BigDecimal("10000.00"));
+
+        when(weeklyAllowanceRepository.findByContractIdAndYearMonth(contractId, year, month))
+                .thenReturn(List.of(includedCurrent, excludedCurrentLastWeek));
+        when(weeklyAllowanceRepository.findByContractIdAndYearMonth(contractId, 2024, 2))
+                .thenReturn(List.of(includedPreviousLastWeek));
+
+        when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
+                .thenReturn(Collections.emptyList());
+        when(salaryRepository.save(any(Salary.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        SalaryDto.Response response = salaryService.calculateSalaryByWorkRecords(contractId, year, month);
+
+        // then
+        assertThat(response.getTotalGrossPay()).isEqualByComparingTo(new BigDecimal("192000.00"));
+        assertThat(response.getOvertimePay()).isEqualByComparingTo(new BigDecimal("22000.00"));
+        assertThat(response.getPaymentDueDate()).isEqualTo("2024-03-25");
+
+        verify(workRecordRepository).findByContractAndDateRange(eq(contractId), eq(startDate), eq(endDate));
+        verify(weeklyAllowanceRepository).findByContractIdAndYearMonth(contractId, year, month);
+        verify(weeklyAllowanceRepository).findByContractIdAndYearMonth(contractId, 2024, 2);
     }
 }
