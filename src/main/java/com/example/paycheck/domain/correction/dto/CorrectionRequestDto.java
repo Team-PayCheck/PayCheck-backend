@@ -4,6 +4,7 @@ import com.example.paycheck.domain.correction.entity.CorrectionRequest;
 import com.example.paycheck.domain.correction.enums.CorrectionStatus;
 import com.example.paycheck.domain.correction.enums.RequestType;
 import com.example.paycheck.domain.user.entity.User;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -36,9 +37,13 @@ public class CorrectionRequestDto {
         private LocalDate requestedWorkDate;
 
         @NotNull(message = "요청 시작 시간은 필수입니다.")
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "09:00")
         private LocalTime requestedStartTime;
 
         @NotNull(message = "요청 종료 시간은 필수입니다.")
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "18:00")
         private LocalTime requestedEndTime;
 
         // CREATE 타입에서 선택적
@@ -58,10 +63,18 @@ public class CorrectionRequestDto {
         private Long workRecordId;
         private Long contractId;
         private LocalDate originalWorkDate;
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "09:00")
         private LocalTime originalStartTime;
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "18:00")
         private LocalTime originalEndTime;
         private LocalDate requestedWorkDate;
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "09:00")
         private LocalTime requestedStartTime;
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "18:00")
         private LocalTime requestedEndTime;
         private Integer requestedBreakMinutes;
         private String requestedMemo;
@@ -103,9 +116,17 @@ public class CorrectionRequestDto {
         private RequestType type;
         private Long workRecordId;
         private LocalDate workDate;
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "09:00")
         private LocalTime originalStartTime;
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "18:00")
         private LocalTime originalEndTime;
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "09:00")
         private LocalTime requestedStartTime;
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "18:00")
         private LocalTime requestedEndTime;
         private CorrectionStatus status;
         private RequesterInfo requester;

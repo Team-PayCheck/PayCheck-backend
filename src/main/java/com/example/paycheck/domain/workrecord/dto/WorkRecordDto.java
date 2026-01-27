@@ -2,6 +2,8 @@ package com.example.paycheck.domain.workrecord.dto;
 
 import com.example.paycheck.domain.workrecord.entity.WorkRecord;
 import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
@@ -29,7 +31,11 @@ public class WorkRecordDto {
         private Long id;
         private Long contractId;
         private LocalDate workDate;
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "09:00")
         private LocalTime startTime;
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "18:00")
         private LocalTime endTime;
         private Integer breakMinutes;
         private Integer totalWorkMinutes;
@@ -63,7 +69,11 @@ public class WorkRecordDto {
         private String workerCode;
         private String workplaceName;
         private LocalDate workDate;
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "09:00")
         private LocalTime startTime;
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "18:00")
         private LocalTime endTime;
         private Integer breakMinutes;
         private Integer totalWorkMinutes;
@@ -101,7 +111,11 @@ public class WorkRecordDto {
         private String workerName;
         private String workplaceName;
         private LocalDate workDate;
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "09:00")
         private LocalTime startTime;
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "18:00")
         private LocalTime endTime;
         private Integer breakMinutes;
         private BigDecimal hourlyWage;
@@ -136,9 +150,13 @@ public class WorkRecordDto {
         private LocalDate workDate;
 
         @NotNull(message = "시작 시간은 필수입니다.")
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "09:00")
         private LocalTime startTime;
 
         @NotNull(message = "종료 시간은 필수입니다.")
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "18:00")
         private LocalTime endTime;
 
         @Min(value = 0, message = "휴게 시간은 0분 이상이어야 합니다.")
@@ -147,6 +165,8 @@ public class WorkRecordDto {
         @Size(max = 500, message = "메모는 500자 이하로 입력해주세요.")
         private String memo;
 
+        @JsonIgnore
+        @Schema(hidden = true)
         @AssertTrue(message = "종료 시간은 시작 시간과 달라야 합니다.")
         public boolean isValidTimeRange() {
             if (startTime == null || endTime == null) return true; // null 체크는 @NotNull이 담당
@@ -167,9 +187,13 @@ public class WorkRecordDto {
         private List<LocalDate> workDates;
 
         @NotNull(message = "시작 시간은 필수입니다.")
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "09:00")
         private LocalTime startTime;
 
         @NotNull(message = "종료 시간은 필수입니다.")
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "18:00")
         private LocalTime endTime;
 
         @Min(value = 0, message = "휴게 시간은 0분 이상이어야 합니다.")
@@ -178,6 +202,8 @@ public class WorkRecordDto {
         @Size(max = 500, message = "메모는 500자 이하로 입력해주세요.")
         private String memo;
 
+        @JsonIgnore
+        @Schema(hidden = true)
         @AssertTrue(message = "종료 시간은 시작 시간과 달라야 합니다.")
         public boolean isValidTimeRange() {
             if (startTime == null || endTime == null) return true; // null 체크는 @NotNull이 담당
@@ -191,8 +217,12 @@ public class WorkRecordDto {
     @AllArgsConstructor
     @Schema(name = "WorkRecordUpdateRequest")
     public static class UpdateRequest {
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "09:00")
         private LocalTime startTime;
 
+        @JsonFormat(pattern = "HH:mm")
+        @Schema(type = "string", example = "18:00")
         private LocalTime endTime;
 
         @Min(value = 0, message = "휴게 시간은 0분 이상이어야 합니다.")
@@ -201,6 +231,8 @@ public class WorkRecordDto {
         @Size(max = 500, message = "메모는 500자 이하로 입력해주세요.")
         private String memo;
 
+        @JsonIgnore
+        @Schema(hidden = true)
         @AssertTrue(message = "종료 시간은 시작 시간과 달라야 합니다.")
         public boolean isValidTimeRange() {
             if (startTime == null || endTime == null) return true; // null 허용 필드이므로 검증 생략
