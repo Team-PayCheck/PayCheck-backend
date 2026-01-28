@@ -12,6 +12,9 @@ import com.example.paycheck.domain.correction.entity.CorrectionRequest;
 import com.example.paycheck.domain.correction.enums.CorrectionStatus;
 import com.example.paycheck.domain.correction.enums.RequestType;
 import com.example.paycheck.domain.correction.repository.CorrectionRequestRepository;
+import com.example.paycheck.domain.notification.enums.NotificationActionType;
+import com.example.paycheck.domain.notification.enums.NotificationType;
+import com.example.paycheck.domain.notification.event.NotificationEvent;
 import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.workrecord.dto.WorkRecordDto;
 import com.example.paycheck.domain.workrecord.entity.WorkRecord;
@@ -19,11 +22,16 @@ import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import com.example.paycheck.domain.workrecord.service.WorkRecordCommandService;
 import com.example.paycheck.domain.workrecord.service.WorkRecordCoordinatorService;
 import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +44,7 @@ public class CorrectionRequestService {
     private final WorkerContractRepository workerContractRepository;
     private final WorkRecordCommandService workRecordCommandService;
     private final WorkRecordCoordinatorService coordinatorService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // ===== 근로자용 API =====
 
@@ -108,6 +117,7 @@ public class CorrectionRequestService {
                 .build();
 
         CorrectionRequest savedRequest = correctionRequestRepository.save(correctionRequest);
+        publishCorrectionRequestCreatedEvent(savedRequest);
         return CorrectionRequestDto.Response.from(savedRequest);
     }
 
@@ -152,6 +162,7 @@ public class CorrectionRequestService {
                 .build();
 
         CorrectionRequest savedRequest = correctionRequestRepository.save(correctionRequest);
+        publishCorrectionRequestCreatedEvent(savedRequest);
         return CorrectionRequestDto.Response.from(savedRequest);
     }
 
@@ -196,6 +207,7 @@ public class CorrectionRequestService {
                 .build();
 
         CorrectionRequest savedRequest = correctionRequestRepository.save(correctionRequest);
+        publishCorrectionRequestCreatedEvent(savedRequest);
         return CorrectionRequestDto.Response.from(savedRequest);
     }
 
@@ -304,6 +316,7 @@ public class CorrectionRequestService {
         // 상태 업데이트
         correctionRequest.approve();
 
+        publishCorrectionResponseEvent(correctionRequest, true);
         return CorrectionRequestDto.Response.from(correctionRequest);
     }
 
@@ -366,6 +379,65 @@ public class CorrectionRequestService {
 
         correctionRequest.reject();
 
+        publishCorrectionResponseEvent(correctionRequest, false);
         return CorrectionRequestDto.Response.from(correctionRequest);
+    }
+
+    private void publishCorrectionRequestCreatedEvent(CorrectionRequest correctionRequest) {
+        WorkerContract contract = getContractForCorrectionRequest(correctionRequest);
+        User employerUser = contract.getWorkplace().getEmployer().getUser();
+        LocalDate workDate = getTargetWorkDate(correctionRequest);
+        String title = String.format("%s 정정 요청이 도착했습니다.", workDate);
+
+        NotificationEvent event = NotificationEvent.builder()
+                .user(employerUser)
+                .type(NotificationType.UNREAD_CORRECTION_REQUEST)
+                .title(title)
+                .actionType(NotificationActionType.VIEW_CORRECTION_REQUEST)
+                .actionData(buildActionData(correctionRequest.getId()))
+                .build();
+
+        eventPublisher.publishEvent(event);
+    }
+
+    private void publishCorrectionResponseEvent(CorrectionRequest correctionRequest, boolean approved) {
+        User worker = correctionRequest.getRequester();
+        LocalDate workDate = getTargetWorkDate(correctionRequest);
+        String title = String.format("%s 정정 요청이 %s되었습니다.", workDate, approved ? "승인" : "거절");
+
+        NotificationEvent event = NotificationEvent.builder()
+                .user(worker)
+                .type(NotificationType.CORRECTION_RESPONSE)
+                .title(title)
+                .actionType(NotificationActionType.VIEW_CORRECTION_REQUEST)
+                .actionData(buildActionData(correctionRequest.getId()))
+                .build();
+
+        eventPublisher.publishEvent(event);
+    }
+
+    private WorkerContract getContractForCorrectionRequest(CorrectionRequest correctionRequest) {
+        if (correctionRequest.getContract() != null) {
+            return correctionRequest.getContract();
+        }
+        return correctionRequest.getWorkRecord().getContract();
+    }
+
+    private LocalDate getTargetWorkDate(CorrectionRequest correctionRequest) {
+        if (correctionRequest.getRequestedWorkDate() != null) {
+            return correctionRequest.getRequestedWorkDate();
+        }
+        return correctionRequest.getOriginalWorkDate();
+    }
+
+    private String buildActionData(Long correctionRequestId) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> data = new HashMap<>();
+            data.put("correctionRequestId", correctionRequestId);
+            return mapper.writeValueAsString(data);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
