@@ -386,8 +386,8 @@ public class CorrectionRequestService {
     private void publishCorrectionRequestCreatedEvent(CorrectionRequest correctionRequest) {
         WorkerContract contract = getContractForCorrectionRequest(correctionRequest);
         User employerUser = contract.getWorkplace().getEmployer().getUser();
-        LocalDate workDate = getTargetWorkDate(correctionRequest);
-        String title = String.format("%s 정정 요청이 도착했습니다.", workDate);
+        User requester = correctionRequest.getRequester();
+        String title = String.format("%s님의 정정 요청이 도착했습니다.", requester.getName());
 
         NotificationEvent event = NotificationEvent.builder()
                 .user(employerUser)
@@ -402,8 +402,7 @@ public class CorrectionRequestService {
 
     private void publishCorrectionResponseEvent(CorrectionRequest correctionRequest, boolean approved) {
         User worker = correctionRequest.getRequester();
-        LocalDate workDate = getTargetWorkDate(correctionRequest);
-        String title = String.format("%s 정정 요청이 %s되었습니다.", workDate, approved ? "승인" : "거절");
+        String title = String.format("%s 정정 요청이 %s되었습니다.", getTargetWorkDate(correctionRequest), approved ? "승인" : "거절");
 
         NotificationEvent event = NotificationEvent.builder()
                 .user(worker)
