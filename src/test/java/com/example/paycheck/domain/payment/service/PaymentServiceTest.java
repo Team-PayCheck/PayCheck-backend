@@ -6,6 +6,8 @@ import com.example.paycheck.domain.payment.dto.PaymentDto;
 import com.example.paycheck.domain.payment.entity.Payment;
 import com.example.paycheck.domain.payment.enums.PaymentStatus;
 import com.example.paycheck.domain.payment.repository.PaymentRepository;
+import com.example.paycheck.domain.notification.enums.NotificationType;
+import com.example.paycheck.domain.notification.event.NotificationEvent;
 import com.example.paycheck.domain.salary.entity.Salary;
 import com.example.paycheck.domain.salary.repository.SalaryRepository;
 import com.example.paycheck.domain.worker.entity.Worker;
@@ -15,11 +17,14 @@ import com.example.paycheck.domain.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +43,9 @@ class PaymentServiceTest {
 
     @Mock
     private SalaryRepository salaryRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private PaymentService paymentService;
@@ -144,6 +152,12 @@ class PaymentServiceTest {
                 .contains("amount=10000")
                 .contains("origin=wage-manager");
         verify(paymentRepository).save(any(Payment.class));
+
+        ArgumentCaptor<NotificationEvent> captor = ArgumentCaptor.forClass(NotificationEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        NotificationEvent event = captor.getValue();
+        assertThat(event.getType()).isEqualTo(NotificationType.PAYMENT_SUCCESS);
+        assertThat(event.getUser()).isEqualTo(user);
     }
 
     @Test
@@ -153,6 +167,7 @@ class PaymentServiceTest {
         Worker worker = mock(Worker.class);
         when(worker.getBankName()).thenReturn(null);
         when(worker.getAccountNumber()).thenReturn(null);
+        when(worker.getUser()).thenReturn(mock(User.class));
 
         WorkerContract contract = mock(WorkerContract.class);
         when(contract.getWorker()).thenReturn(worker);
@@ -160,6 +175,8 @@ class PaymentServiceTest {
         Salary salary = mock(Salary.class);
         when(salary.getId()).thenReturn(1L);
         when(salary.getNetPay()).thenReturn(BigDecimal.valueOf(10000));
+        when(salary.getYear()).thenReturn(2025);
+        when(salary.getMonth()).thenReturn(1);
         when(salary.getContract()).thenReturn(contract);
 
         PaymentDto.PaymentRequest request = PaymentDto.PaymentRequest.builder()
@@ -225,5 +242,43 @@ class PaymentServiceTest {
         // then
         assertThat(result).isNotNull();
         verify(paymentRepository).findByWorkplaceIdAndYearMonth(1L, 2024, 1);
+    }
+
+    @Test
+    @DisplayName("송금 자동 실패 처리 시 알림 발행")
+    void autoFailExpiredPendingPayments_PublishesNotification() {
+        // given
+        User employerUser = mock(User.class);
+        com.example.paycheck.domain.employer.entity.Employer employer = mock(com.example.paycheck.domain.employer.entity.Employer.class);
+        when(employer.getUser()).thenReturn(employerUser);
+
+        Workplace workplace = mock(Workplace.class);
+        when(workplace.getEmployer()).thenReturn(employer);
+
+        WorkerContract contract = mock(WorkerContract.class);
+        when(contract.getWorkplace()).thenReturn(workplace);
+
+        Salary salary = mock(Salary.class);
+        when(salary.getContract()).thenReturn(contract);
+        when(salary.getPaymentDueDate()).thenReturn(LocalDate.now().minusDays(1));
+        when(salary.getYear()).thenReturn(2025);
+        when(salary.getMonth()).thenReturn(1);
+
+        Payment payment = mock(Payment.class);
+        when(payment.getSalary()).thenReturn(salary);
+
+        when(paymentRepository.findByStatus(PaymentStatus.PENDING)).thenReturn(List.of(payment));
+
+        // when
+        paymentService.autoFailExpiredPendingPayments();
+
+        // then
+        verify(payment).fail(anyString());
+        verify(paymentRepository).save(payment);
+        ArgumentCaptor<NotificationEvent> captor = ArgumentCaptor.forClass(NotificationEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        NotificationEvent event = captor.getValue();
+        assertThat(event.getType()).isEqualTo(NotificationType.PAYMENT_FAILED);
+        assertThat(event.getUser()).isEqualTo(employerUser);
     }
 }

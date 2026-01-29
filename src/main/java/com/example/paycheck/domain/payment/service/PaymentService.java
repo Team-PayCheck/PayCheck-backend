@@ -7,19 +7,27 @@ import com.example.paycheck.domain.payment.dto.PaymentDto;
 import com.example.paycheck.domain.payment.entity.Payment;
 import com.example.paycheck.domain.payment.enums.PaymentStatus;
 import com.example.paycheck.domain.payment.repository.PaymentRepository;
+import com.example.paycheck.domain.notification.enums.NotificationActionType;
+import com.example.paycheck.domain.notification.enums.NotificationType;
+import com.example.paycheck.domain.notification.event.NotificationEvent;
 import com.example.paycheck.domain.salary.entity.Salary;
 import com.example.paycheck.domain.salary.repository.SalaryRepository;
 import com.example.paycheck.domain.payment.enums.PaymentMethod;
 import com.example.paycheck.domain.payment.util.TossLinkGenerator;
+import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.worker.entity.Worker;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -31,6 +39,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final SalaryRepository salaryRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 급여 지급 처리 (토스 딥링크 고정)
@@ -71,6 +80,8 @@ public class PaymentService {
         // 급여 송금 완료 처리
         payment.complete(UUID.randomUUID().toString());
         paymentRepository.save(payment);
+
+        publishPaymentSuccessEvent(payment, salary);
 
         String tossLink = buildTossLink(salary);
 
@@ -158,6 +169,7 @@ public class PaymentService {
             if (paymentDueDate != null && paymentDueDate.isBefore(yesterday.plusDays(1))) {
                 payment.fail("급여 지급 예정일(" + paymentDueDate + ")을 초과하여 자동으로 실패 처리되었습니다.");
                 paymentRepository.save(payment);
+                publishPaymentFailedEvent(payment);
             }
         }
     }
@@ -181,6 +193,49 @@ public class PaymentService {
         }
 
         return TossLinkGenerator.generateSupertossLink(bankName, accountNumber, salary.getNetPay());
+    }
+
+    private void publishPaymentSuccessEvent(Payment payment, Salary salary) {
+        User workerUser = salary.getContract().getWorker().getUser();
+        String title = String.format("%d년 %d월 급여가 입금되었습니다.", salary.getYear(), salary.getMonth());
+
+        NotificationEvent event = NotificationEvent.builder()
+                .user(workerUser)
+                .type(NotificationType.PAYMENT_SUCCESS)
+                .title(title)
+                .actionType(NotificationActionType.VIEW_SALARY)
+                .actionData(buildActionData(payment.getId(), salary.getId()))
+                .build();
+
+        eventPublisher.publishEvent(event);
+    }
+
+    private void publishPaymentFailedEvent(Payment payment) {
+        Salary salary = payment.getSalary();
+        User employerUser = salary.getContract().getWorkplace().getEmployer().getUser();
+        String title = String.format("%d년 %d월 급여 송금이 실패했습니다.", salary.getYear(), salary.getMonth());
+
+        NotificationEvent event = NotificationEvent.builder()
+                .user(employerUser)
+                .type(NotificationType.PAYMENT_FAILED)
+                .title(title)
+                .actionType(NotificationActionType.VIEW_PAYMENT_MANAGEMENT)
+                .actionData(buildActionData(payment.getId(), salary.getId()))
+                .build();
+
+        eventPublisher.publishEvent(event);
+    }
+
+    private String buildActionData(Long paymentId, Long salaryId) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> data = new HashMap<>();
+            data.put("paymentId", paymentId);
+            data.put("salaryId", salaryId);
+            return mapper.writeValueAsString(data);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
 }
