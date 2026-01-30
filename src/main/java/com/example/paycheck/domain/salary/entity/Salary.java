@@ -10,6 +10,10 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "salary",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_salary_contract_year_month",
+                columnNames = {"contract_id", "salary_year", "salary_month"}
+        ),
         indexes = {
                 @Index(name = "idx_contract_year_month", columnList = "contract_id,salary_year,salary_month")
         })
@@ -22,6 +26,9 @@ public class Salary extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Version
+    private Long version;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contract_id", nullable = false)
