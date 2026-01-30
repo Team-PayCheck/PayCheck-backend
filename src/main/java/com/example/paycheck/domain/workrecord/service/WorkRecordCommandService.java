@@ -21,16 +21,29 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class WorkRecordCommandService {
+
+    /**
+     * IN절 파라미터 제한을 위한 최대 배치 크기
+     * MySQL의 max_allowed_packet 및 IN절 제한을 고려하여 안전한 크기로 설정
+     */
+    private static final int MAX_BATCH_CHUNK_SIZE = 500;
 
     private final WorkRecordRepository workRecordRepository;
     private final WorkerContractRepository workerContractRepository;
@@ -238,36 +251,60 @@ public class WorkRecordCommandService {
     }
 
     /**
-     * 고용주가 근무 일정 일괄 생성
+     * 고용주가 근무 일정 일괄 생성 (최적화 버전)
      * 여러 날짜에 동일한 시간으로 일정 생성
+     * - 중복 체크 일괄 수행 (N번 쿼리 -> 1번 IN 쿼리)
+     * - WeeklyAllowance 일괄 조회/생성 (N번 -> 1~2번 쿼리)
+     * - WorkRecord 일괄 저장 (saveAll 사용)
      */
     public WorkRecordDto.BatchCreateResponse createWorkRecordsBatch(WorkRecordDto.BatchCreateRequest request) {
         WorkerContract contract = workerContractRepository.findById(request.getContractId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.CONTRACT_NOT_FOUND, "계약을 찾을 수 없습니다."));
 
-        int createdCount = 0;
+        List<LocalDate> requestedDates = request.getWorkDates();
 
-        for (LocalDate workDate : request.getWorkDates()) {
-            // 중복 체크 (이미 해당 날짜에 근무 기록이 있으면 스킵)
-            boolean exists = workRecordRepository.existsByContractAndWorkDate(contract, workDate);
-            if (exists) {
-                continue;
-            }
+        // 1. 중복 체크 일괄 수행 (IN절 파라미터 제한을 고려하여 분할 처리)
+        Set<LocalDate> existingDates = new HashSet<>();
+        for (List<LocalDate> chunk : partitionList(requestedDates, MAX_BATCH_CHUNK_SIZE)) {
+            existingDates.addAll(
+                    workRecordRepository.findExistingWorkDatesByContractAndWorkDates(
+                            contract.getId(), chunk));
+        }
 
+        // 2. 생성할 날짜만 필터링
+        List<LocalDate> datesToCreate = requestedDates.stream()
+                .filter(date -> !existingDates.contains(date))
+                .collect(Collectors.toList());
+
+        if (datesToCreate.isEmpty()) {
+            return WorkRecordDto.BatchCreateResponse.builder()
+                    .createdCount(0)
+                    .skippedCount(requestedDates.size())
+                    .totalRequested(requestedDates.size())
+                    .build();
+        }
+
+        // 3. WeeklyAllowance 일괄 조회/생성 (N번 쿼리 -> 1~2번 쿼리)
+        Map<LocalDate, WeeklyAllowance> weeklyAllowanceMap =
+                coordinatorService.getOrCreateWeeklyAllowances(contract.getId(), datesToCreate);
+
+        // 4. WorkRecord 객체 일괄 생성 (메모리에서)
+        List<WorkRecord> workRecordsToSave = new ArrayList<>();
+        Set<Long> affectedWeeklyAllowanceIds = new HashSet<>();
+
+        for (LocalDate workDate : datesToCreate) {
             int totalMinutes = calculateWorkMinutes(
                     LocalDateTime.of(workDate, request.getStartTime()),
                     LocalDateTime.of(workDate, request.getEndTime()),
                     request.getBreakMinutes() != null ? request.getBreakMinutes() : 0
             );
 
-            // 근무 날짜와 현재 날짜를 비교하여 상태 결정
             WorkRecordStatus status = workDate.isBefore(LocalDate.now())
                     ? WorkRecordStatus.COMPLETED
                     : WorkRecordStatus.SCHEDULED;
 
-            // WorkRecord가 생성된 주에 WeeklyAllowance 자동 생성/조회
-            WeeklyAllowance weeklyAllowance = coordinatorService.getOrCreateWeeklyAllowance(
-                    contract.getId(), workDate);
+            LocalDate weekStart = workDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+            WeeklyAllowance weeklyAllowance = weeklyAllowanceMap.get(weekStart);
 
             WorkRecord workRecord = WorkRecord.builder()
                     .contract(contract)
@@ -281,45 +318,55 @@ public class WorkRecordCommandService {
                     .weeklyAllowance(weeklyAllowance)
                     .build();
 
-            WorkRecord savedRecord = workRecordRepository.save(workRecord);
-            createdCount++;
-
-            // COMPLETED 상태면 정확한 휴일 정보와 사업장 규모를 반영하여 재계산
-            if (status == WorkRecordStatus.COMPLETED) {
-                calculationService.calculateWorkRecordDetails(savedRecord);
-                workRecordRepository.save(savedRecord);
-            }
-
-            // 도메인 간 협력 처리
-            if (status == WorkRecordStatus.COMPLETED) {
-                coordinatorService.handleWorkRecordCreation(savedRecord);
-                coordinatorService.handleWorkRecordCompletion(savedRecord);
-            } else {
-                coordinatorService.handleWorkRecordCreation(savedRecord);
-            }
+            workRecordsToSave.add(workRecord);
+            affectedWeeklyAllowanceIds.add(weeklyAllowance.getId());
         }
 
-        // 근로자에게 일괄 생성 알림 전송 (1회만)
-        if (createdCount > 0) {
+        // 5. WorkRecord 일괄 저장 (saveAll 사용)
+        List<WorkRecord> savedRecords = workRecordRepository.saveAll(workRecordsToSave);
+
+        // 6. COMPLETED 상태 WorkRecord 상세 계산
+        List<WorkRecord> completedRecords = savedRecords.stream()
+                .filter(wr -> wr.getStatus() == WorkRecordStatus.COMPLETED)
+                .collect(Collectors.toList());
+
+        for (WorkRecord completedRecord : completedRecords) {
+            calculationService.calculateWorkRecordDetails(completedRecord);
+        }
+
+        // 7. 계산된 WorkRecord 일괄 업데이트
+        if (!completedRecords.isEmpty()) {
+            workRecordRepository.saveAll(completedRecords);
+        }
+
+        // 8. 도메인 협력 처리 일괄 수행 (기존 handleBatchWorkRecordCreation 활용)
+        coordinatorService.handleBatchWorkRecordCreation(savedRecords);
+
+        // 9. COMPLETED 레코드들의 급여 일괄 재계산
+        if (!completedRecords.isEmpty()) {
+            coordinatorService.handleBatchWorkRecordCompletion(completedRecords);
+        }
+
+        // 10. 근로자에게 일괄 생성 알림 전송 (1회만)
+        if (!savedRecords.isEmpty()) {
             User worker = contract.getWorker().getUser();
-            String title = String.format("%d개의 근무 일정이 등록되었습니다.", createdCount);
+            String title = String.format("%d개의 근무 일정이 등록되었습니다.", savedRecords.size());
 
             NotificationEvent event = NotificationEvent.builder()
                     .user(worker)
                     .type(NotificationType.SCHEDULE_CREATED)
                     .title(title)
                     .actionType(NotificationActionType.VIEW_WORK_RECORD)
-                    .actionData(null)  // 일괄 생성이므로 특정 레코드 ID 없음
+                    .actionData(null)
                     .build();
 
             eventPublisher.publishEvent(event);
         }
 
-        // 결과 반환
         return WorkRecordDto.BatchCreateResponse.builder()
-                .createdCount(createdCount)
-                .skippedCount(request.getWorkDates().size() - createdCount)
-                .totalRequested(request.getWorkDates().size())
+                .createdCount(savedRecords.size())
+                .skippedCount(existingDates.size())
+                .totalRequested(requestedDates.size())
                 .build();
     }
 
@@ -363,5 +410,16 @@ public class WorkRecordCommandService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /**
+     * 리스트를 지정된 크기로 분할 (IN절 파라미터 제한 방어용)
+     */
+    private <T> List<List<T>> partitionList(List<T> list, int size) {
+        List<List<T>> partitions = new ArrayList<>();
+        for (int i = 0; i < list.size(); i += size) {
+            partitions.add(list.subList(i, Math.min(i + size, list.size())));
+        }
+        return partitions;
     }
 }

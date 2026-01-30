@@ -14,8 +14,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -87,5 +93,78 @@ public class WeeklyAllowanceService {
     @Transactional
     public void deleteWeeklyAllowance(Long weeklyAllowanceId) {
         weeklyAllowanceRepository.deleteById(weeklyAllowanceId);
+    }
+
+    /**
+     * 여러 날짜에 대한 WeeklyAllowance를 일괄 조회하거나 생성 (배치 처리용)
+     * @return Map<주 시작일(월요일), WeeklyAllowance>
+     */
+    @Transactional
+    public Map<LocalDate, WeeklyAllowance> getOrCreateWeeklyAllowancesForDates(Long contractId, List<LocalDate> workDates) {
+        if (workDates.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        // 날짜 범위 계산
+        LocalDate minDate = workDates.stream().min(LocalDate::compareTo).orElseThrow();
+        LocalDate maxDate = workDates.stream().max(LocalDate::compareTo).orElseThrow();
+
+        // 기존 WeeklyAllowance 일괄 조회
+        List<WeeklyAllowance> existingAllowances = weeklyAllowanceRepository
+                .findByContractAndDateRange(contractId, minDate, maxDate);
+
+        // 주 시작일 기준 Map 생성
+        Map<LocalDate, WeeklyAllowance> allowanceMap = existingAllowances.stream()
+                .collect(Collectors.toMap(
+                        WeeklyAllowance::getWeekStartDate,
+                        Function.identity(),
+                        (existing, replacement) -> existing));
+
+        // 없는 주에 대해 새로 생성
+        WorkerContract contract = workerContractRepository.findById(contractId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.CONTRACT_NOT_FOUND, "계약을 찾을 수 없습니다."));
+
+        List<WeeklyAllowance> newAllowances = new ArrayList<>();
+        for (LocalDate workDate : workDates) {
+            LocalDate weekStart = workDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+            if (!allowanceMap.containsKey(weekStart)) {
+                LocalDate weekEnd = workDate.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+                WeeklyAllowance newAllowance = WeeklyAllowance.builder()
+                        .contract(contract)
+                        .weekStartDate(weekStart)
+                        .weekEndDate(weekEnd)
+                        .build();
+                newAllowances.add(newAllowance);
+                allowanceMap.put(weekStart, newAllowance);
+            }
+        }
+
+        // 새 WeeklyAllowance 일괄 저장
+        if (!newAllowances.isEmpty()) {
+            weeklyAllowanceRepository.saveAll(newAllowances);
+        }
+
+        return allowanceMap;
+    }
+
+    /**
+     * 여러 WeeklyAllowance의 수당을 일괄 재계산 (배치 처리용)
+     */
+    @Transactional
+    public void recalculateAllowancesBatch(Set<Long> weeklyAllowanceIds) {
+        if (weeklyAllowanceIds.isEmpty()) {
+            return;
+        }
+
+        List<WeeklyAllowance> allowances = weeklyAllowanceRepository.findAllById(weeklyAllowanceIds);
+
+        for (WeeklyAllowance allowance : allowances) {
+            boolean isSmallWorkplace = allowance.getContract().getWorkplace().getIsLessThanFiveEmployees();
+            allowance.calculateTotalWorkHours();
+            allowance.calculateWeeklyPaidLeave();
+            allowance.calculateOvertime(isSmallWorkplace);
+        }
+
+        weeklyAllowanceRepository.saveAll(allowances);
     }
 }
