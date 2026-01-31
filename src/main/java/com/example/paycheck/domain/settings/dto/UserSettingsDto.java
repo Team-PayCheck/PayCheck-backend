@@ -42,6 +42,12 @@ public class UserSettingsDto {
         @Schema(description = "정정 요청 알림 활성화 여부")
         private Boolean correctionRequestAlertEnabled;
 
+        @Schema(description = "초대 알림 활성화 여부")
+        private Boolean invitationAlertEnabled;
+
+        @Schema(description = "퇴사 알림 활성화 여부")
+        private Boolean resignationAlertEnabled;
+
         public static Response from(UserSettings settings) {
             return Response.builder()
                     .id(settings.getId())
@@ -53,6 +59,8 @@ public class UserSettingsDto {
                     .scheduleChangeAlertEnabled(settings.getScheduleChangeAlertEnabled())
                     .paymentAlertEnabled(settings.getPaymentAlertEnabled())
                     .correctionRequestAlertEnabled(settings.getCorrectionRequestAlertEnabled())
+                    .invitationAlertEnabled(settings.getInvitationAlertEnabled())
+                    .resignationAlertEnabled(settings.getResignationAlertEnabled())
                     .build();
         }
     }
@@ -83,5 +91,11 @@ public class UserSettingsDto {
 
         @Schema(description = "정정 요청 알림 활성화 여부")
         private Boolean correctionRequestAlertEnabled;
+
+        @Schema(description = "초대 알림 활성화 여부")
+        private Boolean invitationAlertEnabled;
+
+        @Schema(description = "퇴사 알림 활성화 여부")
+        private Boolean resignationAlertEnabled;
     }
 }
