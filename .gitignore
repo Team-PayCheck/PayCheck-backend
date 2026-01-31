@@ -39,3 +39,4 @@ out/
 ### Claude Code ###
 .claude/
 .claude_docs
+CLAUDE.md

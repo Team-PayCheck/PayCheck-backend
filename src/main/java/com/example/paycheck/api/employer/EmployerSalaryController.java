@@ -16,13 +16,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/employer/salaries")
 @RequiredArgsConstructor
-@PreAuthorize("@userPermission.isEmployer()")
+@PreAuthorize("@permissionEvaluator.isEmployer()")
 public class EmployerSalaryController {
 
     private final SalaryService salaryService;
 
     @Operation(summary = "급여 목록 조회", description = "특정 사업장의 전체 급여 목록을 조회합니다.")
-    @PreAuthorize("@salaryPermission.canAccessWorkplaceSalaries(#workplaceId)")
+    @PreAuthorize("@permissionEvaluator.canAccessWorkplaceSalaries(#workplaceId)")
     @GetMapping
     public ApiResponse<List<SalaryDto.ListResponse>> getSalariesByWorkplace(
             @Parameter(description = "사업장 ID", required = true) @RequestParam Long workplaceId) {
@@ -30,7 +30,7 @@ public class EmployerSalaryController {
     }
 
     @Operation(summary = "급여 목록 조회 (연월)", description = "특정 사업장의 특정 연월 급여 목록을 조회합니다.")
-    @PreAuthorize("@salaryPermission.canAccessWorkplaceSalaries(#workplaceId)")
+    @PreAuthorize("@permissionEvaluator.canAccessWorkplaceSalaries(#workplaceId)")
     @GetMapping("/year-month")
     public ApiResponse<List<SalaryDto.ListResponse>> getSalariesByYearMonth(
             @Parameter(description = "사업장 ID", required = true) @RequestParam Long workplaceId,
@@ -40,7 +40,7 @@ public class EmployerSalaryController {
     }
 
     @Operation(summary = "급여 상세 조회", description = "특정 급여의 상세 정보를 조회합니다.")
-    @PreAuthorize("@salaryPermission.canAccess(#id)")
+    @PreAuthorize("@permissionEvaluator.canAccessSalary(#id)")
     @GetMapping("/{id}")
     public ApiResponse<SalaryDto.Response> getSalaryById(
             @Parameter(description = "급여 ID", required = true) @PathVariable Long id) {
@@ -48,7 +48,7 @@ public class EmployerSalaryController {
     }
 
     @Operation(summary = "급여 자동 계산", description = "근무 기록을 기반으로 급여를 자동 계산합니다. (세금/보험료 포함)")
-    @PreAuthorize("@salaryPermission.canCalculateForContract(#contractId)")
+    @PreAuthorize("@permissionEvaluator.canCalculateSalaryForContract(#contractId)")
     @PostMapping("/contracts/{contractId}/calculate")
     public ApiResponse<SalaryDto.Response> calculateSalaryByWorkRecords(
             @Parameter(description = "계약 ID", required = true) @PathVariable Long contractId,

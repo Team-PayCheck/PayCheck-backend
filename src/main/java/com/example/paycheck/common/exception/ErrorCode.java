@@ -31,6 +31,7 @@ public class ErrorCode {
 
     // Payment domain
     public static final String PAYMENT_NOT_FOUND = "PAYMENT_NOT_FOUND";
+    public static final String INVALID_PAYMENT_STATUS = "INVALID_PAYMENT_STATUS";
 
     // CorrectionRequest domain
     public static final String CORRECTION_REQUEST_NOT_FOUND = "CORRECTION_REQUEST_NOT_FOUND";
@@ -70,6 +71,7 @@ public class ErrorCode {
     public static final String PAYMENT_ALREADY_COMPLETED = "PAYMENT_ALREADY_COMPLETED";
     public static final String KAKAO_USER_INFO_FAILED = "KAKAO_USER_INFO_FAILED";
     public static final String KAKAO_SERVER_ERROR = "KAKAO_SERVER_ERROR";
+    public static final String INVALID_INPUT_VALUE = "INVALID_INPUT_VALUE";
 
     // Database Integrity
     public static final String DATA_INTEGRITY_VIOLATION = "DATA_INTEGRITY_VIOLATION";

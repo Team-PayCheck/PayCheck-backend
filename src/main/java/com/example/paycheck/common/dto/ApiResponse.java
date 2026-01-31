@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -32,6 +34,17 @@ public class ApiResponse<T> {
                 .build();
     }
 
+    public static <T> ApiResponse<T> error(String code, String message, List<ErrorResponse.FieldErrorDetail> fieldErrors) {
+        return ApiResponse.<T>builder()
+                .success(false)
+                .error(ErrorResponse.builder()
+                        .code(code)
+                        .message(message)
+                        .fieldErrors(fieldErrors)
+                        .build())
+                .build();
+    }
+
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
@@ -39,5 +52,15 @@ public class ApiResponse<T> {
     public static class ErrorResponse {
         private String code;
         private String message;
+        private List<FieldErrorDetail> fieldErrors;
+
+        @Getter
+        @NoArgsConstructor
+        @AllArgsConstructor
+        @Builder
+        public static class FieldErrorDetail {
+            private String field;
+            private String message;
+        }
     }
 }

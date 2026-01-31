@@ -17,13 +17,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/employer/payments")
 @RequiredArgsConstructor
-@PreAuthorize("@userPermission.isEmployer()")
+@PreAuthorize("@permissionEvaluator.isEmployer()")
 public class PaymentController {
 
     private final PaymentService paymentService;
 
     @Operation(summary = "급여 송금 처리", description = "근로자에게 토스 딥링크로 급여를 송금합니다.")
-    @PreAuthorize("@salaryPermission.canAccess(#request.salaryId)")
+    @PreAuthorize("@permissionEvaluator.canAccessSalary(#request.salaryId)")
     @PostMapping
     public ApiResponse<PaymentDto.Response> processPayment(
             @Valid @RequestBody PaymentDto.PaymentRequest request) {
@@ -31,7 +31,7 @@ public class PaymentController {
     }
 
     @Operation(summary = "송금 상세 조회", description = "특정 송금 내역의 상세 정보를 조회합니다.")
-    @PreAuthorize("@paymentPermission.canAccess(#id)")
+    @PreAuthorize("@permissionEvaluator.canAccessPayment(#id)")
     @GetMapping("/{id}")
     public ApiResponse<PaymentDto.Response> getPaymentById(
             @Parameter(description = "송금 ID", required = true) @PathVariable Long id) {
@@ -39,7 +39,7 @@ public class PaymentController {
     }
 
     @Operation(summary = "사업장별 송금 목록 조회", description = "특정 사업장의 전체 송금 목록을 조회합니다.")
-    @PreAuthorize("@paymentPermission.canAccessWorkplacePayments(#workplaceId)")
+    @PreAuthorize("@permissionEvaluator.canAccessWorkplacePayments(#workplaceId)")
     @GetMapping
     public ApiResponse<List<PaymentDto.ListResponse>> getPaymentsByWorkplace(
             @Parameter(description = "사업장 ID", required = true) @RequestParam Long workplaceId) {
@@ -47,7 +47,7 @@ public class PaymentController {
     }
 
     @Operation(summary = "사업장별 송금 목록 조회 (연월)", description = "특정 사업장의 특정 연월 송금 목록을 조회합니다.")
-    @PreAuthorize("@paymentPermission.canAccessWorkplacePayments(#workplaceId)")
+    @PreAuthorize("@permissionEvaluator.canAccessWorkplacePayments(#workplaceId)")
     @GetMapping("/year-month")
     public ApiResponse<List<PaymentDto.ListResponse>> getPaymentsByYearMonth(
             @Parameter(description = "사업장 ID", required = true) @RequestParam Long workplaceId,
@@ -57,7 +57,7 @@ public class PaymentController {
     }
 
     @Operation(summary = "미송금자 목록 조회", description = "특정 연월의 미송금자 목록을 조회합니다. (PENDING + FAILED 상태)")
-    @PreAuthorize("@paymentPermission.canAccessWorkplacePayments(#workplaceId)")
+    @PreAuthorize("@permissionEvaluator.canAccessWorkplacePayments(#workplaceId)")
     @GetMapping("/unpaid")
     public ApiResponse<List<PaymentDto.ListResponse>> getUnpaidPayments(
             @Parameter(description = "사업장 ID", required = true) @RequestParam Long workplaceId,
@@ -67,11 +67,19 @@ public class PaymentController {
     }
 
     @Operation(summary = "송금 대기 목록 조회", description = "사업장의 모든 송금 대기 목록을 조회합니다. (PENDING 상태만)")
-    @PreAuthorize("@paymentPermission.canAccessWorkplacePayments(#workplaceId)")
+    @PreAuthorize("@permissionEvaluator.canAccessWorkplacePayments(#workplaceId)")
     @GetMapping("/pending")
     public ApiResponse<List<PaymentDto.ListResponse>> getPendingPaymentsByWorkplace(
             @Parameter(description = "사업장 ID", required = true) @RequestParam Long workplaceId) {
         return ApiResponse.success(paymentService.getPendingPaymentsByWorkplace(workplaceId));
+    }
+
+    @Operation(summary = "급여 송금 완료 처리", description = "토스 송금 완료 후 수동으로 완료 처리합니다. 근로자에게 알림이 발송됩니다.")
+    @PreAuthorize("@permissionEvaluator.canAccessPayment(#id)")
+    @PutMapping("/{id}/complete")
+    public ApiResponse<PaymentDto.Response> completePayment(
+            @Parameter(description = "송금 ID", required = true) @PathVariable Long id) {
+        return ApiResponse.success(paymentService.completePayment(id));
     }
 
 }

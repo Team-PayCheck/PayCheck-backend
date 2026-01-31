@@ -28,12 +28,12 @@ public class WorkRecordCalculationService {
         Workplace workplace = workRecord.getContract().getWorkplace();
         boolean isSmallWorkplace = workplace.getIsLessThanFiveEmployees();
 
-        // 2. 휴일 여부 확인 (주말 + 법정공휴일)
-        boolean isHoliday = holidayService.isHoliday(workRecord.getWorkDate());
+        // 2. 휴일 여부 확인 (주말 + 공공기관 휴일)
+        boolean isHoliday = holidayService.isPublicHoliday(workRecord.getWorkDate());
 
         // 3. 로그 출력 (디버깅용)
         if (log.isDebugEnabled()) {
-            log.debug("WorkRecord 계산: workDate={}, isHoliday={}, isSmallWorkplace={}",
+            log.debug("WorkRecord 계산: workDate={}, isPublicHoliday={}, isSmallWorkplace={}",
                     workRecord.getWorkDate(), isHoliday, isSmallWorkplace);
         }
 
