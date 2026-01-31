@@ -74,4 +74,12 @@ public class PaymentController {
         return ApiResponse.success(paymentService.getPendingPaymentsByWorkplace(workplaceId));
     }
 
+    @Operation(summary = "급여 송금 완료 처리", description = "토스 송금 완료 후 수동으로 완료 처리합니다. 근로자에게 알림이 발송됩니다.")
+    @PreAuthorize("@permissionEvaluator.canAccessPayment(#id)")
+    @PutMapping("/{id}/complete")
+    public ApiResponse<PaymentDto.Response> completePayment(
+            @Parameter(description = "송금 ID", required = true) @PathVariable Long id) {
+        return ApiResponse.success(paymentService.completePayment(id));
+    }
+
 }
