@@ -261,26 +261,37 @@ public class WorkRecordCommandService {
         WorkerContract contract = workerContractRepository.findById(request.getContractId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.CONTRACT_NOT_FOUND, "계약을 찾을 수 없습니다."));
 
+        // 시간 유효성 검증 (종료 시간이 시작 시간보다 늦어야 함)
+        if (!request.getEndTime().isAfter(request.getStartTime())) {
+            throw new BadRequestException(ErrorCode.INVALID_INPUT_VALUE, "종료 시간은 시작 시간보다 늦어야 합니다.");
+        }
+
         List<LocalDate> requestedDates = request.getWorkDates();
+        int originalRequestSize = requestedDates.size();
+
+        // 요청 내 중복 제거
+        List<LocalDate> uniqueRequestedDates = requestedDates.stream()
+                .distinct()
+                .collect(Collectors.toList());
 
         // 1. 중복 체크 일괄 수행 (IN절 파라미터 제한을 고려하여 분할 처리)
         Set<LocalDate> existingDates = new HashSet<>();
-        for (List<LocalDate> chunk : partitionList(requestedDates, MAX_BATCH_CHUNK_SIZE)) {
+        for (List<LocalDate> chunk : partitionList(uniqueRequestedDates, MAX_BATCH_CHUNK_SIZE)) {
             existingDates.addAll(
                     workRecordRepository.findExistingWorkDatesByContractAndWorkDates(
-                            contract.getId(), chunk));
+                            contract.getId(), chunk, WorkRecordStatus.DELETED));
         }
 
         // 2. 생성할 날짜만 필터링
-        List<LocalDate> datesToCreate = requestedDates.stream()
+        List<LocalDate> datesToCreate = uniqueRequestedDates.stream()
                 .filter(date -> !existingDates.contains(date))
                 .collect(Collectors.toList());
 
         if (datesToCreate.isEmpty()) {
             return WorkRecordDto.BatchCreateResponse.builder()
                     .createdCount(0)
-                    .skippedCount(requestedDates.size())
-                    .totalRequested(requestedDates.size())
+                    .skippedCount(originalRequestSize)
+                    .totalRequested(originalRequestSize)
                     .build();
         }
 
@@ -365,8 +376,8 @@ public class WorkRecordCommandService {
 
         return WorkRecordDto.BatchCreateResponse.builder()
                 .createdCount(savedRecords.size())
-                .skippedCount(existingDates.size())
-                .totalRequested(requestedDates.size())
+                .skippedCount(originalRequestSize - savedRecords.size())
+                .totalRequested(originalRequestSize)
                 .build();
     }
 

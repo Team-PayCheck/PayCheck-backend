@@ -123,8 +123,9 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
         @Query("SELECT wr.workDate FROM WorkRecord wr " +
                         "WHERE wr.contract.id = :contractId " +
                         "AND wr.workDate IN :workDates " +
-                        "AND wr.status <> 'DELETED'")
+                        "AND wr.status <> :deletedStatus")
         List<LocalDate> findExistingWorkDatesByContractAndWorkDates(
                         @Param("contractId") Long contractId,
-                        @Param("workDates") List<LocalDate> workDates);
+                        @Param("workDates") List<LocalDate> workDates,
+                        @Param("deletedStatus") WorkRecordStatus deletedStatus);
 }
