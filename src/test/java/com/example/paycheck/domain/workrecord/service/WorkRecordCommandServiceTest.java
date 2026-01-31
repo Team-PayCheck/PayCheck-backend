@@ -19,9 +19,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -150,30 +156,47 @@ class WorkRecordCommandServiceTest {
     }
 
     @Test
-    @DisplayName("근무 일정 일괄 생성 성공")
+    @DisplayName("근무 일정 일괄 생성 성공 - 최적화 버전")
     void createWorkRecordsBatch_Success() {
         // given
         testContract = mock(WorkerContract.class);
         User worker = mock(User.class);
         com.example.paycheck.domain.worker.entity.Worker workerEntity = mock(com.example.paycheck.domain.worker.entity.Worker.class);
 
+        List<LocalDate> workDates = Arrays.asList(
+                LocalDate.now().plusDays(1),
+                LocalDate.now().plusDays(2),
+                LocalDate.now().plusDays(3)
+        );
+
         WorkRecordDto.BatchCreateRequest request = WorkRecordDto.BatchCreateRequest.builder()
                 .contractId(1L)
-                .workDates(Arrays.asList(
-                        LocalDate.now().plusDays(1),
-                        LocalDate.now().plusDays(2),
-                        LocalDate.now().plusDays(3)
-                ))
+                .workDates(workDates)
                 .startTime(LocalTime.of(9, 0))
                 .endTime(LocalTime.of(18, 0))
                 .breakMinutes(60)
                 .memo("일괄 생성 메모")
                 .build();
 
+        // 중복 체크 일괄 조회 Mock (중복 없음)
         when(workerContractRepository.findById(anyLong())).thenReturn(Optional.of(testContract));
-        when(workRecordRepository.existsByContractAndWorkDate(any(), any())).thenReturn(false);
-        when(coordinatorService.getOrCreateWeeklyAllowance(any(), any())).thenReturn(testWeeklyAllowance);
-        when(workRecordRepository.save(any(WorkRecord.class))).thenReturn(mock(WorkRecord.class));
+        when(testContract.getId()).thenReturn(1L);
+        when(workRecordRepository.findExistingWorkDatesByContractAndWorkDates(anyLong(), any()))
+                .thenReturn(Collections.emptyList());
+
+        // WeeklyAllowance 일괄 조회/생성 Mock
+        Map<LocalDate, WeeklyAllowance> weeklyAllowanceMap = new HashMap<>();
+        for (LocalDate date : workDates) {
+            LocalDate weekStart = date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+            weeklyAllowanceMap.putIfAbsent(weekStart, testWeeklyAllowance);
+        }
+        when(coordinatorService.getOrCreateWeeklyAllowances(anyLong(), any()))
+                .thenReturn(weeklyAllowanceMap);
+        when(testWeeklyAllowance.getId()).thenReturn(1L);
+
+        // saveAll Mock
+        when(workRecordRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+
         when(testContract.getWorker()).thenReturn(workerEntity);
         when(workerEntity.getUser()).thenReturn(worker);
 
@@ -185,33 +208,58 @@ class WorkRecordCommandServiceTest {
         assertThat(result.getCreatedCount()).isEqualTo(3);
         assertThat(result.getSkippedCount()).isEqualTo(0);
         assertThat(result.getTotalRequested()).isEqualTo(3);
-        verify(workRecordRepository, times(3)).save(any(WorkRecord.class));
+
+        // 검증: saveAll이 호출되었는지 (개별 save 대신)
+        verify(workRecordRepository, atLeastOnce()).saveAll(anyList());
+        verify(workRecordRepository, never()).save(any(WorkRecord.class));
+
+        // 검증: 중복 체크 일괄 조회
+        verify(workRecordRepository, times(1))
+                .findExistingWorkDatesByContractAndWorkDates(anyLong(), any());
+
+        // 검증: WeeklyAllowance 일괄 조회/생성
+        verify(coordinatorService, times(1))
+                .getOrCreateWeeklyAllowances(anyLong(), any());
+
+        // 검증: 도메인 협력 일괄 처리
+        verify(coordinatorService, times(1))
+                .handleBatchWorkRecordCreation(anyList());
     }
 
     @Test
-    @DisplayName("근무 일정 일괄 생성 - 중복 스킵")
+    @DisplayName("근무 일정 일괄 생성 - 중복 스킵 (최적화 버전)")
     void createWorkRecordsBatch_WithDuplicates() {
         // given
         testContract = mock(WorkerContract.class);
         User worker = mock(User.class);
         com.example.paycheck.domain.worker.entity.Worker workerEntity = mock(com.example.paycheck.domain.worker.entity.Worker.class);
 
+        LocalDate date1 = LocalDate.now().plusDays(1);
+        LocalDate date2 = LocalDate.now().plusDays(2);
+
         WorkRecordDto.BatchCreateRequest request = WorkRecordDto.BatchCreateRequest.builder()
                 .contractId(1L)
-                .workDates(Arrays.asList(
-                        LocalDate.now().plusDays(1),
-                        LocalDate.now().plusDays(2)
-                ))
+                .workDates(Arrays.asList(date1, date2))
                 .startTime(LocalTime.of(9, 0))
                 .endTime(LocalTime.of(18, 0))
                 .build();
 
         when(workerContractRepository.findById(anyLong())).thenReturn(Optional.of(testContract));
-        // 첫 번째는 중복, 두 번째는 새로운 기록
-        when(workRecordRepository.existsByContractAndWorkDate(any(), any()))
-                .thenReturn(true, false);
-        when(coordinatorService.getOrCreateWeeklyAllowance(any(), any())).thenReturn(testWeeklyAllowance);
-        when(workRecordRepository.save(any(WorkRecord.class))).thenReturn(mock(WorkRecord.class));
+        when(testContract.getId()).thenReturn(1L);
+
+        // 첫 번째 날짜는 이미 존재 (중복)
+        when(workRecordRepository.findExistingWorkDatesByContractAndWorkDates(anyLong(), any()))
+                .thenReturn(Collections.singletonList(date1));
+
+        // WeeklyAllowance Mock (date2만 생성됨)
+        Map<LocalDate, WeeklyAllowance> weeklyAllowanceMap = new HashMap<>();
+        LocalDate weekStart = date2.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        weeklyAllowanceMap.put(weekStart, testWeeklyAllowance);
+        when(coordinatorService.getOrCreateWeeklyAllowances(anyLong(), any()))
+                .thenReturn(weeklyAllowanceMap);
+        when(testWeeklyAllowance.getId()).thenReturn(1L);
+
+        when(workRecordRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
         when(testContract.getWorker()).thenReturn(workerEntity);
         when(workerEntity.getUser()).thenReturn(worker);
 
@@ -222,6 +270,9 @@ class WorkRecordCommandServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getCreatedCount()).isEqualTo(1);
         assertThat(result.getSkippedCount()).isEqualTo(1);
-        verify(workRecordRepository, times(1)).save(any(WorkRecord.class));
+
+        // saveAll이 호출되고 개별 save는 호출되지 않음
+        verify(workRecordRepository, atLeastOnce()).saveAll(anyList());
+        verify(workRecordRepository, never()).save(any(WorkRecord.class));
     }
 }

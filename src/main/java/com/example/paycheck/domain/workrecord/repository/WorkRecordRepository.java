@@ -118,4 +118,14 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
                         @Param("startTime") LocalTime startTime,
                         @Param("endTime") LocalTime endTime,
                         @Param("deletedStatus") WorkRecordStatus deletedStatus);
+
+        // 특정 계약의 여러 날짜에 대한 기존 WorkRecord 날짜 일괄 조회 (배치 중복 체크용)
+        @Query("SELECT wr.workDate FROM WorkRecord wr " +
+                        "WHERE wr.contract.id = :contractId " +
+                        "AND wr.workDate IN :workDates " +
+                        "AND wr.status <> :deletedStatus")
+        List<LocalDate> findExistingWorkDatesByContractAndWorkDates(
+                        @Param("contractId") Long contractId,
+                        @Param("workDates") List<LocalDate> workDates,
+                        @Param("deletedStatus") WorkRecordStatus deletedStatus);
 }

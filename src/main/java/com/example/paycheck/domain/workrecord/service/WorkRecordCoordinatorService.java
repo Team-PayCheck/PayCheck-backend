@@ -12,6 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 근무 기록과 다른 도메인(WeeklyAllowance, Salary) 간의 협력을 조율하는 서비스
@@ -140,6 +143,68 @@ public class WorkRecordCoordinatorService {
      */
     public WeeklyAllowance getOrCreateWeeklyAllowance(Long contractId, LocalDate workDate) {
         return weeklyAllowanceService.getOrCreateWeeklyAllowanceForDate(contractId, workDate);
+    }
+
+    /**
+     * 여러 날짜에 대한 WeeklyAllowance를 일괄 조회/생성 (배치 처리용)
+     */
+    public Map<LocalDate, WeeklyAllowance> getOrCreateWeeklyAllowances(Long contractId, List<LocalDate> workDates) {
+        return weeklyAllowanceService.getOrCreateWeeklyAllowancesForDates(contractId, workDates);
+    }
+
+    /**
+     * 일괄 생성된 WorkRecord들의 WeeklyAllowance 수당 일괄 재계산 (배치 처리용)
+     */
+    public void recalculateWeeklyAllowancesBatch(Set<Long> weeklyAllowanceIds) {
+        weeklyAllowanceService.recalculateAllowancesBatch(weeklyAllowanceIds);
+    }
+
+    /**
+     * COMPLETED 상태 WorkRecord들의 급여 일괄 재계산 (배치 처리용)
+     * 동일 계약/년월별로 그룹핑하여 급여 재계산 최소화
+     */
+    public void handleBatchWorkRecordCompletion(List<WorkRecord> completedRecords) {
+        if (completedRecords.isEmpty()) {
+            return;
+        }
+
+        // 동일 계약/년월별로 그룹핑하여 급여 재계산 최소화
+        Map<String, WorkRecord> groupedRecords = completedRecords.stream()
+                .collect(Collectors.toMap(
+                        wr -> {
+                            LocalDate workDate = wr.getWorkDate();
+                            Integer paymentDay = wr.getContract().getPaymentDay();
+                            int year = workDate.getYear();
+                            int month = workDate.getMonthValue();
+                            if (workDate.getDayOfMonth() >= paymentDay) {
+                                LocalDate nextMonth = workDate.plusMonths(1);
+                                year = nextMonth.getYear();
+                                month = nextMonth.getMonthValue();
+                            }
+                            return wr.getContract().getId() + "_" + year + "_" + month;
+                        },
+                        wr -> wr,
+                        (existing, replacement) -> existing));
+
+        // 그룹별로 한 번씩만 급여 재계산
+        for (WorkRecord sample : groupedRecords.values()) {
+            LocalDate workDate = sample.getWorkDate();
+            Integer paymentDay = sample.getContract().getPaymentDay();
+            int year = workDate.getYear();
+            int month = workDate.getMonthValue();
+            if (workDate.getDayOfMonth() >= paymentDay) {
+                LocalDate nextMonth = workDate.plusMonths(1);
+                year = nextMonth.getYear();
+                month = nextMonth.getMonthValue();
+            }
+
+            try {
+                salaryService.recalculateSalaryAfterWorkRecordUpdate(
+                        sample.getContract().getId(), year, month);
+            } catch (NotFoundException e) {
+                // 급여가 아직 생성되지 않은 경우 무시
+            }
+        }
     }
 
 }
