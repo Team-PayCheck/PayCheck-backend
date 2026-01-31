@@ -141,9 +141,10 @@ erDiagram
 
     Salary {
         bigint id PK
+        bigint version "낙관적 락 버전 (@Version)"
         bigint contract_id FK "WorkerContract ID"
-        int year "연도"
-        int month "월"
+        int year "연도 (UK: contract_id, year, month)"
+        int month "월 (UK: contract_id, year, month)"
         decimal total_work_hours "총 근무 시간"
         decimal base_pay "기본급"
         decimal overtime_pay "연장 수당"
@@ -288,6 +289,8 @@ erDiagram
 ### 9. Salary (급여)
 - 월별 급여 정산 내역
 - 기본급, 각종 수당, 4대 보험 및 세금 공제 포함
+- **version**: 낙관적 락을 위한 버전 필드 (@Version)
+- **유니크 제약**: `uk_salary_contract_year_month` (contract_id, year, month) - 계약별 연월 급여 중복 방지
 - **total_work_hours**: 총 근무 시간
 - **four_major_insurance**: 4대 보험 통합 (국민연금+건강보험+고용보험+산재보험)
 - **local_income_tax**: 지방소득세
