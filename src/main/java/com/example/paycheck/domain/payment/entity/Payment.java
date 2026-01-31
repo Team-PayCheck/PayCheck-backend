@@ -22,7 +22,7 @@ public class Payment extends BaseEntity {
     private Long id;
 
     @Version
-    @Column(name = "version")
+    @Column(name = "version", nullable = false)
     private Long version;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -57,5 +57,12 @@ public class Payment extends BaseEntity {
     public void fail(String failureReason) {
         this.status = PaymentStatus.FAILED;
         this.failureReason = failureReason;
+    }
+
+    public void resetToPending() {
+        this.status = PaymentStatus.PENDING;
+        this.paymentDate = null;
+        this.transactionId = null;
+        this.failureReason = null;
     }
 }

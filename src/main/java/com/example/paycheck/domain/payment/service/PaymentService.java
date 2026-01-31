@@ -68,6 +68,8 @@ public class PaymentService {
             if (payment.getStatus() == PaymentStatus.COMPLETED) {
                 throw new BadRequestException(ErrorCode.PAYMENT_ALREADY_COMPLETED, "이미 송금이 완료된 급여입니다.");
             }
+            // FAILED 등 비완료 상태인 경우 PENDING으로 복원
+            payment.resetToPending();
         } else {
             // 새로운 Payment 생성 (토스 딥링크 고정)
             payment = Payment.builder()
