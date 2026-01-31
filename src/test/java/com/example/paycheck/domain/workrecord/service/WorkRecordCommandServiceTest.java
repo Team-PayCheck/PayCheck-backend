@@ -181,7 +181,7 @@ class WorkRecordCommandServiceTest {
         // 중복 체크 일괄 조회 Mock (중복 없음)
         when(workerContractRepository.findById(anyLong())).thenReturn(Optional.of(testContract));
         when(testContract.getId()).thenReturn(1L);
-        when(workRecordRepository.findExistingWorkDatesByContractAndWorkDates(anyLong(), any()))
+        when(workRecordRepository.findExistingWorkDatesByContractAndWorkDates(anyLong(), any(), any(WorkRecordStatus.class)))
                 .thenReturn(Collections.emptyList());
 
         // WeeklyAllowance 일괄 조회/생성 Mock
@@ -215,7 +215,7 @@ class WorkRecordCommandServiceTest {
 
         // 검증: 중복 체크 일괄 조회
         verify(workRecordRepository, times(1))
-                .findExistingWorkDatesByContractAndWorkDates(anyLong(), any());
+                .findExistingWorkDatesByContractAndWorkDates(anyLong(), any(), any(WorkRecordStatus.class));
 
         // 검증: WeeklyAllowance 일괄 조회/생성
         verify(coordinatorService, times(1))
@@ -248,7 +248,7 @@ class WorkRecordCommandServiceTest {
         when(testContract.getId()).thenReturn(1L);
 
         // 첫 번째 날짜는 이미 존재 (중복)
-        when(workRecordRepository.findExistingWorkDatesByContractAndWorkDates(anyLong(), any()))
+        when(workRecordRepository.findExistingWorkDatesByContractAndWorkDates(anyLong(), any(), any(WorkRecordStatus.class)))
                 .thenReturn(Collections.singletonList(date1));
 
         // WeeklyAllowance Mock (date2만 생성됨)
