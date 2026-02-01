@@ -44,7 +44,7 @@
    ⚠️ 별도의 회원가입 엔드포인트는 없으며, 로그인 시 자동으로 처리됨
 
 2. 사업장 등록
-   - 사업자등록번호: 123-45-67890 (유효성 검증)
+   - 사업자등록번호: 123-45-67890 (국세청 status API로 유효성 검증)
    - 사업장명: (주)카페모카
    - 지점명: 홍대점
    - 주소: 서울시 마포구 홍익로 123
@@ -62,6 +62,10 @@ INSERT INTO Employer (user_id, phone)
 VALUES (1, '010-1234-5678');
 
 -- Workplace 테이블
+검증 단계
+- 외부 status API 호출로 사업자등록번호 유효성 확인
+- 개발 환경에서 `nts.business-status.enabled=false` 설정 시 검증 스킵 가능
+
 INSERT INTO Workplace (employer_id, business_number, business_name, name, address, color_code)
 VALUES (1, '123-45-67890', '(주)카페모카', '홍대점', '서울시 마포구 홍익로 123', '#FF6B6B');
 ```
