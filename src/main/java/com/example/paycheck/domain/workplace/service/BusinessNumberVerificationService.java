@@ -5,6 +5,7 @@ import com.example.paycheck.common.exception.ErrorCode;
 import com.example.paycheck.domain.workplace.dto.NtsBusinessStatusRequest;
 import com.example.paycheck.domain.workplace.dto.NtsBusinessStatusResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,7 +16,14 @@ public class BusinessNumberVerificationService {
 
     private final NtsBusinessStatusClient ntsBusinessStatusClient;
 
+    @Value("${nts.business-status.enabled:true}")
+    private boolean enabled;
+
     public void verifyBusinessNumber(String businessNumber) {
+        if (!enabled) {
+            return;
+        }
+
         String normalized = normalize(businessNumber);
         if (normalized.length() != 10) {
             throw new BadRequestException(ErrorCode.INVALID_BUSINESS_NUMBER, "사업자 등록번호 형식이 올바르지 않습니다.");
