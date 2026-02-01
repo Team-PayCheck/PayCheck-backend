@@ -7,6 +7,8 @@ import com.example.paycheck.domain.employer.service.EmployerService;
 import com.example.paycheck.domain.workplace.dto.WorkplaceDto;
 import com.example.paycheck.domain.workplace.entity.Workplace;
 import com.example.paycheck.domain.workplace.repository.WorkplaceRepository;
+import com.example.paycheck.common.exception.BadRequestException;
+import com.example.paycheck.common.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +37,9 @@ class WorkplaceServiceTest {
 
     @Mock
     private EmployerService employerService;
+
+    @Mock
+    private BusinessNumberVerificationService businessNumberVerificationService;
 
     @InjectMocks
     private WorkplaceService workplaceService;
@@ -81,7 +86,34 @@ class WorkplaceServiceTest {
         // then
         assertThat(result).isNotNull();
         verify(employerService).getEmployerByUserId(1L);
+        verify(businessNumberVerificationService).verifyBusinessNumber("123-45-67890");
         verify(workplaceRepository).save(any(Workplace.class));
+    }
+
+    @Test
+    @DisplayName("사업장 생성 실패 - 사업자번호 검증 실패")
+    void createWorkplace_Fail_InvalidBusinessNumber() {
+        // given
+        WorkplaceDto.CreateRequest request = WorkplaceDto.CreateRequest.builder()
+                .businessNumber("123-45-67890")
+                .businessName("테스트 사업체")
+                .name("테스트 사업장")
+                .address("서울시 강남구")
+                .colorCode("#FF0000")
+                .build();
+
+        when(employerService.getEmployerByUserId(1L)).thenReturn(testEmployer);
+        doThrow(new BadRequestException(ErrorCode.INVALID_BUSINESS_NUMBER, "유효하지 않은 사업자 등록번호입니다."))
+                .when(businessNumberVerificationService)
+                .verifyBusinessNumber("123-45-67890");
+
+        // when & then
+        assertThatThrownBy(() -> workplaceService.createWorkplace(1L, request))
+                .isInstanceOf(BadRequestException.class)
+                .extracting("errorCode")
+                .isEqualTo(ErrorCode.INVALID_BUSINESS_NUMBER);
+
+        verify(workplaceRepository, never()).save(any(Workplace.class));
     }
 
     @Test
