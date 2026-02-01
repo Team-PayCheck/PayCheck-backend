@@ -78,6 +78,8 @@ public class ErrorCode {
     public static final String DUPLICATE_KAKAO_ID = "DUPLICATE_KAKAO_ID";
     public static final String DUPLICATE_WORKER_CODE = "DUPLICATE_WORKER_CODE";
     public static final String DUPLICATE_BUSINESS_NUMBER = "DUPLICATE_BUSINESS_NUMBER";
+    public static final String INVALID_BUSINESS_NUMBER = "INVALID_BUSINESS_NUMBER";
+    public static final String BUSINESS_NUMBER_VERIFICATION_FAILED = "BUSINESS_NUMBER_VERIFICATION_FAILED";
 
     private ErrorCode() {
         // 인스턴스화 방지
