@@ -47,28 +47,21 @@ public class TokenService {
     }
 
     /**
-     * Refresh Token 생성 및 DB에 저장 (RTR 방식 - 기존 토큰 폐기 후 신규 생성)
+     * Refresh Token 생성 및 DB에 저장 (DB 레벨 Upsert - 원자적 연산으로 Race Condition 방지)
      *
      * @param userId 사용자 ID
      * @return Refresh Token 문자열
      */
     @Transactional
     public String generateAndSaveRefreshToken(Long userId) {
-        // 기존 Refresh Token이 있다면 폐기
-        refreshTokenRepository.deleteByUserId(userId);
-
         // 새로운 Refresh Token 생성
         String refreshTokenString = jwtTokenProvider.generateRefreshToken(userId);
         LocalDateTime expiresAt = LocalDateTime.now()
                 .plusSeconds(jwtTokenProvider.getRefreshExpirationTime() / 1000);
 
-        RefreshToken refreshToken = RefreshToken.builder()
-                .userId(userId)
-                .token(refreshTokenString)
-                .expiresAt(expiresAt)
-                .build();
+        // DB 레벨 Upsert: 단일 쿼리로 INSERT 또는 UPDATE (원자적 연산)
+        refreshTokenRepository.upsertRefreshToken(userId, refreshTokenString, expiresAt);
 
-        refreshTokenRepository.save(refreshToken);
         return refreshTokenString;
     }
 
@@ -117,10 +110,7 @@ public class TokenService {
 
         Long userId = refreshToken.getUserId();
 
-        // RTR: 기존 Refresh Token 폐기
-        refreshTokenRepository.delete(refreshToken);
-
-        // 새로운 Access Token 및 Refresh Token 생성
+        // 새로운 Access Token 및 Refresh Token 생성 (Upsert 방식으로 기존 토큰 자동 갱신)
         return generateTokenPair(userId);
     }
 

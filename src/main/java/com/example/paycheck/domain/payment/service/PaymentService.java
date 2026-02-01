@@ -7,13 +7,13 @@ import com.example.paycheck.domain.payment.dto.PaymentDto;
 import com.example.paycheck.domain.payment.entity.Payment;
 import com.example.paycheck.domain.payment.enums.PaymentStatus;
 import com.example.paycheck.domain.payment.repository.PaymentRepository;
-import com.example.paycheck.domain.notification.enums.NotificationActionType;
-import com.example.paycheck.domain.notification.enums.NotificationType;
-import com.example.paycheck.domain.notification.event.NotificationEvent;
 import com.example.paycheck.domain.salary.entity.Salary;
 import com.example.paycheck.domain.salary.repository.SalaryRepository;
 import com.example.paycheck.domain.payment.enums.PaymentMethod;
 import com.example.paycheck.domain.payment.util.TossLinkGenerator;
+import com.example.paycheck.domain.notification.enums.NotificationActionType;
+import com.example.paycheck.domain.notification.enums.NotificationType;
+import com.example.paycheck.domain.notification.event.NotificationEvent;
 import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.worker.entity.Worker;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,11 +42,11 @@ public class PaymentService {
     private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * 급여 지급 처리 (토스 딥링크 고정)
+     * 급여 지급 요청 처리 (토스 딥링크 생성)
      * - 급여가 계산되었는지 확인
      * - Payment 레코드 생성 또는 기존 레코드 업데이트
-     * - 상태를 COMPLETED로 변경
-     * - 지급 일시 및 거래 ID 저장
+     * - PENDING 상태로 저장 (실제 송금 완료는 completePayment로 처리)
+     * - 토스 딥링크 반환
      */
     @Transactional
     public PaymentDto.Response processPayment(PaymentDto.PaymentRequest request) {
@@ -68,6 +68,8 @@ public class PaymentService {
             if (payment.getStatus() == PaymentStatus.COMPLETED) {
                 throw new BadRequestException(ErrorCode.PAYMENT_ALREADY_COMPLETED, "이미 송금이 완료된 급여입니다.");
             }
+            // FAILED 등 비완료 상태인 경우 PENDING으로 복원
+            payment.resetToPending();
         } else {
             // 새로운 Payment 생성 (토스 딥링크 고정)
             payment = Payment.builder()
@@ -77,15 +79,40 @@ public class PaymentService {
                     .build();
         }
 
-        // 급여 송금 완료 처리
-        payment.complete(UUID.randomUUID().toString());
+        // PENDING 상태로 저장 (실제 송금 완료는 completePayment에서 처리)
         paymentRepository.save(payment);
-
-        publishPaymentSuccessEvent(payment, salary);
 
         String tossLink = buildTossLink(salary);
 
         return PaymentDto.Response.from(payment, tossLink);
+    }
+
+    /**
+     * 급여 송금 완료 처리 (수동)
+     * - 고용주가 토스 송금 완료 후 수동으로 완료 처리
+     * - 근로자에게 급여 입금 알림 발송
+     * - @Version을 통한 낙관적 락으로 동시성 제어
+     * - JOIN FETCH로 N+1 문제 방지
+     */
+    @Transactional
+    public PaymentDto.Response completePayment(Long paymentId) {
+        Payment payment = paymentRepository.findByIdWithAssociations(paymentId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.PAYMENT_NOT_FOUND, "송금 기록을 찾을 수 없습니다."));
+
+        if (payment.getStatus() == PaymentStatus.COMPLETED) {
+            throw new BadRequestException(ErrorCode.PAYMENT_ALREADY_COMPLETED, "이미 송금이 완료된 급여입니다.");
+        }
+
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            throw new BadRequestException(ErrorCode.INVALID_PAYMENT_STATUS, "송금 대기 상태가 아닙니다.");
+        }
+
+        payment.complete(UUID.randomUUID().toString());
+        paymentRepository.save(payment);
+
+        sendPaymentSuccessNotification(payment);
+
+        return PaymentDto.Response.from(payment, buildTossLink(payment.getSalary()));
     }
 
     /**
@@ -169,7 +196,6 @@ public class PaymentService {
             if (paymentDueDate != null && paymentDueDate.isBefore(yesterday.plusDays(1))) {
                 payment.fail("급여 지급 예정일(" + paymentDueDate + ")을 초과하여 자동으로 실패 처리되었습니다.");
                 paymentRepository.save(payment);
-                publishPaymentFailedEvent(payment);
             }
         }
     }
@@ -195,45 +221,39 @@ public class PaymentService {
         return TossLinkGenerator.generateSupertossLink(bankName, accountNumber, salary.getNetPay());
     }
 
-    private void publishPaymentSuccessEvent(Payment payment, Salary salary) {
-        User workerUser = salary.getContract().getWorker().getUser();
-        String title = String.format("%d년 %d월 급여가 입금되었습니다.", salary.getYear(), salary.getMonth());
+    /**
+     * 급여 입금 완료 알림 발송
+     */
+    private void sendPaymentSuccessNotification(Payment payment) {
+        Salary salary = payment.getSalary();
+        User worker = salary.getContract().getWorker().getUser();
+        String workplaceName = salary.getContract().getWorkplace().getName();
+
+        String title = String.format("%d년 %d월 급여가 입금되었습니다. (%s)",
+                salary.getYear(), salary.getMonth(), workplaceName);
 
         NotificationEvent event = NotificationEvent.builder()
-                .user(workerUser)
+                .user(worker)
                 .type(NotificationType.PAYMENT_SUCCESS)
                 .title(title)
                 .actionType(NotificationActionType.VIEW_SALARY)
-                .actionData(buildActionData(payment.getId(), salary.getId()))
+                .actionData(buildSalaryActionData(salary.getId()))
                 .build();
 
         eventPublisher.publishEvent(event);
     }
 
-    private void publishPaymentFailedEvent(Payment payment) {
-        Salary salary = payment.getSalary();
-        User employerUser = salary.getContract().getWorkplace().getEmployer().getUser();
-        String title = String.format("%d년 %d월 급여 송금이 실패했습니다.", salary.getYear(), salary.getMonth());
-
-        NotificationEvent event = NotificationEvent.builder()
-                .user(employerUser)
-                .type(NotificationType.PAYMENT_FAILED)
-                .title(title)
-                .actionType(NotificationActionType.VIEW_PAYMENT_MANAGEMENT)
-                .actionData(buildActionData(payment.getId(), salary.getId()))
-                .build();
-
-        eventPublisher.publishEvent(event);
-    }
-
-    private String buildActionData(Long paymentId, Long salaryId) {
+    /**
+     * 급여 조회용 액션 데이터 생성
+     */
+    private String buildSalaryActionData(Long salaryId) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             Map<String, Object> data = new HashMap<>();
-            data.put("paymentId", paymentId);
             data.put("salaryId", salaryId);
             return mapper.writeValueAsString(data);
         } catch (Exception e) {
+            log.warn("급여 액션 데이터 생성 실패: salaryId={}", salaryId, e);
             return null;
         }
     }

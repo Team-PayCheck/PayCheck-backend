@@ -31,6 +31,7 @@ public class ErrorCode {
 
     // Payment domain
     public static final String PAYMENT_NOT_FOUND = "PAYMENT_NOT_FOUND";
+    public static final String INVALID_PAYMENT_STATUS = "INVALID_PAYMENT_STATUS";
 
     // CorrectionRequest domain
     public static final String CORRECTION_REQUEST_NOT_FOUND = "CORRECTION_REQUEST_NOT_FOUND";
