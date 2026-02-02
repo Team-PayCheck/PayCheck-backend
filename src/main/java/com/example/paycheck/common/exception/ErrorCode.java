@@ -81,6 +81,10 @@ public class ErrorCode {
     public static final String INVALID_BUSINESS_NUMBER = "INVALID_BUSINESS_NUMBER";
     public static final String BUSINESS_NUMBER_VERIFICATION_FAILED = "BUSINESS_NUMBER_VERIFICATION_FAILED";
 
+    // Concurrency
+    public static final String SALARY_LOCK_TIMEOUT = "SALARY_LOCK_TIMEOUT";
+    public static final String SALARY_CONCURRENT_MODIFICATION = "SALARY_CONCURRENT_MODIFICATION";
+
     private ErrorCode() {
         // 인스턴스화 방지
     }

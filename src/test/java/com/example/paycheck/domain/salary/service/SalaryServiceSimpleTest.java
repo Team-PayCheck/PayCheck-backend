@@ -49,6 +49,9 @@ class SalaryServiceSimpleTest {
     @Mock
     private WeeklyAllowanceRepository weeklyAllowanceRepository;
 
+    @Mock
+    private SalaryPersistenceService salaryPersistenceService;
+
     @InjectMocks
     private SalaryService salaryService;
 
@@ -170,9 +173,9 @@ class SalaryServiceSimpleTest {
 
         when(weeklyAllowanceRepository.findByContractIdAndYearMonth(eq(contractId), anyInt(), anyInt()))
                 .thenReturn(Collections.emptyList());
-        when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
-                .thenReturn(Collections.emptyList());
-        when(salaryRepository.save(any(Salary.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month))
+                .thenReturn(Optional.empty());
+        when(salaryPersistenceService.trySave(any(Salary.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
         salaryService.calculateSalaryByWorkRecords(contractId, year, month);
@@ -180,7 +183,7 @@ class SalaryServiceSimpleTest {
         // then
         verify(workRecordRepository).findByContractAndDateRange(eq(contractId), eq(febStart), eq(febEnd));
         verify(weeklyAllowanceRepository).findByContractIdAndYearMonth(eq(contractId), eq(2024), eq(2));
-        verify(salaryRepository).save(argThat(saved ->
+        verify(salaryPersistenceService).trySave(argThat(saved ->
                 saved.getPaymentDueDate().equals(LocalDate.of(2024, 2, 29))));
     }
 
@@ -243,15 +246,15 @@ class SalaryServiceSimpleTest {
                 .paymentDueDate(LocalDate.of(2024, 5, 10))
                 .build();
 
-        when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
-                .thenReturn(Collections.singletonList(existingSalary));
+        when(salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month))
+                .thenReturn(Optional.of(existingSalary));
 
         // when
         salaryService.calculateSalaryByWorkRecords(contractId, year, month);
 
         // then
         verify(salaryRepository, never()).save(any(Salary.class));
-        verify(salaryRepository).findByContractIdAndYearAndMonth(contractId, year, month);
+        verify(salaryRepository).findByContractIdAndYearAndMonthForUpdate(contractId, year, month);
         verify(workRecordRepository).findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class));
 
         assertThat(existingSalary.getPaymentDueDate()).isEqualTo(LocalDate.of(2024, 5, 10));
