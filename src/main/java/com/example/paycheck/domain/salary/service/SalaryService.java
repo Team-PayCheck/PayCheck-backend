@@ -13,14 +13,18 @@ import com.example.paycheck.domain.salary.util.DeductionCalculator;
 import com.example.paycheck.domain.workrecord.entity.WorkRecord;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -30,6 +34,7 @@ public class SalaryService {
     private final WorkRecordRepository workRecordRepository;
     private final WorkerContractRepository workerContractRepository;
     private final WeeklyAllowanceRepository weeklyAllowanceRepository;
+    private final SalaryPersistenceService salaryPersistenceService;
 
     /**
      * 급여 상세 조회
@@ -192,31 +197,26 @@ public class SalaryService {
             netPay = BigDecimal.ZERO;
         }
 
-        // 기존 급여 정보 확인 또는 새로 생성
-        List<Salary> existingSalaries = salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month);
+        // 비관적 잠금으로 기존 급여 조회 (동시성 제어)
+        Optional<Salary> existingSalary = salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month);
         Salary salary;
 
-        if (!existingSalaries.isEmpty()) {
+        if (existingSalary.isPresent()) {
             // 기존 급여 정보 업데이트
-            salary = existingSalaries.get(0);
-            salary = Salary.builder()
-                    .id(salary.getId())
-                    .contract(contract)
-                    .year(year)
-                    .month(month)
-                    .totalWorkHours(totalWorkHours)
-                    .basePay(totalBasePay)
-                    .overtimePay(totalOvertimePay)
-                    .nightPay(totalNightPay)
-                    .holidayPay(totalHolidayPay)
-                    .totalGrossPay(totalGrossPay)
-                    .fourMajorInsurance(fourMajorInsurance)
-                    .incomeTax(incomeTax)
-                    .localIncomeTax(localIncomeTax)
-                    .totalDeduction(totalDeduction)
-                    .netPay(netPay)
-                    .paymentDueDate(salary.getPaymentDueDate())
-                    .build();
+            salary = existingSalary.get();
+            salary.updateCalculatedFields(
+                    totalWorkHours,
+                    totalBasePay,
+                    totalOvertimePay,
+                    totalNightPay,
+                    totalHolidayPay,
+                    totalGrossPay,
+                    fourMajorInsurance,
+                    incomeTax,
+                    localIncomeTax,
+                    totalDeduction,
+                    netPay
+            );
         } else {
             // 새로운 급여 생성
             salary = Salary.builder()
@@ -236,9 +236,34 @@ public class SalaryService {
                     .netPay(netPay)
                     .paymentDueDate(adjustDayOfMonth(LocalDate.of(year, month, 1), contract.getPaymentDay()))
                     .build();
+
+            try {
+                // REQUIRES_NEW 트랜잭션에서 저장 시도 (실패해도 메인 트랜잭션 유지)
+                salaryPersistenceService.trySave(salary);
+                // REQUIRES_NEW로 저장된 엔티티는 현재 트랜잭션의 영속성 컨텍스트에서 분리되므로 재조회 필요
+                salary = salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month)
+                        .orElseThrow(() -> new IllegalStateException("급여 데이터 동시성 오류"));
+            } catch (DataIntegrityViolationException e) {
+                // 동시 INSERT 발생 시 (Unique Constraint 위반) 재조회 후 업데이트
+                log.warn("급여 동시 생성 감지 - 재조회 후 업데이트 수행: contractId={}, year={}, month={}", contractId, year, month);
+                salary = salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month)
+                        .orElseThrow(() -> new IllegalStateException("급여 데이터 동시성 오류"));
+                salary.updateCalculatedFields(
+                        totalWorkHours,
+                        totalBasePay,
+                        totalOvertimePay,
+                        totalNightPay,
+                        totalHolidayPay,
+                        totalGrossPay,
+                        fourMajorInsurance,
+                        incomeTax,
+                        localIncomeTax,
+                        totalDeduction,
+                        netPay
+                );
+            }
         }
 
-        salaryRepository.save(salary);
         return SalaryDto.Response.from(salary);
     }
 

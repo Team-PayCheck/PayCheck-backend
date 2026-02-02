@@ -51,4 +51,17 @@ public interface WeeklyAllowanceRepository extends JpaRepository<WeeklyAllowance
         List<WeeklyAllowance> results = findAllByContractAndWeek(contractId, targetDate);
         return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
     }
+
+    /**
+     * 특정 계약의 날짜 범위에 해당하는 모든 WeeklyAllowance 조회 (배치 처리용)
+     * weekStartDate와 weekEndDate 범위가 주어진 기간과 겹치는 모든 WeeklyAllowance 반환
+     */
+    @Query("SELECT wa FROM WeeklyAllowance wa " +
+            "WHERE wa.contract.id = :contractId " +
+            "AND wa.weekStartDate <= :endDate " +
+            "AND wa.weekEndDate >= :startDate")
+    List<WeeklyAllowance> findByContractAndDateRange(
+            @Param("contractId") Long contractId,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }

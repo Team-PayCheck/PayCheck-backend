@@ -238,6 +238,9 @@
 }
 ```
 
+설명:
+- 사업자등록번호는 외부 status API로 유효성 검증됩니다.
+
 **Response:**
 ```json
 {
@@ -253,6 +256,28 @@
     "isActive": true,
     "createdAt": "2025-12-15T09:00:00",
     "updatedAt": "2025-12-15T09:00:00"
+  }
+}
+```
+
+**Error (사업자번호 유효성 실패):**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_BUSINESS_NUMBER",
+    "message": "유효하지 않은 사업자 등록번호입니다."
+  }
+}
+```
+
+**Error (검증 API 실패/미설정):**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "BUSINESS_NUMBER_VERIFICATION_FAILED",
+    "message": "사업자 등록번호 검증에 실패했습니다."
   }
 }
 ```
@@ -1263,58 +1288,78 @@
     {
       "id": 305,
       "contractId": 201,
+      "workerName": "박민준",
+      "workerCode": "WORKER001",
+      "workplaceName": "홍대점",
       "workDate": "2025-12-20",
       "startTime": "09:00",
       "endTime": "18:00",
       "breakMinutes": 60,
-      "totalWorkHours": 8.0,
+      "totalWorkMinutes": 420,
       "status": "SCHEDULED",
       "isModified": false,
       "memo": "정상 근무",
-      "createdAt": "2025-12-15T09:30:00",
-      "updatedAt": "2025-12-15T09:30:00"
+      "baseSalary": 0,
+      "nightSalary": 0,
+      "holidaySalary": 0,
+      "totalSalary": 0
     },
     {
       "id": 306,
       "contractId": 201,
+      "workerName": "박민준",
+      "workerCode": "WORKER001",
+      "workplaceName": "홍대점",
       "workDate": "2025-12-25",
       "startTime": "09:00",
       "endTime": "18:00",
       "breakMinutes": 60,
-      "totalWorkHours": 8.0,
+      "totalWorkMinutes": 420,
       "status": "SCHEDULED",
       "isModified": false,
       "memo": "정상 근무",
-      "createdAt": "2025-12-15T09:30:00",
-      "updatedAt": "2025-12-15T09:30:00"
+      "baseSalary": 0,
+      "nightSalary": 0,
+      "holidaySalary": 0,
+      "totalSalary": 0
     },
     {
       "id": 307,
       "contractId": 201,
+      "workerName": "박민준",
+      "workerCode": "WORKER001",
+      "workplaceName": "홍대점",
       "workDate": "2025-12-15",
       "startTime": "09:00",
       "endTime": "18:00",
       "breakMinutes": 60,
-      "totalWorkHours": 8.0,
+      "totalWorkMinutes": 420,
       "status": "PENDING_APPROVAL",
       "isModified": false,
       "memo": "당일 기록",
-      "createdAt": "2025-12-15T14:30:00",
-      "updatedAt": "2025-12-15T14:30:00"
+      "baseSalary": 0,
+      "nightSalary": 0,
+      "holidaySalary": 0,
+      "totalSalary": 0
     },
     {
       "id": 308,
       "contractId": 201,
+      "workerName": "박민준",
+      "workerCode": "WORKER001",
+      "workplaceName": "홍대점",
       "workDate": "2025-12-10",
       "startTime": "09:00",
       "endTime": "18:00",
       "breakMinutes": 60,
-      "totalWorkHours": 8.0,
+      "totalWorkMinutes": 420,
       "status": "COMPLETED",
       "isModified": false,
       "memo": "완료됨",
-      "createdAt": "2025-12-10T09:30:00",
-      "updatedAt": "2025-12-10T17:30:00"
+      "baseSalary": 70210,
+      "nightSalary": 0,
+      "holidaySalary": 0,
+      "totalSalary": 70210
     }
   ]
 }
@@ -1331,20 +1376,21 @@
   "data": {
     "id": 308,
     "contractId": 201,
-    "workerId": 2001,
     "workerName": "박민준",
-    "workplaceId": 101,
+    "workerCode": "WORKER001",
     "workplaceName": "홍대점",
     "workDate": "2025-12-10",
     "startTime": "09:00",
     "endTime": "18:00",
     "breakMinutes": 60,
-    "totalWorkHours": 8.0,
+    "totalWorkMinutes": 420,
     "status": "COMPLETED",
     "isModified": false,
     "memo": "완료됨",
-    "createdAt": "2025-12-10T09:30:00",
-    "updatedAt": "2025-12-10T17:30:00"
+    "baseSalary": 70210,
+    "nightSalary": 0,
+    "holidaySalary": 0,
+    "totalSalary": 70210
   }
 }
 ```

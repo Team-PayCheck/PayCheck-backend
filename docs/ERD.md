@@ -23,6 +23,7 @@ erDiagram
     Salary ||--|| Payment : "paid_through"
 
     User ||--o{ Notification : "receives"
+    User ||--o| RefreshToken : "has"
 
     User {
         bigint id PK
@@ -140,9 +141,10 @@ erDiagram
 
     Salary {
         bigint id PK
+        bigint version "낙관적 락 버전 (@Version)"
         bigint contract_id FK "WorkerContract ID"
-        int year "연도"
-        int month "월"
+        int year "연도 (UK: contract_id, year, month)"
+        int month "월 (UK: contract_id, year, month)"
         decimal total_work_hours "총 근무 시간"
         decimal base_pay "기본급"
         decimal overtime_pay "연장 수당"
@@ -193,6 +195,17 @@ erDiagram
         boolean schedule_change_alert_enabled "일정 변경 알림"
         boolean payment_alert_enabled "송금 알림"
         boolean correction_request_alert_enabled "정정 요청 알림"
+        boolean invitation_alert_enabled "초대 알림"
+        boolean resignation_alert_enabled "퇴직 알림"
+        datetime created_at
+        datetime updated_at
+    }
+
+    RefreshToken {
+        bigint id PK
+        bigint user_id FK UK "User ID (사용자당 1개)"
+        string token UK "Refresh Token 값 (length 500)"
+        datetime expires_at "만료 일시"
         datetime created_at
         datetime updated_at
     }
@@ -218,7 +231,7 @@ erDiagram
 
 ### 4. Workplace (사업장)
 - 고용주가 운영하는 사업장 정보
-- 사업자등록번호로 유효성 검증
+- 사업자등록번호로 유효성 검증 (국세청 status API 기반)
 - **business_name**: 사업장명 (법인명 등)
 - **name**: 지점명 또는 별칭 (예: "홍대점", "강남점")
 - **color_code**: 캘린더에서 근무지별 색상 구분을 위한 필드
@@ -278,6 +291,8 @@ erDiagram
 ### 9. Salary (급여)
 - 월별 급여 정산 내역
 - 기본급, 각종 수당, 4대 보험 및 세금 공제 포함
+- **version**: 낙관적 락을 위한 버전 필드 (@Version)
+- **유니크 제약**: `uk_salary_contract_year_month` (contract_id, year, month) - 계약별 연월 급여 중복 방지
 - **total_work_hours**: 총 근무 시간
 - **four_major_insurance**: 4대 보험 통합 (국민연금+건강보험+고용보험+산재보험)
 - **local_income_tax**: 지방소득세
@@ -310,10 +325,19 @@ erDiagram
 - 푸시, 이메일, SMS 알림 개별 설정
 - 알림 유형별 활성화/비활성화 설정
 
+### 13. RefreshToken (리프레시 토큰)
+- JWT 인증을 위한 Refresh Token 저장
+- **user_id**: 사용자당 1개의 토큰만 유지 (UNIQUE 제약)
+- **token**: Refresh Token 값 (UNIQUE 제약)
+- **expires_at**: 토큰 만료 일시
+- RTR(Refresh Token Rotation) 방식으로 토큰 갱신 시 기존 토큰 자동 교체
+- DB 레벨 Upsert(INSERT ... ON DUPLICATE KEY UPDATE)로 원자적 저장
+
 ## 주요 관계
 
 1. **User ↔ Employer/Worker**: 상속 관계 (Single Table or Joined)
 2. **User → UserSettings**: 1:1 (사용자 설정)
+3. **User → RefreshToken**: 1:1 (JWT 인증 토큰)
 3. **Employer → Workplace**: 1:N (한 고용주가 여러 사업장 운영)
 4. **Workplace ↔ Worker → WorkerContract**: N:M (다대다 관계를 계약으로 해소)
 5. **WorkerContract → WorkRecord/Salary/WeeklyAllowance**: 1:N
@@ -351,6 +375,7 @@ erDiagram
 - Payment: salary_id, status
 - Notification: user_id, is_read, created_at
 - UserSettings: user_id (UK)
+- RefreshToken: user_id (UK), token (UK)
 
 ## 보안 고려사항
 

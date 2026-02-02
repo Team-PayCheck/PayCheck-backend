@@ -18,6 +18,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -38,6 +39,9 @@ class PaymentServiceTest {
 
     @Mock
     private SalaryRepository salaryRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private PaymentService paymentService;
@@ -225,5 +229,90 @@ class PaymentServiceTest {
         // then
         assertThat(result).isNotNull();
         verify(paymentRepository).findByWorkplaceIdAndYearMonth(1L, 2024, 1);
+    }
+
+    @Test
+    @DisplayName("송금 완료 처리 성공")
+    void completePayment_Success() {
+        // given
+        User user = mock(User.class);
+        when(user.getName()).thenReturn("근로자A");
+
+        Worker worker = mock(Worker.class);
+        when(worker.getId()).thenReturn(5L);
+        when(worker.getBankName()).thenReturn("카카오뱅크");
+        when(worker.getAccountNumber()).thenReturn("3333-1234-1234");
+        when(worker.getUser()).thenReturn(user);
+
+        Workplace workplace = mock(Workplace.class);
+        when(workplace.getId()).thenReturn(20L);
+        when(workplace.getName()).thenReturn("테스트매장");
+
+        WorkerContract contract = mock(WorkerContract.class);
+        when(contract.getWorker()).thenReturn(worker);
+        when(contract.getWorkplace()).thenReturn(workplace);
+
+        Salary salary = mock(Salary.class);
+        when(salary.getId()).thenReturn(1L);
+        when(salary.getNetPay()).thenReturn(BigDecimal.valueOf(10000));
+        when(salary.getYear()).thenReturn(2025);
+        when(salary.getMonth()).thenReturn(1);
+        when(salary.getContract()).thenReturn(contract);
+
+        Payment payment = Payment.builder()
+                .salary(salary)
+                .status(PaymentStatus.PENDING)
+                .build();
+
+        when(paymentRepository.findByIdWithAssociations(1L)).thenReturn(Optional.of(payment));
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        PaymentDto.Response response = paymentService.completePayment(1L);
+
+        // then
+        assertThat(response).isNotNull();
+        assertThat(payment.getStatus()).isEqualTo(PaymentStatus.COMPLETED);
+        verify(paymentRepository).save(payment);
+        verify(eventPublisher).publishEvent(any(Object.class));
+    }
+
+    @Test
+    @DisplayName("송금 완료 처리 실패 - Payment 없음")
+    void completePayment_Fail_NotFound() {
+        // given
+        when(paymentRepository.findByIdWithAssociations(anyLong())).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> paymentService.completePayment(1L))
+                .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("송금 완료 처리 실패 - 이미 완료됨")
+    void completePayment_Fail_AlreadyCompleted() {
+        // given
+        Payment payment = mock(Payment.class);
+        when(payment.getStatus()).thenReturn(PaymentStatus.COMPLETED);
+
+        when(paymentRepository.findByIdWithAssociations(1L)).thenReturn(Optional.of(payment));
+
+        // when & then
+        assertThatThrownBy(() -> paymentService.completePayment(1L))
+                .isInstanceOf(BadRequestException.class);
+    }
+
+    @Test
+    @DisplayName("송금 완료 처리 실패 - FAILED 상태")
+    void completePayment_Fail_FailedStatus() {
+        // given
+        Payment payment = mock(Payment.class);
+        when(payment.getStatus()).thenReturn(PaymentStatus.FAILED);
+
+        when(paymentRepository.findByIdWithAssociations(1L)).thenReturn(Optional.of(payment));
+
+        // when & then
+        assertThatThrownBy(() -> paymentService.completePayment(1L))
+                .isInstanceOf(BadRequestException.class);
     }
 }

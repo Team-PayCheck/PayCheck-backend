@@ -10,6 +10,10 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "salary",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_salary_contract_year_month",
+                columnNames = {"contract_id", "salary_year", "salary_month"}
+        ),
         indexes = {
                 @Index(name = "idx_contract_year_month", columnList = "contract_id,salary_year,salary_month")
         })
@@ -22,6 +26,9 @@ public class Salary extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Version
+    private Long version;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "contract_id", nullable = false)
@@ -68,4 +75,30 @@ public class Salary extends BaseEntity {
 
     @Column(name = "payment_due_date")
     private LocalDate paymentDueDate;
+
+    public void updateCalculatedFields(
+            BigDecimal totalWorkHours,
+            BigDecimal basePay,
+            BigDecimal overtimePay,
+            BigDecimal nightPay,
+            BigDecimal holidayPay,
+            BigDecimal totalGrossPay,
+            BigDecimal fourMajorInsurance,
+            BigDecimal incomeTax,
+            BigDecimal localIncomeTax,
+            BigDecimal totalDeduction,
+            BigDecimal netPay
+    ) {
+        this.totalWorkHours = totalWorkHours;
+        this.basePay = basePay;
+        this.overtimePay = overtimePay;
+        this.nightPay = nightPay;
+        this.holidayPay = holidayPay;
+        this.totalGrossPay = totalGrossPay;
+        this.fourMajorInsurance = fourMajorInsurance;
+        this.incomeTax = incomeTax;
+        this.localIncomeTax = localIncomeTax;
+        this.totalDeduction = totalDeduction;
+        this.netPay = netPay;
+    }
 }

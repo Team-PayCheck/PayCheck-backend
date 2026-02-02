@@ -79,10 +79,18 @@ public class OpenApiConfig {
      */
     @SuppressWarnings("rawtypes")
     private Content createErrorContent(String errorCode, String errorMessage) {
-        Schema errorDetailSchema = new Schema<>()
+        Schema<?> fieldErrorSchema = new Schema<>()
                 .type("object")
-                .addProperty("code", new Schema<>().type("string").example(errorCode))
-                .addProperty("message", new Schema<>().type("string").example(errorMessage));
+                .addProperty("field", new Schema<>().type("string"))
+                .addProperty("message", new Schema<>().type("string"));
+
+        Schema<?> errorDetailSchema = new Schema<>()
+                .type("object")
+                .addProperty("code", new Schema<>().type("string"))
+                .addProperty("message", new Schema<>().type("string"))
+                .addProperty("fieldErrors", new Schema<>()
+                        .type("array")
+                        .items(fieldErrorSchema));
 
         Schema errorResponseSchema = new Schema<>()
                 .type("object")

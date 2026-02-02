@@ -1,6 +1,5 @@
 package com.example.paycheck.domain.auth.service;
 
-import com.example.paycheck.domain.auth.entity.RefreshToken;
 import com.example.paycheck.domain.auth.repository.RefreshTokenRepository;
 import com.example.paycheck.global.security.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
@@ -10,8 +9,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
+
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -42,21 +44,19 @@ class TokenServiceTest {
     }
 
     @Test
-    @DisplayName("Refresh Token 생성 및 저장 성공")
+    @DisplayName("Refresh Token 생성 및 저장 성공 - DB 레벨 Upsert")
     void generateAndSaveRefreshToken_Success() {
         // given
         when(jwtTokenProvider.generateRefreshToken(1L)).thenReturn("refresh_token");
         when(jwtTokenProvider.getRefreshExpirationTime()).thenReturn(2592000000L);
-        doNothing().when(refreshTokenRepository).deleteByUserId(1L);
-        when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(null);
+        doNothing().when(refreshTokenRepository).upsertRefreshToken(eq(1L), eq("refresh_token"), any(LocalDateTime.class));
 
         // when
         String result = tokenService.generateAndSaveRefreshToken(1L);
 
         // then
         assertThat(result).isEqualTo("refresh_token");
-        verify(refreshTokenRepository).deleteByUserId(1L);
-        verify(refreshTokenRepository).save(any(RefreshToken.class));
+        verify(refreshTokenRepository).upsertRefreshToken(eq(1L), eq("refresh_token"), any(LocalDateTime.class));
     }
 
     @Test
@@ -66,8 +66,7 @@ class TokenServiceTest {
         when(jwtTokenProvider.generateToken(1L)).thenReturn("access_token");
         when(jwtTokenProvider.generateRefreshToken(1L)).thenReturn("refresh_token");
         when(jwtTokenProvider.getRefreshExpirationTime()).thenReturn(2592000000L);
-        doNothing().when(refreshTokenRepository).deleteByUserId(1L);
-        when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(null);
+        doNothing().when(refreshTokenRepository).upsertRefreshToken(eq(1L), eq("refresh_token"), any(LocalDateTime.class));
 
         // when
         TokenService.TokenPair result = tokenService.generateTokenPair(1L);
@@ -78,6 +77,7 @@ class TokenServiceTest {
         assertThat(result.getRefreshToken()).isEqualTo("refresh_token");
         verify(jwtTokenProvider).generateToken(1L);
         verify(jwtTokenProvider).generateRefreshToken(1L);
+        verify(refreshTokenRepository).upsertRefreshToken(eq(1L), eq("refresh_token"), any(LocalDateTime.class));
     }
 
     @Test

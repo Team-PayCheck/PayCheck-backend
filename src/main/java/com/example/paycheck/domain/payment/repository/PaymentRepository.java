@@ -15,6 +15,19 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findBySalaryId(Long salaryId);
     List<Payment> findByStatus(PaymentStatus status);
 
+    /**
+     * Payment 조회 시 연관된 모든 엔티티를 함께 조회 (N+1 문제 방지)
+     * - Salary, Contract, Worker, User, Workplace를 JOIN FETCH
+     */
+    @Query("SELECT p FROM Payment p " +
+           "JOIN FETCH p.salary s " +
+           "JOIN FETCH s.contract c " +
+           "JOIN FETCH c.worker w " +
+           "JOIN FETCH w.user u " +
+           "JOIN FETCH c.workplace wp " +
+           "WHERE p.id = :paymentId")
+    Optional<Payment> findByIdWithAssociations(@Param("paymentId") Long paymentId);
+
     @Query("SELECT p FROM Payment p " +
            "JOIN FETCH p.salary s " +
            "JOIN FETCH s.contract c " +

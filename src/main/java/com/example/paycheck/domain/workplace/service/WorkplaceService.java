@@ -23,10 +23,13 @@ public class WorkplaceService {
     private final WorkplaceRepository workplaceRepository;
     private final WorkerContractRepository workerContractRepository;
     private final EmployerService employerService;
+    private final BusinessNumberVerificationService businessNumberVerificationService;
 
     @Transactional
     public WorkplaceDto.Response createWorkplace(Long userId, WorkplaceDto.CreateRequest request) {
         Employer employer = employerService.getEmployerByUserId(userId);
+
+        businessNumberVerificationService.verifyBusinessNumber(request.getBusinessNumber());
 
         Workplace workplace = Workplace.builder()
                 .employer(employer)

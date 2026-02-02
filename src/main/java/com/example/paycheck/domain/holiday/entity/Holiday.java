@@ -75,6 +75,14 @@ public class Holiday extends BaseEntity {
     private String remarks;
 
     /**
+     * 공공기관 휴일 여부
+     * true: 실제 휴일 (휴일근로 수당 적용)
+     * false: 기념일 (평일 근무로 처리)
+     */
+    @Column(name = "is_public_holiday", nullable = false)
+    private Boolean isPublicHoliday;
+
+    /**
      * 공휴일 타입
      */
     public enum HolidayType {
@@ -104,9 +112,10 @@ public class Holiday extends BaseEntity {
     /**
      * 공휴일 정보 업데이트
      */
-    public void update(String holidayName, HolidayType type, String remarks) {
+    public void update(String holidayName, HolidayType type, String remarks, Boolean isPublicHoliday) {
         this.holidayName = holidayName;
         this.type = type;
         this.remarks = remarks;
+        this.isPublicHoliday = isPublicHoliday;
     }
 }
