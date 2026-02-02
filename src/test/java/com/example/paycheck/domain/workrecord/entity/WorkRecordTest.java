@@ -801,4 +801,66 @@ class WorkRecordTest {
         assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(170000));
         assertThat(work.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(200000));
     }
+
+    @Test
+    @DisplayName("평일 경계값 - 정확히 8시간 vs 8시간 1분(연장 발생)")
+    void calculateSalary_Weekday_8HoursVs8Hours1Minute() {
+        // given: 09:00-17:00 (8시간) / 09:00-17:01 (8시간 1분)
+        WorkRecord exact8 = WorkRecord.builder()
+                .contract(mockContract)
+                .workDate(LocalDate.of(2024, 1, 16)) // Tuesday
+                .startTime(LocalTime.of(9, 0))
+                .endTime(LocalTime.of(17, 0))
+                .breakMinutes(0)
+                .build();
+
+        WorkRecord over8 = WorkRecord.builder()
+                .contract(mockContract)
+                .workDate(LocalDate.of(2024, 1, 16)) // Tuesday
+                .startTime(LocalTime.of(9, 0))
+                .endTime(LocalTime.of(17, 1))
+                .breakMinutes(0)
+                .build();
+
+        // when
+        exact8.calculateHoursWithHolidayInfo(false, false);
+        exact8.calculateSalaryWithAllowanceRules(false);
+        over8.calculateHoursWithHolidayInfo(false, false);
+        over8.calculateSalaryWithAllowanceRules(false);
+
+        // then
+        assertThat(exact8.getTotalHours()).isEqualByComparingTo(new BigDecimal("8.00"));
+        assertThat(exact8.getTotalSalary()).isEqualByComparingTo(new BigDecimal("80000.00"));
+
+        // 8시간 1분 -> 8.02시간 (HALF_UP, scale=2)
+        assertThat(over8.getTotalHours()).isEqualByComparingTo(new BigDecimal("8.02"));
+        // 초과 0.02시간에 1.5배 적용: 0.02 * 10000 * 1.5 = 300
+        assertThat(over8.getTotalSalary()).isEqualByComparingTo(new BigDecimal("80300.00"));
+    }
+
+    @Test
+    @DisplayName("평일 야간+연장 중복 - 분 단위 포함 (20:00-06:01)")
+    void calculateSalary_Weekday_NightAndOvertime_WithMinutePrecision() {
+        // given: 20:00-06:01 (10시간 1분: 주간 2.02시간 + 야간 8시간)
+        when(mockContract.getHourlyWage()).thenReturn(new BigDecimal("10003"));
+        WorkRecord work = WorkRecord.builder()
+                .contract(mockContract)
+                .workDate(LocalDate.of(2024, 1, 17)) // Wednesday
+                .startTime(LocalTime.of(20, 0))
+                .endTime(LocalTime.of(6, 1))
+                .breakMinutes(0)
+                .build();
+
+        // when
+        work.calculateHoursWithHolidayInfo(false, false);
+        work.calculateSalaryWithAllowanceRules(false);
+
+        // then
+        assertThat(work.getTotalHours()).isEqualByComparingTo(new BigDecimal("10.02"));
+        assertThat(work.getRegularHours()).isEqualByComparingTo(new BigDecimal("2.02"));
+        assertThat(work.getNightHours()).isEqualByComparingTo(new BigDecimal("8.00"));
+        assertThat(work.getBaseSalary()).isEqualByComparingTo(new BigDecimal("20206.06"));
+        assertThat(work.getNightSalary()).isEqualByComparingTo(new BigDecimal("130139.03"));
+        assertThat(work.getTotalSalary()).isEqualByComparingTo(new BigDecimal("150345.09"));
+    }
 }

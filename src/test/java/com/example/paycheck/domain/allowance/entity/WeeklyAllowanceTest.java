@@ -144,6 +144,27 @@ class WeeklyAllowanceTest {
     }
 
     @Test
+    @DisplayName("주휴수당 계산 - 분 단위(15시간 1분) 반올림 검증")
+    void calculateWeeklyPaidLeave_RoundsToWonPrecision() {
+        // given
+        when(mockContract.getHourlyWage()).thenReturn(new BigDecimal("10003"));
+        weeklyAllowance = WeeklyAllowance.builder()
+                .contract(mockContract)
+                .weekStartDate(LocalDate.of(2024, 1, 1))
+                .weekEndDate(LocalDate.of(2024, 1, 7))
+                .totalWorkHours(new BigDecimal("15.01"))
+                .build();
+
+        // when
+        weeklyAllowance.calculateWeeklyPaidLeave();
+
+        // then
+        // (15.01 / 40) = 0.38 (scale=2, HALF_UP) -> 0.38 * 8 * 10003 = 30409.12
+        assertThat(weeklyAllowance.getWeeklyPaidLeaveAmount())
+                .isEqualByComparingTo(new BigDecimal("30409.12"));
+    }
+
+    @Test
     @DisplayName("연장수당 계산 - 주 40시간 이하 (미지급)")
     void calculateOvertime_LessThan40Hours() {
         // given
@@ -200,6 +221,25 @@ class WeeklyAllowanceTest {
         // then
         assertThat(weeklyAllowance.getOvertimeHours()).isEqualTo(BigDecimal.ZERO);
         assertThat(weeklyAllowance.getOvertimeAmount()).isEqualTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    @DisplayName("연장수당 계산 - 40시간 1분(경계값 초과)")
+    void calculateOvertime_Over40HoursByOneMinute() {
+        // given
+        weeklyAllowance = WeeklyAllowance.builder()
+                .contract(mockContract)
+                .weekStartDate(LocalDate.of(2024, 1, 1))
+                .weekEndDate(LocalDate.of(2024, 1, 7))
+                .totalWorkHours(new BigDecimal("40.01"))
+                .build();
+
+        // when
+        weeklyAllowance.calculateOvertime(false); // large workplace
+
+        // then
+        assertThat(weeklyAllowance.getOvertimeHours()).isEqualByComparingTo(new BigDecimal("0.01"));
+        assertThat(weeklyAllowance.getOvertimeAmount()).isEqualByComparingTo(new BigDecimal("150.0"));
     }
 
     @Test
