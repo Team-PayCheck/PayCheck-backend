@@ -4,6 +4,7 @@ import com.example.paycheck.domain.notification.entity.Notification;
 import com.example.paycheck.domain.notification.repository.NotificationRepository;
 import com.example.paycheck.domain.notification.service.SseEmitterService;
 import com.example.paycheck.domain.settings.dto.NotificationChannels;
+import com.example.paycheck.domain.settings.enums.NotificationChannel;
 import com.example.paycheck.domain.settings.service.UserSettingsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,7 +52,7 @@ public class NotificationEventListener {
         Notification savedNotification = notificationRepository.save(notification);
 
         // SSE를 통한 실시간 알림 전송 (push 채널이 활성화된 경우)
-        if (channels.getChannels().contains("push")) {
+        if (channels.getChannels().contains(NotificationChannel.PUSH.getValue())) {
             sseEmitterService.sendNotification(userId, savedNotification);
         }
     }
