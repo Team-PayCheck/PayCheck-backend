@@ -238,6 +238,9 @@
 }
 ```
 
+설명:
+- 사업자등록번호는 외부 status API로 유효성 검증됩니다.
+
 **Response:**
 ```json
 {
@@ -253,6 +256,28 @@
     "isActive": true,
     "createdAt": "2025-12-15T09:00:00",
     "updatedAt": "2025-12-15T09:00:00"
+  }
+}
+```
+
+**Error (사업자번호 유효성 실패):**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_BUSINESS_NUMBER",
+    "message": "유효하지 않은 사업자 등록번호입니다."
+  }
+}
+```
+
+**Error (검증 API 실패/미설정):**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "BUSINESS_NUMBER_VERIFICATION_FAILED",
+    "message": "사업자 등록번호 검증에 실패했습니다."
   }
 }
 ```
