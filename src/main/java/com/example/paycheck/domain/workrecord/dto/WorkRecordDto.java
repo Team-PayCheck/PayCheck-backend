@@ -80,6 +80,14 @@ public class WorkRecordDto {
         private WorkRecordStatus status;
         private Boolean isModified;
         private String memo;
+        @Schema(description = "기본 급여")
+        private BigDecimal baseSalary;
+        @Schema(description = "야간 수당")
+        private BigDecimal nightSalary;
+        @Schema(description = "휴일 수당")
+        private BigDecimal holidaySalary;
+        @Schema(description = "총 급여")
+        private BigDecimal totalSalary;
 
         public static DetailedResponse from(WorkRecord workRecord) {
             return DetailedResponse.builder()
@@ -96,6 +104,10 @@ public class WorkRecordDto {
                     .status(workRecord.getStatus())
                     .isModified(workRecord.getIsModified())
                     .memo(workRecord.getMemo())
+                    .baseSalary(workRecord.getBaseSalary())
+                    .nightSalary(workRecord.getNightSalary())
+                    .holidaySalary(workRecord.getHolidaySalary())
+                    .totalSalary(workRecord.getTotalSalary())
                     .build();
         }
     }
