@@ -5,8 +5,10 @@ import jakarta.persistence.LockTimeoutException;
 import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.PessimisticLockException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -66,7 +68,12 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE, "요청 값이 올바르지 않습니다.", fieldErrors);
     }
 
-    @ExceptionHandler({PessimisticLockException.class, LockTimeoutException.class})
+    @ExceptionHandler({
+            PessimisticLockException.class,
+            LockTimeoutException.class,
+            PessimisticLockingFailureException.class,
+            CannotAcquireLockException.class
+    })
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiResponse<Void> handleLockException(Exception e) {
         log.error("LockException: {}", e.getMessage());
