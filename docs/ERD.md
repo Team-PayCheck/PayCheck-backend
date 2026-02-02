@@ -195,6 +195,8 @@ erDiagram
         boolean schedule_change_alert_enabled "일정 변경 알림"
         boolean payment_alert_enabled "송금 알림"
         boolean correction_request_alert_enabled "정정 요청 알림"
+        boolean invitation_alert_enabled "초대 알림"
+        boolean resignation_alert_enabled "퇴직 알림"
         datetime created_at
         datetime updated_at
     }

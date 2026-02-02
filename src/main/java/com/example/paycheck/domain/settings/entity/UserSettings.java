@@ -49,6 +49,14 @@ public class UserSettings extends BaseEntity {
     @Builder.Default
     private Boolean correctionRequestAlertEnabled = true;
 
+    @Column(name = "invitation_alert_enabled", nullable = false)
+    @Builder.Default
+    private Boolean invitationAlertEnabled = true;
+
+    @Column(name = "resignation_alert_enabled", nullable = false)
+    @Builder.Default
+    private Boolean resignationAlertEnabled = true;
+
     public void updateSettings(
             Boolean notificationEnabled,
             Boolean pushEnabled,
@@ -56,7 +64,9 @@ public class UserSettings extends BaseEntity {
             Boolean smsEnabled,
             Boolean scheduleChangeAlertEnabled,
             Boolean paymentAlertEnabled,
-            Boolean correctionRequestAlertEnabled
+            Boolean correctionRequestAlertEnabled,
+            Boolean invitationAlertEnabled,
+            Boolean resignationAlertEnabled
     ) {
         if (notificationEnabled != null) this.notificationEnabled = notificationEnabled;
         if (pushEnabled != null) this.pushEnabled = pushEnabled;
@@ -65,5 +75,7 @@ public class UserSettings extends BaseEntity {
         if (scheduleChangeAlertEnabled != null) this.scheduleChangeAlertEnabled = scheduleChangeAlertEnabled;
         if (paymentAlertEnabled != null) this.paymentAlertEnabled = paymentAlertEnabled;
         if (correctionRequestAlertEnabled != null) this.correctionRequestAlertEnabled = correctionRequestAlertEnabled;
+        if (invitationAlertEnabled != null) this.invitationAlertEnabled = invitationAlertEnabled;
+        if (resignationAlertEnabled != null) this.resignationAlertEnabled = resignationAlertEnabled;
     }
 }

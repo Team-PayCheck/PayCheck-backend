@@ -41,6 +41,8 @@ class UserSettingsTest {
                 true,
                 false,
                 false,
+                false,
+                false,
                 false
         );
 
@@ -52,6 +54,8 @@ class UserSettingsTest {
         assertThat(userSettings.getScheduleChangeAlertEnabled()).isFalse();
         assertThat(userSettings.getPaymentAlertEnabled()).isFalse();
         assertThat(userSettings.getCorrectionRequestAlertEnabled()).isFalse();
+        assertThat(userSettings.getInvitationAlertEnabled()).isFalse();
+        assertThat(userSettings.getResignationAlertEnabled()).isFalse();
     }
 
     @Test
@@ -60,6 +64,8 @@ class UserSettingsTest {
         // when
         userSettings.updateSettings(
                 false,
+                null,
+                null,
                 null,
                 null,
                 null,
@@ -83,6 +89,8 @@ class UserSettingsTest {
 
         // when
         userSettings.updateSettings(
+                null,
+                null,
                 null,
                 null,
                 null,
@@ -113,5 +121,7 @@ class UserSettingsTest {
         assertThat(defaultSettings.getScheduleChangeAlertEnabled()).isTrue();
         assertThat(defaultSettings.getPaymentAlertEnabled()).isTrue();
         assertThat(defaultSettings.getCorrectionRequestAlertEnabled()).isTrue();
+        assertThat(defaultSettings.getInvitationAlertEnabled()).isTrue();
+        assertThat(defaultSettings.getResignationAlertEnabled()).isTrue();
     }
 }

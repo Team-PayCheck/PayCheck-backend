@@ -1,6 +1,7 @@
 package com.example.paycheck.domain.settings.service;
 
 import com.example.paycheck.common.exception.NotFoundException;
+import com.example.paycheck.domain.notification.enums.NotificationType;
 import com.example.paycheck.domain.settings.dto.NotificationChannels;
 import com.example.paycheck.domain.settings.entity.UserSettings;
 import com.example.paycheck.domain.settings.repository.UserSettingsRepository;
@@ -267,6 +268,117 @@ class UserSettingsServiceTest {
 
         // when
         NotificationChannels result = userSettingsService.getNotificationChannels(userId, "unknown_type");
+
+        // then
+        assertThat(result.isShouldSend()).isTrue();
+        assertThat(result.getChannels()).contains("push");
+    }
+
+    // NotificationType enum 오버로드 메서드 테스트
+
+    @Test
+    @DisplayName("알림 채널 조회 (NotificationType) - INVITATION 비활성화")
+    void getNotificationChannels_TypeEnum_InvitationDisabled() {
+        // given
+        Long userId = 1L;
+        UserSettings settings = mock(UserSettings.class);
+        when(settings.getNotificationEnabled()).thenReturn(true);
+        when(settings.getPushEnabled()).thenReturn(true);
+        when(settings.getInvitationAlertEnabled()).thenReturn(false);
+        when(userSettingsRepository.findByUserId(userId)).thenReturn(Optional.of(settings));
+
+        // when
+        NotificationChannels result = userSettingsService.getNotificationChannels(userId, NotificationType.INVITATION);
+
+        // then
+        assertThat(result.isShouldSend()).isFalse();
+    }
+
+    @Test
+    @DisplayName("알림 채널 조회 (NotificationType) - RESIGNATION 비활성화")
+    void getNotificationChannels_TypeEnum_ResignationDisabled() {
+        // given
+        Long userId = 1L;
+        UserSettings settings = mock(UserSettings.class);
+        when(settings.getNotificationEnabled()).thenReturn(true);
+        when(settings.getPushEnabled()).thenReturn(true);
+        when(settings.getResignationAlertEnabled()).thenReturn(false);
+        when(userSettingsRepository.findByUserId(userId)).thenReturn(Optional.of(settings));
+
+        // when
+        NotificationChannels result = userSettingsService.getNotificationChannels(userId, NotificationType.RESIGNATION);
+
+        // then
+        assertThat(result.isShouldSend()).isFalse();
+    }
+
+    @Test
+    @DisplayName("알림 채널 조회 (NotificationType) - SCHEDULE_CREATED는 scheduleChangeAlertEnabled 따름")
+    void getNotificationChannels_TypeEnum_ScheduleCreated() {
+        // given
+        Long userId = 1L;
+        UserSettings settings = mock(UserSettings.class);
+        when(settings.getNotificationEnabled()).thenReturn(true);
+        when(settings.getPushEnabled()).thenReturn(true);
+        when(settings.getScheduleChangeAlertEnabled()).thenReturn(false);
+        when(userSettingsRepository.findByUserId(userId)).thenReturn(Optional.of(settings));
+
+        // when
+        NotificationChannels result = userSettingsService.getNotificationChannels(userId, NotificationType.SCHEDULE_CREATED);
+
+        // then
+        assertThat(result.isShouldSend()).isFalse();
+    }
+
+    @Test
+    @DisplayName("알림 채널 조회 (NotificationType) - PAYMENT_SUCCESS는 paymentAlertEnabled 따름")
+    void getNotificationChannels_TypeEnum_PaymentSuccess() {
+        // given
+        Long userId = 1L;
+        UserSettings settings = mock(UserSettings.class);
+        when(settings.getNotificationEnabled()).thenReturn(true);
+        when(settings.getPushEnabled()).thenReturn(true);
+        when(settings.getPaymentAlertEnabled()).thenReturn(false);
+        when(userSettingsRepository.findByUserId(userId)).thenReturn(Optional.of(settings));
+
+        // when
+        NotificationChannels result = userSettingsService.getNotificationChannels(userId, NotificationType.PAYMENT_SUCCESS);
+
+        // then
+        assertThat(result.isShouldSend()).isFalse();
+    }
+
+    @Test
+    @DisplayName("알림 채널 조회 (NotificationType) - CORRECTION_RESPONSE는 correctionRequestAlertEnabled 따름")
+    void getNotificationChannels_TypeEnum_CorrectionResponse() {
+        // given
+        Long userId = 1L;
+        UserSettings settings = mock(UserSettings.class);
+        when(settings.getNotificationEnabled()).thenReturn(true);
+        when(settings.getPushEnabled()).thenReturn(true);
+        when(settings.getCorrectionRequestAlertEnabled()).thenReturn(false);
+        when(userSettingsRepository.findByUserId(userId)).thenReturn(Optional.of(settings));
+
+        // when
+        NotificationChannels result = userSettingsService.getNotificationChannels(userId, NotificationType.CORRECTION_RESPONSE);
+
+        // then
+        assertThat(result.isShouldSend()).isFalse();
+    }
+
+    @Test
+    @DisplayName("알림 채널 조회 (NotificationType) - 활성화 시 정상 전송")
+    void getNotificationChannels_TypeEnum_Enabled() {
+        // given
+        Long userId = 1L;
+        UserSettings settings = mock(UserSettings.class);
+        when(settings.getNotificationEnabled()).thenReturn(true);
+        when(settings.getPushEnabled()).thenReturn(true);
+        when(settings.getInvitationAlertEnabled()).thenReturn(true);
+        when(userSettingsRepository.findByUserId(userId)).thenReturn(Optional.of(settings));
+
+        // when
+        NotificationChannels result = userSettingsService.getNotificationChannels(userId, NotificationType.INVITATION);
 
         // then
         assertThat(result.isShouldSend()).isTrue();
