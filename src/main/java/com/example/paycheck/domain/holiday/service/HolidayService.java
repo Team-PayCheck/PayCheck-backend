@@ -35,7 +35,7 @@ public class HolidayService {
      * @param date 확인할 날짜
      * @return 공공기관 휴일 여부
      */
-    @Cacheable(value = "public-holiday-check", key = "#date")
+    @Cacheable(value = "holiday-check", key = "#date")
     public boolean isPublicHoliday(LocalDate date) {
         // 1. 토요일/일요일 체크
         if (date.getDayOfWeek().getValue() >= 6) {
@@ -97,7 +97,7 @@ public class HolidayService {
      * @return 저장된 공휴일 개수
      */
     @Transactional
-    @CacheEvict(value = {"public-holiday-check", "holidays-by-year"}, allEntries = true)
+    @CacheEvict(value = {"holiday-check", "holidays-by-year"}, allEntries = true)
     public int updateHolidays(int year) {
         log.info("{}년 공휴일 정보 업데이트 시작", year);
 
