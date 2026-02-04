@@ -1,6 +1,8 @@
 package com.example.paycheck.domain.salary.util;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -233,6 +235,8 @@ public class DeductionCalculator {
 
     private static TaxTable loadTaxTable() {
         ObjectMapper mapper = new ObjectMapper();
+        mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try (InputStream stream = DeductionCalculator.class.getClassLoader()
             .getResourceAsStream(INCOME_TAX_TABLE_RESOURCE)) {
             if (stream == null) {

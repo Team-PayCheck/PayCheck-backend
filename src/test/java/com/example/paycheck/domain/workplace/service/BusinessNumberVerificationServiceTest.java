@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +32,8 @@ class BusinessNumberVerificationServiceTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
+        ReflectionTestUtils.setField(businessNumberVerificationService, "enabled", true);
+        when(ntsBusinessStatusClient.isConfigured()).thenReturn(true);
     }
 
     @Test
