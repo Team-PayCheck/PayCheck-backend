@@ -239,10 +239,9 @@ public class SalaryService {
 
             try {
                 // REQUIRES_NEW 트랜잭션에서 저장 시도 (실패해도 메인 트랜잭션 유지)
-                salaryPersistenceService.trySave(salary);
-                // REQUIRES_NEW로 저장된 엔티티는 현재 트랜잭션의 영속성 컨텍스트에서 분리되므로 재조회 필요
-                salary = salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month)
-                        .orElseThrow(() -> new IllegalStateException("급여 데이터 동시성 오류"));
+                // 성공 시 저장된 엔티티를 그대로 사용한다.
+                // 재조회는 동시 INSERT 충돌(DataIntegrityViolationException) 경로에서만 수행한다.
+                salary = salaryPersistenceService.trySave(salary);
             } catch (DataIntegrityViolationException e) {
                 // 동시 INSERT 발생 시 (Unique Constraint 위반) 재조회 후 업데이트
                 log.warn("급여 동시 생성 감지 - 재조회 후 업데이트 수행: contractId={}, year={}, month={}", contractId, year, month);

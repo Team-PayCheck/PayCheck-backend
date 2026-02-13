@@ -17,7 +17,7 @@ public class BusinessNumberVerificationService {
     private final NtsBusinessStatusClient ntsBusinessStatusClient;
 
     @Value("${nts.business-status.enabled:true}")
-    private boolean enabled;
+    private boolean enabled = true;
 
     public void verifyBusinessNumber(String businessNumber) {
         if (!enabled) {

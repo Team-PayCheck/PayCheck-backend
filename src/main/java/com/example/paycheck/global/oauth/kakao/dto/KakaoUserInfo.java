@@ -5,6 +5,7 @@ import lombok.Builder;
 @Builder
 public record KakaoUserInfo(
         String kakaoId,
-        String name
+        String name,
+        String profileImageUrl
 ) {
 }
