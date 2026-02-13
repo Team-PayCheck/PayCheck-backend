@@ -69,7 +69,8 @@ class AuthServiceTest {
 
         kakaoUserInfo = new KakaoUserInfo(
                 "test_kakao_id",
-                "카카오 닉네임"
+                "카카오 닉네임",
+                "https://kakao.com/profile.jpg"
         );
 
         tokenPair = TokenService.TokenPair.builder()
@@ -159,8 +160,76 @@ class AuthServiceTest {
 
         verify(oAuthService).getKakaoUserInfo(request.getKakaoAccessToken());
         verify(userRepository).findByKakaoId(kakaoUserInfo.kakaoId());
-        verify(userService).register(any(UserDto.RegisterRequest.class));
+        verify(userService).register(argThat(registerRequest ->
+                "https://example.com/profile.jpg".equals(registerRequest.getProfileImageUrl())));
         verify(tokenService).generateTokenPair(1L);
+    }
+
+    @Test
+    @DisplayName("카카오 회원가입 시 프로필 이미지 미입력이면 카카오 이미지 사용")
+    void registerWithKakao_UsesKakaoProfileImageAsDefault() {
+        // given
+        AuthDto.KakaoRegisterRequest request = AuthDto.KakaoRegisterRequest.builder()
+                .kakaoAccessToken("kakao_access_token")
+                .phone("010-1234-5678")
+                .userType("WORKER")
+                .bankName("카카오뱅크")
+                .accountNumber("3333123456789")
+                .build();
+
+        UserDto.RegisterResponse registerResponse = UserDto.RegisterResponse.builder()
+                .userId(1L)
+                .name("카카오 닉네임")
+                .userType(UserType.WORKER)
+                .workerCode("WORKER001")
+                .build();
+
+        when(oAuthService.getKakaoUserInfo(request.getKakaoAccessToken())).thenReturn(kakaoUserInfo);
+        when(userRepository.findByKakaoId(kakaoUserInfo.kakaoId())).thenReturn(Optional.empty());
+        when(oAuthService.resolveDisplayName(kakaoUserInfo)).thenReturn("카카오 닉네임");
+        when(userService.register(any(UserDto.RegisterRequest.class))).thenReturn(registerResponse);
+        when(tokenService.generateTokenPair(1L)).thenReturn(tokenPair);
+
+        // when
+        authService.registerWithKakao(request);
+
+        // then
+        verify(userService).register(argThat(registerRequest ->
+                "https://kakao.com/profile.jpg".equals(registerRequest.getProfileImageUrl())));
+    }
+
+    @Test
+    @DisplayName("카카오 회원가입 시 잘못된 프로필 이미지 문자열이면 카카오 이미지 사용")
+    void registerWithKakao_InvalidProfileImageString_UsesKakaoImage() {
+        // given
+        AuthDto.KakaoRegisterRequest request = AuthDto.KakaoRegisterRequest.builder()
+                .kakaoAccessToken("kakao_access_token")
+                .phone("010-1234-5678")
+                .userType("WORKER")
+                .profileImageUrl("string")
+                .bankName("카카오뱅크")
+                .accountNumber("3333123456789")
+                .build();
+
+        UserDto.RegisterResponse registerResponse = UserDto.RegisterResponse.builder()
+                .userId(1L)
+                .name("카카오 닉네임")
+                .userType(UserType.WORKER)
+                .workerCode("WORKER001")
+                .build();
+
+        when(oAuthService.getKakaoUserInfo(request.getKakaoAccessToken())).thenReturn(kakaoUserInfo);
+        when(userRepository.findByKakaoId(kakaoUserInfo.kakaoId())).thenReturn(Optional.empty());
+        when(oAuthService.resolveDisplayName(kakaoUserInfo)).thenReturn("카카오 닉네임");
+        when(userService.register(any(UserDto.RegisterRequest.class))).thenReturn(registerResponse);
+        when(tokenService.generateTokenPair(1L)).thenReturn(tokenPair);
+
+        // when
+        authService.registerWithKakao(request);
+
+        // then
+        verify(userService).register(argThat(registerRequest ->
+                "https://kakao.com/profile.jpg".equals(registerRequest.getProfileImageUrl())));
     }
 
     @Test
