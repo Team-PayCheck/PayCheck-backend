@@ -17,10 +17,12 @@ import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -35,6 +37,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional
 public class WorkRecordCommandService {
@@ -52,6 +55,7 @@ public class WorkRecordCommandService {
     private final WorkRecordGenerationService workRecordGenerationService;
     private final WorkRecordCalculationService calculationService;
     private final ApplicationEventPublisher eventPublisher;
+    private final Clock clock;
 
     /**
      * 고용주가 근무 일정 생성 (승인 불필요)
@@ -69,7 +73,7 @@ public class WorkRecordCommandService {
 
         // 근무 날짜와 현재 날짜를 비교하여 상태 결정
         // 과거 날짜면 COMPLETED, 미래 날짜면 SCHEDULED
-        WorkRecordStatus status = request.getWorkDate().isBefore(LocalDate.now())
+        WorkRecordStatus status = request.getWorkDate().isBefore(LocalDate.now(clock))
                 ? WorkRecordStatus.COMPLETED
                 : WorkRecordStatus.SCHEDULED;
 
@@ -310,7 +314,7 @@ public class WorkRecordCommandService {
                     request.getBreakMinutes() != null ? request.getBreakMinutes() : 0
             );
 
-            WorkRecordStatus status = workDate.isBefore(LocalDate.now())
+            WorkRecordStatus status = workDate.isBefore(LocalDate.now(clock))
                     ? WorkRecordStatus.COMPLETED
                     : WorkRecordStatus.SCHEDULED;
 
@@ -336,14 +340,12 @@ public class WorkRecordCommandService {
         // 5. WorkRecord 일괄 저장 (saveAll 사용)
         List<WorkRecord> savedRecords = workRecordRepository.saveAll(workRecordsToSave);
 
-        // 6. COMPLETED 상태 WorkRecord 상세 계산
+        // 6. COMPLETED 상태 WorkRecord 상세 일괄 계산
         List<WorkRecord> completedRecords = savedRecords.stream()
                 .filter(wr -> wr.getStatus() == WorkRecordStatus.COMPLETED)
                 .collect(Collectors.toList());
 
-        for (WorkRecord completedRecord : completedRecords) {
-            calculationService.calculateWorkRecordDetails(completedRecord);
-        }
+        calculationService.calculateWorkRecordDetailsBatch(completedRecords);
 
         // 7. 계산된 WorkRecord 일괄 업데이트
         if (!completedRecords.isEmpty()) {
@@ -382,6 +384,21 @@ public class WorkRecordCommandService {
     }
 
     /**
+     * 계약 해지 시 미래 예정된 근무 기록 일괄 삭제
+     * - 해당 근무 기록에 연결된 CorrectionRequest 삭제
+     * - SCHEDULED 상태의 오늘 이후 근무 기록 물리 삭제
+     */
+    public void deleteFutureWorkRecords(Long contractId) {
+        // 삭제할 WorkRecord를 참조하는 CorrectionRequest 삭제
+        correctionRequestRepository.deleteByWorkRecordContractAndDateAfterAndStatus(
+                contractId, LocalDate.now(clock).minusDays(1), WorkRecordStatus.SCHEDULED);
+
+        // 오늘 이후의 SCHEDULED 상태 WorkRecord 삭제
+        workRecordRepository.deleteByContractIdAndWorkDateAfterAndStatus(
+                contractId, LocalDate.now(clock).minusDays(1), WorkRecordStatus.SCHEDULED);
+    }
+
+    /**
      * 계약 정보 변경 시 미래 WorkRecord 재생성
      * - 오늘 이후의 SCHEDULED 상태 WorkRecord 삭제
      * - 변경된 근무 스케줄로 새로운 WorkRecord 생성
@@ -392,14 +409,14 @@ public class WorkRecordCommandService {
 
         // 삭제할 WorkRecord를 참조하는 CorrectionRequest 삭제
         correctionRequestRepository.deleteByWorkRecordContractAndDateAfterAndStatus(
-                contractId, LocalDate.now(), WorkRecordStatus.SCHEDULED);
+                contractId, LocalDate.now(clock), WorkRecordStatus.SCHEDULED);
 
         // 오늘 이후의 SCHEDULED 상태 WorkRecord 삭제
         workRecordRepository.deleteByContractIdAndWorkDateAfterAndStatus(
-                contractId, LocalDate.now(), WorkRecordStatus.SCHEDULED);
+                contractId, LocalDate.now(clock), WorkRecordStatus.SCHEDULED);
 
         // 새로운 WorkRecord 생성 (오늘+1 ~ 2개월 뒤)
-        LocalDate startDate = LocalDate.now().plusDays(1);
+        LocalDate startDate = LocalDate.now(clock).plusDays(1);
         LocalDate endDate = startDate.plusMonths(2);
         workRecordGenerationService.generateWorkRecordsForPeriod(contract, startDate, endDate);
     }
@@ -419,7 +436,7 @@ public class WorkRecordCommandService {
             data.put("workRecordId", workRecordId);
             return mapper.writeValueAsString(data);
         } catch (Exception e) {
-            return null;
+            throw new RuntimeException("알림 액션 데이터 생성 실패: workRecordId=" + workRecordId, e);
         }
     }
 
