@@ -389,13 +389,15 @@ public class WorkRecordCommandService {
      * - SCHEDULED 상태의 오늘 이후 근무 기록 물리 삭제
      */
     public void deleteFutureWorkRecords(Long contractId) {
-        // 삭제할 WorkRecord를 참조하는 CorrectionRequest 삭제
-        correctionRequestRepository.deleteByWorkRecordContractAndDateAfterAndStatus(
-                contractId, LocalDate.now(clock).minusDays(1), WorkRecordStatus.SCHEDULED);
+        LocalDate today = LocalDate.now(clock);
 
-        // 오늘 이후의 SCHEDULED 상태 WorkRecord 삭제
+        // 삭제할 WorkRecord를 참조하는 CorrectionRequest 삭제 (오늘 포함 이후)
+        correctionRequestRepository.deleteByWorkRecordContractAndDateAfterAndStatus(
+                contractId, today.minusDays(1), WorkRecordStatus.SCHEDULED);
+
+        // 오늘 포함 이후의 SCHEDULED 상태 WorkRecord 삭제
         workRecordRepository.deleteByContractIdAndWorkDateAfterAndStatus(
-                contractId, LocalDate.now(clock).minusDays(1), WorkRecordStatus.SCHEDULED);
+                contractId, today.minusDays(1), WorkRecordStatus.SCHEDULED);
     }
 
     /**
