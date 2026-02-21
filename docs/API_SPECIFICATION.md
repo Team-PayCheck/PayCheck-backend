@@ -64,6 +64,12 @@
 | **12. 공통 - 설정** ||||||||
 | 12.1 | 내 설정 조회 | GET | `/api/settings/me` | 로그인한 사용자의 알림 설정 조회 | 대기 | 완료 | 2025-12-10 | [링크](#121-내-설정-조회) |
 | 12.2 | 내 설정 수정 | PUT | `/api/settings/me` | 로그인한 사용자의 알림 설정 수정 | 대기 | 완료 | 2025-12-10 | [링크](#122-내-설정-수정) |
+| **13. 공통 - 공지사항** ||||||||
+| 13.1 | 공지사항 작성 | POST | `/api/workplaces/{workplaceId}/notices` | 사업장 공지사항 작성 (사업장 소속 인원) | 대기 | 완료 | 2026-02-21 | [링크](#131-공지사항-작성) |
+| 13.2 | 공지사항 목록 조회 | GET | `/api/workplaces/{workplaceId}/notices` | 사업장 공지사항 목록 조회 (만료 제외) | 대기 | 완료 | 2026-02-21 | [링크](#132-공지사항-목록-조회) |
+| 13.3 | 공지사항 단건 조회 | GET | `/api/notices/{noticeId}` | 공지사항 상세 조회 | 대기 | 완료 | 2026-02-21 | [링크](#133-공지사항-단건-조회) |
+| 13.4 | 공지사항 수정 | PUT | `/api/notices/{noticeId}` | 공지사항 수정 (작성자만) | 대기 | 완료 | 2026-02-21 | [링크](#134-공지사항-수정) |
+| 13.5 | 공지사항 삭제 | DELETE | `/api/notices/{noticeId}` | 공지사항 삭제 (작성자만, 소프트 삭제) | 대기 | 완료 | 2026-02-21 | [링크](#135-공지사항-삭제) |
 
 ---
 
@@ -1964,6 +1970,139 @@ data: {
 
 ---
 
+### 13.1 공지사항 작성
+
+**POST** `/api/workplaces/{workplaceId}/notices`
+
+**Request Body:**
+```json
+{
+  "category": "URGENT",
+  "title": "사장님 공지 : 위생사항 엄수",
+  "content": "주방 위생 관리 철저히 해주세요.",
+  "expiresAt": "2026-03-01T23:59:59"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "workplaceId": 1,
+    "workplaceName": "테스트 사업장",
+    "authorId": 1,
+    "authorName": "홍길동",
+    "category": "URGENT",
+    "title": "사장님 공지 : 위생사항 엄수",
+    "content": "주방 위생 관리 철저히 해주세요.",
+    "expiresAt": "2026-03-01T23:59:59",
+    "createdAt": "2026-02-21T09:00:00",
+    "updatedAt": "2026-02-21T09:00:00"
+  }
+}
+```
+
+---
+
+### 13.2 공지사항 목록 조회
+
+**GET** `/api/workplaces/{workplaceId}/notices`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "category": "URGENT",
+      "title": "사장님 공지 : 위생사항 엄수",
+      "authorName": "홍길동",
+      "createdAt": "2026-02-21T09:00:00"
+    }
+  ]
+}
+```
+
+---
+
+### 13.3 공지사항 단건 조회
+
+**GET** `/api/notices/{noticeId}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "workplaceId": 1,
+    "workplaceName": "테스트 사업장",
+    "authorId": 1,
+    "authorName": "홍길동",
+    "category": "URGENT",
+    "title": "사장님 공지 : 위생사항 엄수",
+    "content": "주방 위생 관리 철저히 해주세요.",
+    "expiresAt": "2026-03-01T23:59:59",
+    "createdAt": "2026-02-21T09:00:00",
+    "updatedAt": "2026-02-21T09:00:00"
+  }
+}
+```
+
+---
+
+### 13.4 공지사항 수정
+
+**PUT** `/api/notices/{noticeId}`
+
+**Request Body:**
+```json
+{
+  "title": "수정된 제목",
+  "content": "수정된 내용",
+  "expiresAt": "2026-04-01T23:59:59"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "workplaceId": 1,
+    "workplaceName": "테스트 사업장",
+    "authorId": 1,
+    "authorName": "홍길동",
+    "category": "URGENT",
+    "title": "수정된 제목",
+    "content": "수정된 내용",
+    "expiresAt": "2026-04-01T23:59:59",
+    "createdAt": "2026-02-21T09:00:00",
+    "updatedAt": "2026-02-21T10:00:00"
+  }
+}
+```
+
+---
+
+### 13.5 공지사항 삭제
+
+**DELETE** `/api/notices/{noticeId}`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": null
+}
+```
+
+---
+
 ## 인증
 **Header:** `Authorization: Bearer {access_token}`
 
@@ -1983,3 +2122,7 @@ data: {
   - Notification에 actionType, actionData 필드 추가
   - Workplace에 isLessThanFiveEmployees 필드 추가
   - WorkerContract에 payrollDeductionType 필드 추가
+- v1.7 (2026-02-21): 공지사항 API 추가 (13.1~13.5)
+  - Notice 엔티티 추가 (Workplace 단위, expiresAt 필수)
+  - NoticeCategory enum 추가 (HANDOVER, URGENT, SCHEDULE, ETC)
+  - 공지사항 CRUD API 구현 (작성·목록조회·단건조회·수정·삭제)
