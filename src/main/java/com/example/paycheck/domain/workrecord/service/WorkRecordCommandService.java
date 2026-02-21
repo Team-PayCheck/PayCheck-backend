@@ -438,7 +438,8 @@ public class WorkRecordCommandService {
             data.put("workRecordId", workRecordId);
             return mapper.writeValueAsString(data);
         } catch (Exception e) {
-            throw new RuntimeException("알림 액션 데이터 생성 실패: workRecordId=" + workRecordId, e);
+            log.error("알림 액션 데이터 생성 실패: workRecordId={}", workRecordId, e);
+            return "{}";
         }
     }
 
