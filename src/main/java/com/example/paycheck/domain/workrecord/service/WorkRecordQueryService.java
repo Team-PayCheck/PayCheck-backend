@@ -13,6 +13,7 @@ import com.example.paycheck.domain.workrecord.dto.WorkRecordDto;
 import com.example.paycheck.domain.workrecord.entity.WorkRecord;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -72,7 +73,7 @@ public class WorkRecordQueryService {
         if (filterType == null) {
             // 전체 조회 (모든 타입)
             correctionRequests = correctionRequestRepository.findByWorkplaceIdAndStatus(
-                    workplaceId, CorrectionStatus.PENDING);
+                    workplaceId, CorrectionStatus.PENDING, Pageable.unpaged()).getContent();
         } else {
             // 특정 타입만 조회
             correctionRequests = correctionRequestRepository.findByWorkplaceIdAndStatusAndType(
