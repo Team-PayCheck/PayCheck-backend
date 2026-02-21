@@ -20,6 +20,7 @@ import com.example.paycheck.domain.contract.dto.WorkScheduleDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ContractService {
@@ -144,6 +146,9 @@ public class ContractService {
 
         contract.terminate();
 
+        // 미래 예정된 근무 기록 일괄 soft-delete
+        workRecordCommandService.deleteFutureWorkRecords(contractId);
+
         publishResignationEvent(contract);
     }
 
@@ -202,6 +207,7 @@ public class ContractService {
             data.put("workplaceId", workplaceId);
             return objectMapper.writeValueAsString(data);
         } catch (JsonProcessingException e) {
+            log.error("알림 액션 데이터 생성 실패: contractId={}, workplaceId={}", contractId, workplaceId, e);
             return null;
         }
     }

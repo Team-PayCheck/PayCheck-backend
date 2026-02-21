@@ -16,12 +16,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import java.time.Clock;
 import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Arrays;
 import java.util.Collections;
@@ -60,6 +64,14 @@ class WorkRecordCommandServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    private static final LocalDate FIXED_DATE = LocalDate.of(2026, 2, 21);
+
+    @Spy
+    private Clock clock = Clock.fixed(
+            FIXED_DATE.atStartOfDay(ZoneId.systemDefault()).toInstant(),
+            ZoneId.systemDefault()
+    );
 
     @InjectMocks
     private WorkRecordCommandService workRecordCommandService;
@@ -224,6 +236,40 @@ class WorkRecordCommandServiceTest {
         // 검증: 도메인 협력 일괄 처리
         verify(coordinatorService, times(1))
                 .handleBatchWorkRecordCreation(anyList());
+    }
+
+    @Test
+    @DisplayName("계약 해지 시 미래 근무 기록 및 관련 정정요청 삭제 성공")
+    void deleteFutureWorkRecords_Success() {
+        // given
+        Long contractId = 1L;
+        LocalDate expectedBoundary = FIXED_DATE.minusDays(1); // 어제 이후(today 포함) 삭제
+
+        // when
+        workRecordCommandService.deleteFutureWorkRecords(contractId);
+
+        // then: 고정된 날짜(2026-02-21) 기준으로 올바른 파라미터 전달 검증
+        verify(correctionRequestRepository).deleteByWorkRecordContractAndDateAfterAndStatus(
+                contractId, expectedBoundary, WorkRecordStatus.SCHEDULED);
+        verify(workRecordRepository).deleteByContractIdAndWorkDateAfterAndStatus(
+                contractId, expectedBoundary, WorkRecordStatus.SCHEDULED);
+    }
+
+    @Test
+    @DisplayName("계약 해지 시 정정요청 삭제 후 근무 기록 삭제 순서 보장")
+    void deleteFutureWorkRecords_OrderGuaranteed() {
+        // given
+        Long contractId = 2L;
+
+        // when
+        workRecordCommandService.deleteFutureWorkRecords(contractId);
+
+        // then: CorrectionRequest 삭제가 먼저, WorkRecord 삭제가 나중에 실행되어야 함
+        var inOrder = inOrder(correctionRequestRepository, workRecordRepository);
+        inOrder.verify(correctionRequestRepository).deleteByWorkRecordContractAndDateAfterAndStatus(
+                any(), any(), any());
+        inOrder.verify(workRecordRepository).deleteByContractIdAndWorkDateAfterAndStatus(
+                any(), any(), any());
     }
 
     @Test
