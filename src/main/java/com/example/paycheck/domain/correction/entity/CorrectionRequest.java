@@ -14,12 +14,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "correction_request", uniqueConstraints = {
-        @UniqueConstraint(name = "uk_correction_work_record_pending",
-                columnNames = {"work_record_id", "type", "status"}),
-        @UniqueConstraint(name = "uk_correction_create_pending",
-                columnNames = {"contract_id", "requested_work_date", "type", "status"})
-})
+@Table(name = "correction_request")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
