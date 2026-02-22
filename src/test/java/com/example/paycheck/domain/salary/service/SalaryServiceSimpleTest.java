@@ -291,7 +291,6 @@ class SalaryServiceSimpleTest {
         Long contractId = 1L;
         Integer year = 2024;
         Integer month = 3;
-        java.util.concurrent.atomic.AtomicReference<Salary> savedSalary = new java.util.concurrent.atomic.AtomicReference<>();
 
         WorkerContract contract = mock(WorkerContract.class);
         when(contract.getPaymentDay()).thenReturn(25);
@@ -346,13 +345,8 @@ class SalaryServiceSimpleTest {
                 .thenReturn(List.of(includedPreviousLastWeek));
 
         when(salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month))
-                .thenReturn(Optional.empty())
-                .thenAnswer(invocation -> Optional.ofNullable(savedSalary.get()));
-        when(salaryPersistenceService.trySave(any(Salary.class))).thenAnswer(invocation -> {
-            Salary salary = invocation.getArgument(0);
-            savedSalary.set(salary);
-            return salary;
-        });
+                .thenReturn(Optional.empty());
+        when(salaryPersistenceService.trySave(any(Salary.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
         SalaryDto.Response response = salaryService.calculateSalaryByWorkRecords(contractId, year, month);

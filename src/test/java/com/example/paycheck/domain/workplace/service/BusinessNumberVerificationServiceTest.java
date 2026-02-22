@@ -32,8 +32,8 @@ class BusinessNumberVerificationServiceTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
+        // @Value는 @InjectMocks에서 처리되지 않아 enabled 필드가 false(기본값)로 남으므로 직접 주입
         ReflectionTestUtils.setField(businessNumberVerificationService, "enabled", true);
-        when(ntsBusinessStatusClient.isConfigured()).thenReturn(true);
     }
 
     @Test

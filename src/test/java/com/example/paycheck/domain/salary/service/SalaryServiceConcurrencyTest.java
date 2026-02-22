@@ -192,27 +192,9 @@ class SalaryServiceConcurrencyTest {
         when(weeklyAllowanceRepository.findByContractIdAndYearMonth(eq(contractId), anyInt(), anyInt()))
                 .thenReturn(Collections.emptyList());
 
-        // 기존 급여 없음 -> 저장 후 재조회
+        // 기존 급여 없음
         when(salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month))
-                .thenReturn(Optional.empty())
-                .thenReturn(Optional.of(Salary.builder()
-                        .id(10L)
-                        .contract(mockContract)
-                        .year(year)
-                        .month(month)
-                        .totalWorkHours(BigDecimal.ZERO)
-                        .basePay(BigDecimal.ZERO)
-                        .overtimePay(BigDecimal.ZERO)
-                        .nightPay(BigDecimal.ZERO)
-                        .holidayPay(BigDecimal.ZERO)
-                        .totalGrossPay(BigDecimal.ZERO)
-                        .fourMajorInsurance(BigDecimal.ZERO)
-                        .incomeTax(BigDecimal.ZERO)
-                        .localIncomeTax(BigDecimal.ZERO)
-                        .totalDeduction(BigDecimal.ZERO)
-                        .netPay(BigDecimal.ZERO)
-                        .paymentDueDate(LocalDate.of(2024, 5, 25))
-                        .build()));
+                .thenReturn(Optional.empty());
 
         when(salaryPersistenceService.trySave(any(Salary.class))).thenAnswer(invocation -> {
             Salary saved = invocation.getArgument(0);
@@ -240,7 +222,7 @@ class SalaryServiceConcurrencyTest {
         var response = salaryService.calculateSalaryByWorkRecords(contractId, year, month);
 
         // then
-        verify(salaryRepository, times(2)).findByContractIdAndYearAndMonthForUpdate(contractId, year, month);
+        verify(salaryRepository).findByContractIdAndYearAndMonthForUpdate(contractId, year, month);
         verify(salaryPersistenceService).trySave(any(Salary.class));
         assertThat(response).isNotNull();
         assertThat(response.getYear()).isEqualTo(year);
