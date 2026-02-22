@@ -42,7 +42,16 @@ public class PaymentDayReminderService {
      */
     @Transactional
     public void sendPaymentDayReminders() {
-        LocalDate tomorrow = LocalDate.now().plusDays(1);
+        sendPaymentDayRemindersForDate(LocalDate.now());
+    }
+
+    /**
+     * 주어진 기준 날짜로 급여 지급일 전날 알림을 처리합니다.
+     * 테스트에서 날짜를 고정하여 호출할 수 있도록 패키지 프라이빗으로 분리합니다.
+     */
+    @Transactional
+    void sendPaymentDayRemindersForDate(LocalDate today) {
+        LocalDate tomorrow = today.plusDays(1);
         int tomorrowDay = tomorrow.getDayOfMonth();
         boolean isLastDayOfMonth = (tomorrowDay == tomorrow.lengthOfMonth());
 
