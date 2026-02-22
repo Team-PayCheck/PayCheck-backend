@@ -245,7 +245,7 @@ public class CustomPermissionEvaluator {
     // ==================== NOTICE 권한 ====================
 
     public boolean canAccessNotice(Long noticeId) {
-        Notice notice = noticeRepository.findById(noticeId).orElse(null);
+        Notice notice = noticeRepository.findByIdAndIsDeletedFalse(noticeId).orElse(null);
         if (notice == null) {
             return false;
         }

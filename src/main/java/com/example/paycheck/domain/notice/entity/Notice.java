@@ -36,7 +36,7 @@ public class Notice extends BaseEntity {
     @Column(name = "category", nullable = false)
     private NoticeCategory category;
 
-    @Column(name = "title", nullable = false)
+    @Column(name = "title", nullable = false, length = 100)
     private String title;
 
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
@@ -57,7 +57,7 @@ public class Notice extends BaseEntity {
         if (category != null) this.category = category;
         if (title != null) this.title = title;
         if (content != null) this.content = content;
-        this.expiresAt = expiresAt;
+        if (expiresAt != null) this.expiresAt = expiresAt;
     }
 
     public void delete() {

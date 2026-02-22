@@ -54,7 +54,7 @@ public class NoticeController {
 
     @Operation(summary = "공지사항 수정", description = "공지사항을 수정합니다. 작성자만 수정할 수 있습니다.")
     @PreAuthorize("@permissionEvaluator.canAccessNotice(#noticeId)")
-    @PutMapping("/notices/{noticeId}")
+    @PatchMapping("/notices/{noticeId}")
     public ApiResponse<NoticeDto.Response> updateNotice(
             @Parameter(description = "공지사항 ID", required = true) @PathVariable Long noticeId,
             @AuthenticationPrincipal User user,

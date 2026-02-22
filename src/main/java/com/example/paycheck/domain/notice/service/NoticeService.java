@@ -1,5 +1,6 @@
 package com.example.paycheck.domain.notice.service;
 
+import com.example.paycheck.common.exception.BadRequestException;
 import com.example.paycheck.common.exception.ErrorCode;
 import com.example.paycheck.common.exception.NotFoundException;
 import com.example.paycheck.common.exception.UnauthorizedException;
@@ -26,6 +27,10 @@ public class NoticeService {
 
     @Transactional
     public NoticeDto.Response createNotice(Long workplaceId, User author, NoticeDto.CreateRequest request) {
+        if (!request.getExpiresAt().isAfter(LocalDateTime.now())) {
+            throw new BadRequestException(ErrorCode.INVALID_INPUT_VALUE, "만료 일시는 현재 시간 이후여야 합니다.");
+        }
+
         Workplace workplace = workplaceRepository.findById(workplaceId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.WORKPLACE_NOT_FOUND, "사업장을 찾을 수 없습니다."));
 
@@ -61,6 +66,10 @@ public class NoticeService {
 
     @Transactional
     public NoticeDto.Response updateNotice(Long noticeId, User user, NoticeDto.UpdateRequest request) {
+        if (request.getExpiresAt() != null && !request.getExpiresAt().isAfter(LocalDateTime.now())) {
+            throw new BadRequestException(ErrorCode.INVALID_INPUT_VALUE, "만료 일시는 현재 시간 이후여야 합니다.");
+        }
+
         Notice notice = noticeRepository.findByIdAndIsDeletedFalse(noticeId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.NOTICE_NOT_FOUND, "공지사항을 찾을 수 없습니다."));
 
