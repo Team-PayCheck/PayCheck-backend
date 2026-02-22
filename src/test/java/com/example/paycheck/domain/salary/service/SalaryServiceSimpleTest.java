@@ -326,9 +326,9 @@ class SalaryServiceSimpleTest {
         when(weeklyAllowanceRepository.findByContractIdAndYearMonth(contractId, 2024, 2))
                 .thenReturn(List.of(includedPreviousLastWeek));
 
-        when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
-                .thenReturn(Collections.emptyList());
-        when(salaryRepository.save(any(Salary.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month))
+                .thenReturn(Optional.empty());
+        when(salaryPersistenceService.trySave(any(Salary.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
         SalaryDto.Response response = salaryService.calculateSalaryByWorkRecords(contractId, year, month);
