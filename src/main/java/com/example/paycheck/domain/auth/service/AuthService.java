@@ -22,6 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+
 /**
  * 인증 플로우를 조율하는 서비스
  * OAuth, Token 서비스를 조합하여 로그인/회원가입 등의 비즈니스 로직 처리
@@ -29,6 +32,8 @@ import org.springframework.util.StringUtils;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
+    private static final String DEFAULT_PROFILE_IMAGE_URL = "https://via.placeholder.com/150/CCCCCC/FFFFFF?text=User";
 
     private final OAuthService oAuthService;
     private final TokenService tokenService;
@@ -162,7 +167,7 @@ public class AuthService {
                 .name(request.getName().trim())
                 .phone(request.getPhone())
                 .userType(userType)
-                .profileImageUrl(request.getProfileImageUrl())
+                .profileImageUrl(resolveRegisterProfileImageUrl(request.getProfileImageUrl(), userInfo.profileImageUrl()))
                 .bankName(request.getBankName())
                 .accountNumber(request.getAccountNumber())
                 .build();
@@ -199,6 +204,43 @@ public class AuthService {
             return UserType.valueOf(userType.toUpperCase());
         } catch (Exception e) {
             throw new BadRequestException(ErrorCode.INVALID_USER_TYPE, "유효하지 않은 사용자 유형입니다. EMPLOYER 또는 WORKER를 입력해주세요.");
+        }
+    }
+
+    /**
+     * 회원가입 시 최종 프로필 이미지 URL을 결정하는 우선순위 로직
+     * 우선순위: 사용자 입력 URL > 카카오 프로필 이미지 > 기본 placeholder
+     *
+     * 클라이언트가 placeholder URL을 그대로 전송한 경우에도 "이미지 없음" 으로 간주하여
+     * 카카오 이미지로 대체한다. (클라이언트가 기본값을 재전송하는 경우 방어)
+     */
+    private String resolveRegisterProfileImageUrl(String requestedProfileImageUrl, String kakaoProfileImageUrl) {
+        // 클라이언트가 명시적으로 보낸 URL이 있으면 우선 사용 (placeholder는 제외)
+        if (isValidHttpUrl(requestedProfileImageUrl) && !DEFAULT_PROFILE_IMAGE_URL.equals(requestedProfileImageUrl)) {
+            return requestedProfileImageUrl;
+        }
+        // 값이 없거나 placeholder면 카카오 이미지를 기본값으로 사용
+        if (isValidHttpUrl(kakaoProfileImageUrl)) {
+            return kakaoProfileImageUrl;
+        }
+        return DEFAULT_PROFILE_IMAGE_URL;
+    }
+
+    /**
+     * 주어진 문자열이 유효한 http/https URL인지 확인
+     * scheme(http/https) 존재 여부와 host 유효성을 검사한다.
+     */
+    private boolean isValidHttpUrl(String value) {
+        if (!StringUtils.hasText(value)) {
+            return false;
+        }
+        try {
+            URI uri = new URI(value);
+            String scheme = uri.getScheme();
+            return ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme))
+                    && StringUtils.hasText(uri.getHost());
+        } catch (URISyntaxException e) {
+            return false;
         }
     }
 

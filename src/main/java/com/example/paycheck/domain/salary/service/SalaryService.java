@@ -239,7 +239,8 @@ public class SalaryService {
 
             try {
                 // REQUIRES_NEW 트랜잭션에서 저장 시도 (실패해도 메인 트랜잭션 유지)
-                // trySave()가 저장된 엔티티를 반환하므로 반환값을 직접 사용
+                // 성공 시 저장된 엔티티를 그대로 사용한다.
+                // 재조회는 동시 INSERT 충돌(DataIntegrityViolationException) 경로에서만 수행한다.
                 salary = salaryPersistenceService.trySave(salary);
             } catch (DataIntegrityViolationException e) {
                 // 동시 INSERT 발생 시 (Unique Constraint 위반) 재조회 후 업데이트
