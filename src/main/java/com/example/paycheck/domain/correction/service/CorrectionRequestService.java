@@ -24,9 +24,13 @@ import com.example.paycheck.domain.workrecord.service.WorkRecordCoordinatorServi
 import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -35,6 +39,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CorrectionRequestService {
@@ -266,19 +271,18 @@ public class CorrectionRequestService {
     // ===== 고용주용 API =====
 
     /**
-     * 사업장별 정정요청 목록 조회
+     * 사업장별 정정요청 목록 조회 (페이징)
      */
-    public List<CorrectionRequestDto.ListResponse> getCorrectionRequestsByWorkplace(Long workplaceId, CorrectionStatus status) {
-        List<CorrectionRequest> requests;
+    public Page<CorrectionRequestDto.ListResponse> getCorrectionRequestsByWorkplace(
+            Long workplaceId, CorrectionStatus status, Pageable pageable) {
+        Page<CorrectionRequest> requests;
         if (status != null) {
-            requests = correctionRequestRepository.findByWorkplaceIdAndStatus(workplaceId, status);
+            requests = correctionRequestRepository.findByWorkplaceIdAndStatus(workplaceId, status, pageable);
         } else {
-            requests = correctionRequestRepository.findByWorkplaceId(workplaceId);
+            requests = correctionRequestRepository.findByWorkplaceId(workplaceId, pageable);
         }
 
-        return requests.stream()
-                .map(CorrectionRequestDto.ListResponse::from)
-                .collect(Collectors.toList());
+        return requests.map(CorrectionRequestDto.ListResponse::from);
     }
 
     /**
@@ -436,6 +440,7 @@ public class CorrectionRequestService {
             data.put("correctionRequestId", correctionRequestId);
             return mapper.writeValueAsString(data);
         } catch (Exception e) {
+            log.error("알림 액션 데이터 생성 실패: correctionRequestId={}", correctionRequestId, e);
             return null;
         }
     }
