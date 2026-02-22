@@ -1,8 +1,8 @@
 package com.example.paycheck.domain.salary.util;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -235,7 +235,6 @@ public class DeductionCalculator {
 
     private static TaxTable loadTaxTable() {
         ObjectMapper mapper = new ObjectMapper();
-        mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try (InputStream stream = DeductionCalculator.class.getClassLoader()
             .getResourceAsStream(INCOME_TAX_TABLE_RESOURCE)) {
@@ -250,14 +249,19 @@ public class DeductionCalculator {
     }
 
     private static class TaxTableData {
-        public List<TaxTableRow> rows;
+        @JsonProperty("rows")
+        private List<TaxTableRow> rows;
     }
 
     private static class TaxTableRow {
-        public int min_salary_thousand;
-        public int max_salary_thousand;
-        public int family_count;
-        public int income_tax_won;
+        @JsonProperty("min_salary_thousand")
+        private int minSalaryThousand;
+        @JsonProperty("max_salary_thousand")
+        private int maxSalaryThousand;
+        @JsonProperty("family_count")
+        private int familyCount;
+        @JsonProperty("income_tax_won")
+        private int incomeTaxWon;
     }
 
     private static class TaxTable {
@@ -271,8 +275,8 @@ public class DeductionCalculator {
             Map<Integer, List<TaxRange>> map = new HashMap<>();
             if (rows != null) {
                 for (TaxTableRow row : rows) {
-                    map.computeIfAbsent(row.family_count, key -> new ArrayList<>())
-                        .add(new TaxRange(row.min_salary_thousand, row.max_salary_thousand, row.income_tax_won));
+                    map.computeIfAbsent(row.familyCount, key -> new ArrayList<>())
+                        .add(new TaxRange(row.minSalaryThousand, row.maxSalaryThousand, row.incomeTaxWon));
                 }
             }
             return new TaxTable(map);
