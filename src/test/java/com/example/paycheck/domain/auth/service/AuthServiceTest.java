@@ -233,6 +233,80 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("카카오 회원가입 시 사용자 URL도 카카오 이미지도 없으면 placeholder 반환")
+    void registerWithKakao_NoBothImages_UsesPlaceholder() {
+        // given
+        KakaoUserInfo kakaoUserInfoWithoutImage = new KakaoUserInfo(
+                "test_kakao_id",
+                "카카오 닉네임",
+                null // 카카오 프로필 이미지 없음
+        );
+
+        AuthDto.KakaoRegisterRequest request = AuthDto.KakaoRegisterRequest.builder()
+                .kakaoAccessToken("kakao_access_token")
+                .phone("010-1234-5678")
+                .userType("WORKER")
+                // profileImageUrl 미입력
+                .bankName("카카오뱅크")
+                .accountNumber("3333123456789")
+                .build();
+
+        UserDto.RegisterResponse registerResponse = UserDto.RegisterResponse.builder()
+                .userId(1L)
+                .name("카카오 닉네임")
+                .userType(UserType.WORKER)
+                .workerCode("WORKER001")
+                .build();
+
+        when(oAuthService.getKakaoUserInfo(request.getKakaoAccessToken())).thenReturn(kakaoUserInfoWithoutImage);
+        when(userRepository.findByKakaoId(kakaoUserInfoWithoutImage.kakaoId())).thenReturn(Optional.empty());
+        when(oAuthService.resolveDisplayName(kakaoUserInfoWithoutImage)).thenReturn("카카오 닉네임");
+        when(userService.register(any(UserDto.RegisterRequest.class))).thenReturn(registerResponse);
+        when(tokenService.generateTokenPair(1L)).thenReturn(tokenPair);
+
+        // when
+        authService.registerWithKakao(request);
+
+        // then
+        verify(userService).register(argThat(registerRequest ->
+                "https://via.placeholder.com/150/CCCCCC/FFFFFF?text=User".equals(registerRequest.getProfileImageUrl())));
+    }
+
+    @Test
+    @DisplayName("카카오 회원가입 시 placeholder URL을 직접 전송하면 카카오 이미지로 대체")
+    void registerWithKakao_PlaceholderUrlSentExplicitly_UsesKakaoImage() {
+        // given
+        AuthDto.KakaoRegisterRequest request = AuthDto.KakaoRegisterRequest.builder()
+                .kakaoAccessToken("kakao_access_token")
+                .phone("010-1234-5678")
+                .userType("WORKER")
+                .profileImageUrl("https://via.placeholder.com/150/CCCCCC/FFFFFF?text=User") // placeholder URL 명시 전송
+                .bankName("카카오뱅크")
+                .accountNumber("3333123456789")
+                .build();
+
+        UserDto.RegisterResponse registerResponse = UserDto.RegisterResponse.builder()
+                .userId(1L)
+                .name("카카오 닉네임")
+                .userType(UserType.WORKER)
+                .workerCode("WORKER001")
+                .build();
+
+        when(oAuthService.getKakaoUserInfo(request.getKakaoAccessToken())).thenReturn(kakaoUserInfo);
+        when(userRepository.findByKakaoId(kakaoUserInfo.kakaoId())).thenReturn(Optional.empty());
+        when(oAuthService.resolveDisplayName(kakaoUserInfo)).thenReturn("카카오 닉네임");
+        when(userService.register(any(UserDto.RegisterRequest.class))).thenReturn(registerResponse);
+        when(tokenService.generateTokenPair(1L)).thenReturn(tokenPair);
+
+        // when
+        authService.registerWithKakao(request);
+
+        // then: placeholder URL은 "이미지 없음"으로 간주하여 카카오 이미지로 대체
+        verify(userService).register(argThat(registerRequest ->
+                "https://kakao.com/profile.jpg".equals(registerRequest.getProfileImageUrl())));
+    }
+
+    @Test
     @DisplayName("카카오 회원가입 실패 - 이미 가입된 사용자")
     void registerWithKakao_DuplicateUser() {
         // given

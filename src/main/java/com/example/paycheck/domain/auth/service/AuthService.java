@@ -207,8 +207,15 @@ public class AuthService {
         }
     }
 
+    /**
+     * 회원가입 시 최종 프로필 이미지 URL을 결정하는 우선순위 로직
+     * 우선순위: 사용자 입력 URL > 카카오 프로필 이미지 > 기본 placeholder
+     *
+     * 클라이언트가 placeholder URL을 그대로 전송한 경우에도 "이미지 없음" 으로 간주하여
+     * 카카오 이미지로 대체한다. (클라이언트가 기본값을 재전송하는 경우 방어)
+     */
     private String resolveRegisterProfileImageUrl(String requestedProfileImageUrl, String kakaoProfileImageUrl) {
-        // 클라이언트가 명시적으로 보낸 URL이 있으면 우선 사용
+        // 클라이언트가 명시적으로 보낸 URL이 있으면 우선 사용 (placeholder는 제외)
         if (isValidHttpUrl(requestedProfileImageUrl) && !DEFAULT_PROFILE_IMAGE_URL.equals(requestedProfileImageUrl)) {
             return requestedProfileImageUrl;
         }
@@ -219,6 +226,10 @@ public class AuthService {
         return DEFAULT_PROFILE_IMAGE_URL;
     }
 
+    /**
+     * 주어진 문자열이 유효한 http/https URL인지 확인
+     * scheme(http/https) 존재 여부와 host 유효성을 검사한다.
+     */
     private boolean isValidHttpUrl(String value) {
         if (!StringUtils.hasText(value)) {
             return false;
