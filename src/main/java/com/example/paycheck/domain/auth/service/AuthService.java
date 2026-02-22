@@ -161,6 +161,11 @@ public class AuthService {
             );
         }
 
+        // 이름 필수 검증
+        if (!StringUtils.hasText(request.getName())) {
+            throw new BadRequestException(ErrorCode.INVALID_INPUT_VALUE, "이름은 필수입니다.");
+        }
+
         // 회원가입 요청 DTO 생성
         UserDto.RegisterRequest registerRequest = UserDto.RegisterRequest.builder()
                 .kakaoId(userInfo.kakaoId())
