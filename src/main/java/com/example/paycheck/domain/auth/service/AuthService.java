@@ -164,7 +164,7 @@ public class AuthService {
         // 회원가입 요청 DTO 생성
         UserDto.RegisterRequest registerRequest = UserDto.RegisterRequest.builder()
                 .kakaoId(userInfo.kakaoId())
-                .name(oAuthService.resolveDisplayName(userInfo))
+                .name(request.getName().trim())
                 .phone(request.getPhone())
                 .userType(userType)
                 .profileImageUrl(resolveRegisterProfileImageUrl(request.getProfileImageUrl(), userInfo.profileImageUrl()))

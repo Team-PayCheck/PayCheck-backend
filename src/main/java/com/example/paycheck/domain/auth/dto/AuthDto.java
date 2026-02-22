@@ -43,6 +43,9 @@ public class AuthDto {
         @NotBlank(message = "카카오 액세스 토큰은 필수입니다.")
         private String kakaoAccessToken;
 
+        @NotBlank(message = "이름은 필수입니다.")
+        private String name;
+
         @NotBlank(message = "사용자 유형은 필수입니다.")
         private String userType;
 
