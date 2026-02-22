@@ -228,10 +228,12 @@ class PaymentDayReminderServiceTest {
         // given
         LocalDate today = LocalDate.of(2025, 3, 20);
 
+        // sendReminderForContract 실행 순서: getPaymentDay → getId → getWorkplace().getName() → getWorker().getUser()
+        // getWorkplace()가 getWorker()보다 먼저 호출되므로 getWorkplace()에서 예외를 발생시킴
         WorkerContract failingContract = mock(WorkerContract.class);
         when(failingContract.getId()).thenReturn(2L);
         when(failingContract.getPaymentDay()).thenReturn(21);
-        when(failingContract.getWorker()).thenThrow(new RuntimeException("의도적 예외"));
+        when(failingContract.getWorkplace()).thenThrow(new RuntimeException("의도적 예외"));
 
         WorkRecord workRecord = mock(WorkRecord.class);
         when(workRecord.getTotalHours()).thenReturn(new BigDecimal("8.0"));
