@@ -107,6 +107,12 @@ public class GlobalExceptionHandler {
             } else if (exceptionMessage.contains("business_number") || exceptionMessage.contains("BUSINESS_NUMBER")) {
                 errorCode = ErrorCode.DUPLICATE_BUSINESS_NUMBER;
                 errorMessage = "이미 등록된 사업자등록번호입니다.";
+            } else if (exceptionMessage.contains("uk_correction_work_record_pending")
+                    || exceptionMessage.contains("uk_correction_create_pending")
+                    || exceptionMessage.contains("UK_CORRECTION_WORK_RECORD_PENDING")
+                    || exceptionMessage.contains("UK_CORRECTION_CREATE_PENDING")) {
+                errorCode = ErrorCode.DUPLICATE_CORRECTION_REQUEST;
+                errorMessage = "해당 항목에 이미 대기중인 정정요청이 있습니다.";
             } else if (exceptionMessage.contains("Duplicate entry")) {
                 errorMessage = "중복된 데이터가 이미 존재합니다.";
             }

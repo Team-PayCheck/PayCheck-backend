@@ -175,7 +175,8 @@ public class UserSettingsService {
                 -> settings.getScheduleChangeAlertEnabled();
             case CORRECTION_RESPONSE, UNREAD_CORRECTION_REQUEST
                 -> settings.getCorrectionRequestAlertEnabled();
-            case PAYMENT_DUE, PAYMENT_SUCCESS, PAYMENT_FAILED
+            case PAYMENT_DUE, PAYMENT_SUCCESS, PAYMENT_FAILED,
+                 WORK_RECORD_CONFIRMATION
                 -> settings.getPaymentAlertEnabled();
             case INVITATION -> settings.getInvitationAlertEnabled();
             case RESIGNATION -> settings.getResignationAlertEnabled();

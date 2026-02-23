@@ -171,6 +171,7 @@ class AuthServiceTest {
         // given
         AuthDto.KakaoRegisterRequest request = AuthDto.KakaoRegisterRequest.builder()
                 .kakaoAccessToken("kakao_access_token")
+                .name("홍길동")
                 .phone("010-1234-5678")
                 .userType("WORKER")
                 .bankName("카카오뱅크")
@@ -179,14 +180,13 @@ class AuthServiceTest {
 
         UserDto.RegisterResponse registerResponse = UserDto.RegisterResponse.builder()
                 .userId(1L)
-                .name("카카오 닉네임")
+                .name("홍길동")
                 .userType(UserType.WORKER)
                 .workerCode("WORKER001")
                 .build();
 
         when(oAuthService.getKakaoUserInfo(request.getKakaoAccessToken())).thenReturn(kakaoUserInfo);
         when(userRepository.findByKakaoId(kakaoUserInfo.kakaoId())).thenReturn(Optional.empty());
-        when(oAuthService.resolveDisplayName(kakaoUserInfo)).thenReturn("카카오 닉네임");
         when(userService.register(any(UserDto.RegisterRequest.class))).thenReturn(registerResponse);
         when(tokenService.generateTokenPair(1L)).thenReturn(tokenPair);
 
@@ -204,6 +204,7 @@ class AuthServiceTest {
         // given
         AuthDto.KakaoRegisterRequest request = AuthDto.KakaoRegisterRequest.builder()
                 .kakaoAccessToken("kakao_access_token")
+                .name("홍길동")
                 .phone("010-1234-5678")
                 .userType("WORKER")
                 .profileImageUrl("string")
@@ -213,14 +214,13 @@ class AuthServiceTest {
 
         UserDto.RegisterResponse registerResponse = UserDto.RegisterResponse.builder()
                 .userId(1L)
-                .name("카카오 닉네임")
+                .name("홍길동")
                 .userType(UserType.WORKER)
                 .workerCode("WORKER001")
                 .build();
 
         when(oAuthService.getKakaoUserInfo(request.getKakaoAccessToken())).thenReturn(kakaoUserInfo);
         when(userRepository.findByKakaoId(kakaoUserInfo.kakaoId())).thenReturn(Optional.empty());
-        when(oAuthService.resolveDisplayName(kakaoUserInfo)).thenReturn("카카오 닉네임");
         when(userService.register(any(UserDto.RegisterRequest.class))).thenReturn(registerResponse);
         when(tokenService.generateTokenPair(1L)).thenReturn(tokenPair);
 
@@ -244,6 +244,7 @@ class AuthServiceTest {
 
         AuthDto.KakaoRegisterRequest request = AuthDto.KakaoRegisterRequest.builder()
                 .kakaoAccessToken("kakao_access_token")
+                .name("홍길동")
                 .phone("010-1234-5678")
                 .userType("WORKER")
                 // profileImageUrl 미입력
@@ -253,14 +254,13 @@ class AuthServiceTest {
 
         UserDto.RegisterResponse registerResponse = UserDto.RegisterResponse.builder()
                 .userId(1L)
-                .name("카카오 닉네임")
+                .name("홍길동")
                 .userType(UserType.WORKER)
                 .workerCode("WORKER001")
                 .build();
 
         when(oAuthService.getKakaoUserInfo(request.getKakaoAccessToken())).thenReturn(kakaoUserInfoWithoutImage);
         when(userRepository.findByKakaoId(kakaoUserInfoWithoutImage.kakaoId())).thenReturn(Optional.empty());
-        when(oAuthService.resolveDisplayName(kakaoUserInfoWithoutImage)).thenReturn("카카오 닉네임");
         when(userService.register(any(UserDto.RegisterRequest.class))).thenReturn(registerResponse);
         when(tokenService.generateTokenPair(1L)).thenReturn(tokenPair);
 
@@ -278,6 +278,7 @@ class AuthServiceTest {
         // given
         AuthDto.KakaoRegisterRequest request = AuthDto.KakaoRegisterRequest.builder()
                 .kakaoAccessToken("kakao_access_token")
+                .name("홍길동")
                 .phone("010-1234-5678")
                 .userType("WORKER")
                 .profileImageUrl("https://via.placeholder.com/150/CCCCCC/FFFFFF?text=User") // placeholder URL 명시 전송
@@ -287,14 +288,13 @@ class AuthServiceTest {
 
         UserDto.RegisterResponse registerResponse = UserDto.RegisterResponse.builder()
                 .userId(1L)
-                .name("카카오 닉네임")
+                .name("홍길동")
                 .userType(UserType.WORKER)
                 .workerCode("WORKER001")
                 .build();
 
         when(oAuthService.getKakaoUserInfo(request.getKakaoAccessToken())).thenReturn(kakaoUserInfo);
         when(userRepository.findByKakaoId(kakaoUserInfo.kakaoId())).thenReturn(Optional.empty());
-        when(oAuthService.resolveDisplayName(kakaoUserInfo)).thenReturn("카카오 닉네임");
         when(userService.register(any(UserDto.RegisterRequest.class))).thenReturn(registerResponse);
         when(tokenService.generateTokenPair(1L)).thenReturn(tokenPair);
 
