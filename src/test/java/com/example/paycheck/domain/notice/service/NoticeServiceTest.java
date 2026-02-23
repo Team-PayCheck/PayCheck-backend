@@ -2,22 +2,32 @@ package com.example.paycheck.domain.notice.service;
 
 import com.example.paycheck.common.exception.NotFoundException;
 import com.example.paycheck.common.exception.UnauthorizedException;
+import com.example.paycheck.domain.contract.entity.WorkerContract;
+import com.example.paycheck.domain.contract.repository.WorkerContractRepository;
 import com.example.paycheck.domain.employer.entity.Employer;
+import com.example.paycheck.domain.notification.enums.NotificationActionType;
+import com.example.paycheck.domain.notification.enums.NotificationType;
+import com.example.paycheck.domain.notification.event.NotificationEvent;
 import com.example.paycheck.domain.notice.dto.NoticeDto;
 import com.example.paycheck.domain.notice.entity.Notice;
 import com.example.paycheck.domain.notice.enums.NoticeCategory;
 import com.example.paycheck.domain.notice.repository.NoticeRepository;
 import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.enums.UserType;
+import com.example.paycheck.domain.worker.entity.Worker;
 import com.example.paycheck.domain.workplace.entity.Workplace;
 import com.example.paycheck.domain.workplace.repository.WorkplaceRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,11 +48,22 @@ class NoticeServiceTest {
     @Mock
     private WorkplaceRepository workplaceRepository;
 
+    @Mock
+    private WorkerContractRepository contractRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+    @Spy
+    private ObjectMapper objectMapper = new ObjectMapper();
+
     @InjectMocks
     private NoticeService noticeService;
 
     private User authorUser;
     private User otherUser;
+    private Worker otherWorker;
+    private WorkerContract activeContract;
     private Employer employer;
     private Workplace workplace;
     private Notice notice;
@@ -62,6 +83,12 @@ class NoticeServiceTest {
                 .kakaoId("kakao-other")
                 .name("다른 사용자")
                 .userType(UserType.WORKER)
+                .build();
+
+        otherWorker = Worker.builder()
+                .id(10L)
+                .user(otherUser)
+                .workerCode("ABC123")
                 .build();
 
         employer = Employer.builder()
@@ -89,6 +116,13 @@ class NoticeServiceTest {
                 .content("위생사항 엄수")
                 .expiresAt(futureExpiry)
                 .build();
+
+        activeContract = WorkerContract.builder()
+                .id(100L)
+                .workplace(workplace)
+                .worker(otherWorker)
+                .isActive(true)
+                .build();
     }
 
     // ==================== createNotice ====================
@@ -106,6 +140,8 @@ class NoticeServiceTest {
 
         when(workplaceRepository.findById(1L)).thenReturn(Optional.of(workplace));
         when(noticeRepository.save(any())).thenReturn(notice);
+        when(contractRepository.findByWorkplaceIdAndIsActive(1L, true))
+                .thenReturn(List.of(activeContract));
 
         // when
         NoticeDto.Response result = noticeService.createNotice(1L, authorUser, request);
@@ -117,6 +153,17 @@ class NoticeServiceTest {
         assertThat(result.getAuthorName()).isEqualTo("작성자");
         verify(workplaceRepository).findById(1L);
         verify(noticeRepository).save(any());
+        verify(contractRepository).findByWorkplaceIdAndIsActive(1L, true);
+
+        ArgumentCaptor<NotificationEvent> eventCaptor = ArgumentCaptor.forClass(NotificationEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+
+        NotificationEvent event = eventCaptor.getValue();
+        assertThat(event.getUser().getId()).isEqualTo(otherUser.getId());
+        assertThat(event.getType()).isEqualTo(NotificationType.NOTICE_CREATED);
+        assertThat(event.getActionType()).isEqualTo(NotificationActionType.VIEW_NOTICE);
+        assertThat(event.getActionData()).contains("\"noticeId\":1");
+        assertThat(event.getActionData()).contains("\"workplaceId\":1");
     }
 
     @Test

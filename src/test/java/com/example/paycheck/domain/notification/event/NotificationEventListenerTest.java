@@ -9,6 +9,7 @@ import com.example.paycheck.domain.settings.dto.NotificationChannels;
 import com.example.paycheck.domain.settings.service.UserSettingsService;
 import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.enums.UserType;
+import com.example.paycheck.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,9 +19,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,6 +38,9 @@ class NotificationEventListenerTest {
 
     @Mock
     private UserSettingsService userSettingsService;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private NotificationEventListener notificationEventListener;
@@ -58,6 +64,8 @@ class NotificationEventListenerTest {
                 .actionType(NotificationActionType.VIEW_WORKPLACE_INVITATION)
                 .actionData("{\"workplaceId\": 1}")
                 .build();
+
+        lenient().when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
     }
 
     @Test

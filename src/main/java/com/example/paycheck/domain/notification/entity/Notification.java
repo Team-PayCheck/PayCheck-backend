@@ -6,6 +6,8 @@ import com.example.paycheck.domain.notification.enums.NotificationType;
 import com.example.paycheck.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -29,14 +31,16 @@ public class Notification extends BaseEntity {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(name = "type", nullable = false, length = 50)
     private NotificationType type;
 
     @Column(name = "title", nullable = false)
     private String title;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "action_type", nullable = false)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(name = "action_type", nullable = false, length = 50)
     @Builder.Default
     private NotificationActionType actionType = NotificationActionType.NONE;
 
