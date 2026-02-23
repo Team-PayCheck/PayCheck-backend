@@ -39,6 +39,9 @@ public class ErrorCode {
     // Notification domain
     public static final String NOTIFICATION_NOT_FOUND = "NOTIFICATION_NOT_FOUND";
 
+    // Notice domain
+    public static final String NOTICE_NOT_FOUND = "NOTICE_NOT_FOUND";
+
     // RefreshToken domain
     public static final String REFRESH_TOKEN_NOT_FOUND = "REFRESH_TOKEN_NOT_FOUND";
 

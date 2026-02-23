@@ -11,6 +11,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +34,8 @@ class BusinessNumberVerificationServiceTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
+        // @Value는 @InjectMocks에서 처리되지 않아 enabled 필드가 false(기본값)로 남으므로 직접 주입
+        ReflectionTestUtils.setField(businessNumberVerificationService, "enabled", true);
     }
 
     @Test

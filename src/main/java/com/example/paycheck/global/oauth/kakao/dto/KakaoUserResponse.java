@@ -23,15 +23,25 @@ public class KakaoUserResponse {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class KakaoProfile {
         private String nickname;
+
+        @JsonProperty("profile_image_url")
+        private String profileImageUrl;
     }
 
     public KakaoUserInfo toUserInfo() {
-        String kakaoIdValue = String.valueOf(id);
-        String nameValue = kakaoAccount.getProfile().getNickname();
+        String kakaoIdValue = id != null ? String.valueOf(id) : null;
+        String nameValue = null;
+        String profileImageUrlValue = null;
+
+        if (kakaoAccount != null && kakaoAccount.getProfile() != null) {
+            nameValue = kakaoAccount.getProfile().getNickname();
+            profileImageUrlValue = kakaoAccount.getProfile().getProfileImageUrl();
+        }
 
         return KakaoUserInfo.builder()
                 .kakaoId(kakaoIdValue)
                 .name(nameValue)
+                .profileImageUrl(profileImageUrlValue)
                 .build();
     }
 }
