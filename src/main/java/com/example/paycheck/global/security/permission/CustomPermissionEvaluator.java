@@ -76,11 +76,6 @@ public class CustomPermissionEvaluator {
         return worker != null && worker.getUser().getId().equals(user.getId());
     }
 
-    public boolean canAccessWorkerByUserId(Long userId) {
-        User user = getCurrentUser();
-        return user != null && user.getId().equals(userId);
-    }
-
     // ==================== WORKPLACE 권한 ====================
 
     public boolean canAccessWorkplaceAsMember(Long workplaceId) {
