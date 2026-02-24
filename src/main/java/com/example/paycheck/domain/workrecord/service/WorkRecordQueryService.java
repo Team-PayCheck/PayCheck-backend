@@ -11,6 +11,7 @@ import com.example.paycheck.domain.worker.entity.Worker;
 import com.example.paycheck.domain.worker.repository.WorkerRepository;
 import com.example.paycheck.domain.workrecord.dto.WorkRecordDto;
 import com.example.paycheck.domain.workrecord.entity.WorkRecord;
+import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -32,7 +33,7 @@ public class WorkRecordQueryService {
     private final CorrectionRequestRepository correctionRequestRepository;
 
     public List<WorkRecordDto.Response> getWorkRecordsByContract(Long contractId) {
-        return workRecordRepository.findByContractId(contractId).stream()
+        return workRecordRepository.findByContractId(contractId, WorkRecordStatus.DELETED).stream()
                 .map(WorkRecordDto.Response::from)
                 .collect(Collectors.toList());
     }
@@ -46,7 +47,7 @@ public class WorkRecordQueryService {
     // 고용주용: 사업장의 근무 기록 조회 (캘린더)
     public List<WorkRecordDto.CalendarResponse> getWorkRecordsByWorkplaceAndDateRange(
             Long workplaceId, LocalDate startDate, LocalDate endDate) {
-        List<WorkRecord> records = workRecordRepository.findByWorkplaceAndDateRange(workplaceId, startDate, endDate);
+        List<WorkRecord> records = workRecordRepository.findByWorkplaceAndDateRange(workplaceId, startDate, endDate, WorkRecordStatus.DELETED);
         return records.stream()
                 .map(WorkRecordDto.CalendarResponse::from)
                 .collect(Collectors.toList());
@@ -58,7 +59,7 @@ public class WorkRecordQueryService {
         Worker worker = workerRepository.findByUserId(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.WORKER_NOT_FOUND, "근로자 정보를 찾을 수 없습니다."));
 
-        List<WorkRecord> records = workRecordRepository.findByWorkerAndDateRange(worker.getId(), startDate, endDate);
+        List<WorkRecord> records = workRecordRepository.findByWorkerAndDateRange(worker.getId(), startDate, endDate, WorkRecordStatus.DELETED);
         return records.stream()
                 .map(WorkRecordDto.DetailedResponse::from)
                 .collect(Collectors.toList());

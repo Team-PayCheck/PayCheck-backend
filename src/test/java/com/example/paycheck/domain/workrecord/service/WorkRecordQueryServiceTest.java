@@ -4,6 +4,7 @@ import com.example.paycheck.common.exception.NotFoundException;
 import com.example.paycheck.domain.correction.repository.CorrectionRequestRepository;
 import com.example.paycheck.domain.worker.repository.WorkerRepository;
 import com.example.paycheck.domain.workrecord.dto.WorkRecordDto;
+import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -49,14 +50,14 @@ class WorkRecordQueryServiceTest {
     void getWorkRecordsByContract_Success() {
         // given
         Long contractId = 1L;
-        when(workRecordRepository.findByContractId(contractId)).thenReturn(Arrays.asList());
+        when(workRecordRepository.findByContractId(contractId, WorkRecordStatus.DELETED)).thenReturn(Arrays.asList());
 
         // when
         List<WorkRecordDto.Response> result = workRecordQueryService.getWorkRecordsByContract(contractId);
 
         // then
         assertThat(result).isNotNull();
-        verify(workRecordRepository).findByContractId(contractId);
+        verify(workRecordRepository).findByContractId(contractId, WorkRecordStatus.DELETED);
     }
 
     @Test
@@ -77,7 +78,7 @@ class WorkRecordQueryServiceTest {
         Long workplaceId = 1L;
         LocalDate startDate = LocalDate.of(2024, 1, 1);
         LocalDate endDate = LocalDate.of(2024, 1, 31);
-        when(workRecordRepository.findByWorkplaceAndDateRange(workplaceId, startDate, endDate))
+        when(workRecordRepository.findByWorkplaceAndDateRange(workplaceId, startDate, endDate, WorkRecordStatus.DELETED))
                 .thenReturn(Arrays.asList());
 
         // when
@@ -86,7 +87,7 @@ class WorkRecordQueryServiceTest {
 
         // then
         assertThat(result).isNotNull();
-        verify(workRecordRepository).findByWorkplaceAndDateRange(workplaceId, startDate, endDate);
+        verify(workRecordRepository).findByWorkplaceAndDateRange(workplaceId, startDate, endDate, WorkRecordStatus.DELETED);
     }
 
     @Test

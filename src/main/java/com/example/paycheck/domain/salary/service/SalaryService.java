@@ -11,6 +11,7 @@ import com.example.paycheck.domain.salary.entity.Salary;
 import com.example.paycheck.domain.salary.repository.SalaryRepository;
 import com.example.paycheck.domain.salary.util.DeductionCalculator;
 import com.example.paycheck.domain.workrecord.entity.WorkRecord;
+import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -105,7 +106,7 @@ public class SalaryService {
         LocalDate endDate = adjustDayOfMonth(LocalDate.of(year, month, 1), paymentDay).minusDays(1);
 
         List<WorkRecord> workRecords = workRecordRepository.findByContractAndDateRange(
-                contractId, startDate, endDate);
+                contractId, startDate, endDate, WorkRecordStatus.DELETED);
 
         // 기간 내 WorkRecord가 없으면 Salary 생성하지 않음
         if (workRecords.isEmpty()) {
