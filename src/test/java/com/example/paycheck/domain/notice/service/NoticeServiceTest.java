@@ -216,6 +216,59 @@ class NoticeServiceTest {
         verify(eventPublisher).publishEvent(any(NotificationEvent.class));
     }
 
+    @Test
+    @DisplayName("공지사항 작성 성공 - 사업장 고용주가 null이어도 근로자 알림 발행")
+    void createNotice_Success_WhenEmployerIsNull() {
+        // given
+        Workplace workplaceWithoutEmployer = Workplace.builder()
+                .id(1L)
+                .employer(null)
+                .businessNumber("123-45-67890")
+                .businessName("테스트 사업체")
+                .name("테스트 사업장")
+                .isActive(true)
+                .build();
+
+        Notice noticeWithoutEmployer = Notice.builder()
+                .id(1L)
+                .workplace(workplaceWithoutEmployer)
+                .author(authorUser)
+                .category(NoticeCategory.URGENT)
+                .title("긴급 공지")
+                .content("위생사항 엄수")
+                .expiresAt(futureExpiry)
+                .build();
+
+        WorkerContract contractInWorkplaceWithoutEmployer = WorkerContract.builder()
+                .id(101L)
+                .workplace(workplaceWithoutEmployer)
+                .worker(otherWorker)
+                .isActive(true)
+                .build();
+
+        NoticeDto.CreateRequest request = NoticeDto.CreateRequest.builder()
+                .category(NoticeCategory.URGENT)
+                .title("긴급 공지")
+                .content("위생사항 엄수")
+                .expiresAt(futureExpiry)
+                .build();
+
+        when(workplaceRepository.findById(1L)).thenReturn(Optional.of(workplaceWithoutEmployer));
+        when(noticeRepository.save(any())).thenReturn(noticeWithoutEmployer);
+        when(contractRepository.findByWorkplaceIdAndIsActive(1L, true))
+                .thenReturn(List.of(contractInWorkplaceWithoutEmployer));
+
+        // when
+        NoticeDto.Response result = noticeService.createNotice(1L, authorUser, request);
+
+        // then
+        assertThat(result).isNotNull();
+        ArgumentCaptor<NotificationEvent> eventCaptor = ArgumentCaptor.forClass(NotificationEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getUser().getId()).isEqualTo(otherUser.getId());
+        assertThat(eventCaptor.getValue().getType()).isEqualTo(NotificationType.NOTICE_CREATED);
+    }
+
     // ==================== getNotices ====================
 
     @Test

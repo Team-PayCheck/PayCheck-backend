@@ -125,9 +125,13 @@ public class NoticeService {
         Long authorId = notice.getAuthor().getId();
 
         Set<Long> notifiedUserIds = new HashSet<>();
+        User employerUser = null;
+        if (notice.getWorkplace() != null && notice.getWorkplace().getEmployer() != null) {
+            employerUser = notice.getWorkplace().getEmployer().getUser();
+        }
 
         publishNoticeNotificationIfNeeded(
-                notice.getWorkplace().getEmployer().getUser(),
+                employerUser,
                 authorId,
                 title,
                 actionData,
