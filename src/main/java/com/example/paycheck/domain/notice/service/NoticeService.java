@@ -61,7 +61,12 @@ public class NoticeService {
                 .build();
 
         Notice saved = noticeRepository.save(notice);
-        publishNoticeCreatedNotification(saved);
+        try {
+            publishNoticeCreatedNotification(saved);
+        } catch (Exception e) {
+            log.error("공지사항 생성은 성공했지만 알림 발행에 실패했습니다. noticeId={}, workplaceId={}",
+                    saved.getId(), workplaceId, e);
+        }
         return NoticeDto.Response.from(saved);
     }
 
@@ -133,8 +138,9 @@ public class NoticeService {
                 .findByWorkplaceIdAndIsActive(notice.getWorkplace().getId(), true);
 
         for (WorkerContract contract : activeContracts) {
+            User workerUser = contract.getWorker() != null ? contract.getWorker().getUser() : null;
             publishNoticeNotificationIfNeeded(
-                    contract.getWorker().getUser(),
+                    workerUser,
                     authorId,
                     title,
                     actionData,

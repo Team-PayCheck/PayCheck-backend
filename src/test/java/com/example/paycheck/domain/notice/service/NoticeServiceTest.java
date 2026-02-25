@@ -187,6 +187,35 @@ class NoticeServiceTest {
         verify(noticeRepository, never()).save(any());
     }
 
+    @Test
+    @DisplayName("공지사항 작성 성공 - 알림 발행 실패 시에도 롤백되지 않음")
+    void createNotice_Success_WhenNotificationPublishFails() {
+        // given
+        NoticeDto.CreateRequest request = NoticeDto.CreateRequest.builder()
+                .category(NoticeCategory.URGENT)
+                .title("긴급 공지")
+                .content("위생사항 엄수")
+                .expiresAt(futureExpiry)
+                .build();
+
+        when(workplaceRepository.findById(1L)).thenReturn(Optional.of(workplace));
+        when(noticeRepository.save(any())).thenReturn(notice);
+        when(contractRepository.findByWorkplaceIdAndIsActive(1L, true))
+                .thenReturn(List.of(activeContract));
+        doThrow(new RuntimeException("알림 발행 실패"))
+                .when(eventPublisher).publishEvent(any(NotificationEvent.class));
+
+        // when
+        NoticeDto.Response result = noticeService.createNotice(1L, authorUser, request);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+        verify(workplaceRepository).findById(1L);
+        verify(noticeRepository).save(any());
+        verify(eventPublisher).publishEvent(any(NotificationEvent.class));
+    }
+
     // ==================== getNotices ====================
 
     @Test
