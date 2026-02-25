@@ -131,9 +131,6 @@ public class NoticeService {
 
         List<WorkerContract> activeContracts = contractRepository
                 .findByWorkplaceIdAndIsActive(notice.getWorkplace().getId(), true);
-        if (activeContracts == null) {
-            activeContracts = List.of();
-        }
 
         for (WorkerContract contract : activeContracts) {
             publishNoticeNotificationIfNeeded(
