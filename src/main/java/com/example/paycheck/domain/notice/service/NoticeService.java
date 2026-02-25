@@ -135,20 +135,25 @@ public class NoticeService {
                 authorId,
                 title,
                 actionData,
-                notifiedUserIds
+                notifiedUserIds,
+                notice.getId()
         );
 
         List<WorkerContract> activeContracts = contractRepository
                 .findByWorkplaceIdAndIsActive(notice.getWorkplace().getId(), true);
 
         for (WorkerContract contract : activeContracts) {
+            if (contract == null) {
+                continue;
+            }
             User workerUser = contract.getWorker() != null ? contract.getWorker().getUser() : null;
             publishNoticeNotificationIfNeeded(
                     workerUser,
                     authorId,
                     title,
                     actionData,
-                    notifiedUserIds
+                    notifiedUserIds,
+                    notice.getId()
             );
         }
     }
@@ -158,12 +163,14 @@ public class NoticeService {
             Long authorId,
             String title,
             String actionData,
-            Set<Long> notifiedUserIds
+            Set<Long> notifiedUserIds,
+            Long noticeId
     ) {
         if (recipient == null || recipient.getId() == null) {
             return;
         }
-        if (recipient.getId().equals(authorId) || !notifiedUserIds.add(recipient.getId())) {
+        Long recipientId = recipient.getId();
+        if (recipientId.equals(authorId) || notifiedUserIds.contains(recipientId)) {
             return;
         }
 
@@ -175,7 +182,12 @@ public class NoticeService {
                 .actionData(actionData)
                 .build();
 
-        eventPublisher.publishEvent(event);
+        try {
+            eventPublisher.publishEvent(event);
+            notifiedUserIds.add(recipientId);
+        } catch (Exception e) {
+            log.error("공지사항 알림 발행 실패: noticeId={}, recipientUserId={}", noticeId, recipientId, e);
+        }
     }
 
     private String buildActionData(Long noticeId, Long workplaceId) {

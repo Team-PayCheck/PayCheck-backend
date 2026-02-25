@@ -269,6 +269,62 @@ class NoticeServiceTest {
         assertThat(eventCaptor.getValue().getType()).isEqualTo(NotificationType.NOTICE_CREATED);
     }
 
+    @Test
+    @DisplayName("공지사항 작성 성공 - 한 수신자 알림 발행 실패해도 나머지는 계속 발행")
+    void createNotice_Success_WhenOneRecipientPublishFails() {
+        // given
+        User secondUser = User.builder()
+                .id(3L)
+                .kakaoId("kakao-other-2")
+                .name("두번째 사용자")
+                .userType(UserType.WORKER)
+                .build();
+        Worker secondWorker = Worker.builder()
+                .id(11L)
+                .user(secondUser)
+                .workerCode("DEF456")
+                .build();
+        WorkerContract secondContract = WorkerContract.builder()
+                .id(102L)
+                .workplace(workplace)
+                .worker(secondWorker)
+                .isActive(true)
+                .build();
+
+        NoticeDto.CreateRequest request = NoticeDto.CreateRequest.builder()
+                .category(NoticeCategory.URGENT)
+                .title("긴급 공지")
+                .content("위생사항 엄수")
+                .expiresAt(futureExpiry)
+                .build();
+
+        when(workplaceRepository.findById(1L)).thenReturn(Optional.of(workplace));
+        when(noticeRepository.save(any())).thenReturn(notice);
+        when(contractRepository.findByWorkplaceIdAndIsActive(1L, true))
+                .thenReturn(List.of(activeContract, secondContract));
+
+        doAnswer(invocation -> {
+            NotificationEvent event = invocation.getArgument(0);
+            if (event.getUser().getId().equals(otherUser.getId())) {
+                throw new RuntimeException("첫 번째 수신자 발행 실패");
+            }
+            return null;
+        }).when(eventPublisher).publishEvent(any(NotificationEvent.class));
+
+        // when
+        NoticeDto.Response result = noticeService.createNotice(1L, authorUser, request);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+
+        ArgumentCaptor<NotificationEvent> eventCaptor = ArgumentCaptor.forClass(NotificationEvent.class);
+        verify(eventPublisher, times(2)).publishEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getAllValues())
+                .extracting(event -> event.getUser().getId())
+                .containsExactly(otherUser.getId(), secondUser.getId());
+    }
+
     // ==================== getNotices ====================
 
     @Test
