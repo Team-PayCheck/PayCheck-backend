@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +32,7 @@ public class UserController {
     @PutMapping("/{userId}")
     public ApiResponse<UserDto.Response> updateUser(
             @Parameter(description = "사용자 ID", required = true) @PathVariable Long userId,
-            @RequestBody UserDto.UpdateRequest request) {
+            @Valid @RequestBody UserDto.UpdateRequest request) {
         return ApiResponse.success(userService.updateUser(userId, request));
     }
 
@@ -45,7 +46,7 @@ public class UserController {
     @PutMapping("/me")
     public ApiResponse<UserDto.Response> updateMyInfo(
             @AuthenticationPrincipal User user,
-            @RequestBody UserDto.UpdateRequest request) {
+            @Valid @RequestBody UserDto.UpdateRequest request) {
         return ApiResponse.success(userService.updateUser(user.getId(), request));
     }
 
