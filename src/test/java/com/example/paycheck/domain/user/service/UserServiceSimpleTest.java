@@ -7,6 +7,8 @@ import com.example.paycheck.domain.user.dto.UserDto;
 import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.enums.UserType;
 import com.example.paycheck.domain.user.repository.UserRepository;
+import com.example.paycheck.domain.worker.entity.Worker;
+import com.example.paycheck.domain.worker.repository.WorkerRepository;
 import com.example.paycheck.domain.worker.service.WorkerService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,6 +29,9 @@ class UserServiceSimpleTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private WorkerRepository workerRepository;
 
     @Mock
     private WorkerService workerService;
@@ -58,7 +63,15 @@ class UserServiceSimpleTest {
     @DisplayName("사용자 ID로 조회 성공")
     void getUserById_Success() {
         // given
+        Worker mockWorker = Worker.builder()
+                .workerCode("ABC123")
+                .bankName("카카오뱅크")
+                .accountNumber("123456789012")
+                .user(testWorker)
+                .build();
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(testWorker));
+        when(workerRepository.findByUserId(1L)).thenReturn(Optional.of(mockWorker));
 
         // when
         UserDto.Response result = userService.getUserById(1L);
@@ -68,8 +81,12 @@ class UserServiceSimpleTest {
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getName()).isEqualTo("근로자 테스트");
         assertThat(result.getUserType()).isEqualTo(UserType.WORKER);
+        assertThat(result.getWorkerCode()).isEqualTo("ABC123");
+        assertThat(result.getBankName()).isEqualTo("카카오뱅크");
+        assertThat(result.getAccountNumber()).isEqualTo("123456789012");
 
         verify(userRepository).findById(1L);
+        verify(workerRepository).findByUserId(1L);
     }
 
     @Test

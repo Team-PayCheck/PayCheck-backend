@@ -177,6 +177,16 @@ public class PaymentService {
     }
 
     /**
+     * 근로자 본인의 특정 연월 송금 내역 조회
+     */
+    public List<PaymentDto.ListResponse> getPaymentsByWorkerAndYearMonth(Long userId, Integer year, Integer month) {
+        return paymentRepository.findByWorkerUserIdAndYearMonth(userId, year, month)
+                .stream()
+                .map(PaymentDto.ListResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * 송금 기한 초과 자동 실패 처리 (예약 작업)
      * - 급여 지급 예정일 당일에 송금되지 않으면 다음날 자동으로 FAILED 처리
      * - 예약 작업(Scheduled Task)에서 매일 호출됨

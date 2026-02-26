@@ -78,20 +78,6 @@ class WorkerServiceTest {
     }
 
     @Test
-    @DisplayName("사용자 ID로 근로자 조회 성공")
-    void getWorkerByUserId_Success() {
-        // given
-        when(workerRepository.findByUserId(1L)).thenReturn(Optional.of(testWorker));
-
-        // when
-        WorkerDto.Response result = workerService.getWorkerByUserId(1L);
-
-        // then
-        assertThat(result).isNotNull();
-        verify(workerRepository).findByUserId(1L);
-    }
-
-    @Test
     @DisplayName("근로자 코드로 조회 성공")
     void getWorkerByWorkerCode_Success() {
         // given

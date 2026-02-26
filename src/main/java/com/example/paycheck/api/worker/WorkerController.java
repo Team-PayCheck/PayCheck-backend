@@ -27,14 +27,6 @@ public class WorkerController {
         return ApiResponse.success(workerService.getWorkerById(workerId));
     }
 
-    @Operation(summary = "근로자 조회 (사용자 ID)", description = "사용자 ID로 근로자 정보를 조회합니다.")
-    @PreAuthorize("@permissionEvaluator.canAccessWorkerByUserId(#userId)")
-    @GetMapping("/user/{userId}")
-    public ApiResponse<WorkerDto.Response> getWorkerByUserId(
-            @Parameter(description = "사용자 ID", required = true) @PathVariable Long userId) {
-        return ApiResponse.success(workerService.getWorkerByUserId(userId));
-    }
-
     @Operation(summary = "근로자 조회 (근로자 코드)", description = "근로자 코드로 근로자 정보를 조회합니다.")
     @GetMapping("/code/{workerCode}")
     public ApiResponse<WorkerDto.Response> getWorkerByCode(

@@ -10,6 +10,7 @@ import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.worker.entity.Worker;
 import com.example.paycheck.domain.workplace.entity.Workplace;
 import com.example.paycheck.domain.workrecord.entity.WorkRecord;
+import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -93,7 +94,7 @@ class SalaryServiceConcurrencyTest {
         Integer month = 5;
 
         when(workerContractRepository.findById(contractId)).thenReturn(Optional.of(mockContract));
-        when(workRecordRepository.findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class)))
+        when(workRecordRepository.findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class), any(WorkRecordStatus.class)))
                 .thenReturn(Collections.singletonList(mockWorkRecord));
         when(weeklyAllowanceRepository.findByContractIdAndYearMonth(eq(contractId), anyInt(), anyInt()))
                 .thenReturn(Collections.emptyList());
@@ -138,7 +139,7 @@ class SalaryServiceConcurrencyTest {
         Integer month = 5;
 
         when(workerContractRepository.findById(contractId)).thenReturn(Optional.of(mockContract));
-        when(workRecordRepository.findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class)))
+        when(workRecordRepository.findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class), any(WorkRecordStatus.class)))
                 .thenReturn(Collections.singletonList(mockWorkRecord));
         when(weeklyAllowanceRepository.findByContractIdAndYearMonth(eq(contractId), anyInt(), anyInt()))
                 .thenReturn(Collections.emptyList());
@@ -187,7 +188,7 @@ class SalaryServiceConcurrencyTest {
         Integer month = 5;
 
         when(workerContractRepository.findById(contractId)).thenReturn(Optional.of(mockContract));
-        when(workRecordRepository.findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class)))
+        when(workRecordRepository.findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class), any(WorkRecordStatus.class)))
                 .thenReturn(Collections.singletonList(mockWorkRecord));
         when(weeklyAllowanceRepository.findByContractIdAndYearMonth(eq(contractId), anyInt(), anyInt()))
                 .thenReturn(Collections.emptyList());
@@ -238,7 +239,7 @@ class SalaryServiceConcurrencyTest {
         Integer month = 5;
 
         when(workerContractRepository.findById(contractId)).thenReturn(Optional.of(mockContract));
-        when(workRecordRepository.findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class)))
+        when(workRecordRepository.findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class), any(WorkRecordStatus.class)))
                 .thenReturn(Collections.singletonList(mockWorkRecord));
         when(weeklyAllowanceRepository.findByContractIdAndYearMonth(eq(contractId), anyInt(), anyInt()))
                 .thenReturn(Collections.emptyList());
