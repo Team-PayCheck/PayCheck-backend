@@ -32,4 +32,8 @@ public class WorkScheduleDto {
     @Pattern(regexp = "^([01]\\d|2[0-3]):[0-5]\\d$", message = "시간 형식은 HH:mm 이어야 합니다.")
     @Schema(description = "근무 종료 시간 (HH:mm)", example = "18:00")
     private String endTime;
+
+    @Min(value = 0, message = "휴게시간은 0분 이상이어야 합니다.")
+    @Schema(description = "휴게시간 (분)", example = "30")
+    private Integer breakMinutes;
 }
