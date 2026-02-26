@@ -58,7 +58,6 @@ class WorkplaceServiceTest {
                 .id(1L)
                 .employer(testEmployer)
                 .businessNumber("123-45-67890")
-                .businessName("테스트 사업체")
                 .name("테스트 사업장")
                 .address("서울시 강남구")
                 .isActive(true)
@@ -71,7 +70,6 @@ class WorkplaceServiceTest {
         // given
         WorkplaceDto.CreateRequest request = WorkplaceDto.CreateRequest.builder()
                 .businessNumber("123-45-67890")
-                .businessName("테스트 사업체")
                 .name("테스트 사업장")
                 .address("서울시 강남구")
                 .colorCode("#FF0000")
@@ -96,7 +94,6 @@ class WorkplaceServiceTest {
         // given
         WorkplaceDto.CreateRequest request = WorkplaceDto.CreateRequest.builder()
                 .businessNumber("123-45-67890")
-                .businessName("테스트 사업체")
                 .name("테스트 사업장")
                 .address("서울시 강남구")
                 .colorCode("#FF0000")
@@ -165,7 +162,6 @@ class WorkplaceServiceTest {
     void updateWorkplace_Success() {
         // given
         WorkplaceDto.UpdateRequest request = WorkplaceDto.UpdateRequest.builder()
-                .businessName("수정된 사업체")
                 .name("수정된 사업장")
                 .address("서울시 서초구")
                 .colorCode("#00FF00")
