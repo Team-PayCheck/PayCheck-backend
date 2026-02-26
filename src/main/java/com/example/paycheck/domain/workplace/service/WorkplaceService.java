@@ -34,7 +34,6 @@ public class WorkplaceService {
         Workplace workplace = Workplace.builder()
                 .employer(employer)
                 .businessNumber(request.getBusinessNumber())
-                .businessName(request.getBusinessName())
                 .name(request.getName())
                 .address(request.getAddress())
                 .colorCode(request.getColorCode())
@@ -70,7 +69,6 @@ public class WorkplaceService {
                 .orElseThrow(() -> new NotFoundException(ErrorCode.WORKPLACE_NOT_FOUND, "사업장을 찾을 수 없습니다."));
 
         workplace.update(
-                request.getBusinessName(),
                 request.getName(),
                 request.getAddress(),
                 request.getColorCode(),

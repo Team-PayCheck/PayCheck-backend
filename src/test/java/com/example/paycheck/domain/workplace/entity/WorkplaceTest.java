@@ -21,7 +21,6 @@ class WorkplaceTest {
                 .id(1L)
                 .employer(mockEmployer)
                 .businessNumber("123-45-67890")
-                .businessName("테스트 사업장")
                 .name("본점")
                 .address("서울시 강남구")
                 .colorCode("#FF5733")
@@ -35,7 +34,6 @@ class WorkplaceTest {
     void update_AllFields() {
         // when
         workplace.update(
-                "수정된 사업장",
                 "지점",
                 "서울시 서초구",
                 "#33FF57",
@@ -43,7 +41,6 @@ class WorkplaceTest {
         );
 
         // then
-        assertThat(workplace.getBusinessName()).isEqualTo("수정된 사업장");
         assertThat(workplace.getName()).isEqualTo("지점");
         assertThat(workplace.getAddress()).isEqualTo("서울시 서초구");
         assertThat(workplace.getColorCode()).isEqualTo("#33FF57");
@@ -55,16 +52,14 @@ class WorkplaceTest {
     void update_PartialFields() {
         // when
         workplace.update(
-                "수정된 사업장",
-                null,
+                "수정된 근무지명",
                 null,
                 null,
                 null
         );
 
         // then
-        assertThat(workplace.getBusinessName()).isEqualTo("수정된 사업장");
-        assertThat(workplace.getName()).isEqualTo("본점"); // unchanged
+        assertThat(workplace.getName()).isEqualTo("수정된 근무지명");
         assertThat(workplace.getAddress()).isEqualTo("서울시 강남구"); // unchanged
     }
 
@@ -72,14 +67,12 @@ class WorkplaceTest {
     @DisplayName("사업장 정보 업데이트 - null 값은 변경되지 않음")
     void update_NullValues() {
         // given
-        String originalBusinessName = workplace.getBusinessName();
         String originalName = workplace.getName();
 
         // when
-        workplace.update(null, null, null, null, null);
+        workplace.update(null, null, null, null);
 
         // then
-        assertThat(workplace.getBusinessName()).isEqualTo(originalBusinessName);
         assertThat(workplace.getName()).isEqualTo(originalName);
     }
 
@@ -113,7 +106,6 @@ class WorkplaceTest {
         Workplace defaultWorkplace = Workplace.builder()
                 .employer(mockEmployer)
                 .businessNumber("999-99-99999")
-                .businessName("기본 사업장")
                 .name("기본")
                 .build();
 
