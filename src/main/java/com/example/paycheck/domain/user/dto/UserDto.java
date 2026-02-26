@@ -69,6 +69,7 @@ public class UserDto {
         @Pattern(regexp = "^01[0-9]-\\d{4}-\\d{4}$", message = "전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)")
         private String phone;
 
+        @Pattern(regexp = "^(https?://.+)?$", message = "프로필 이미지는 HTTP/HTTPS URL 형식이어야 합니다.")
         private String profileImageUrl;
     }
 
