@@ -8,6 +8,7 @@ import com.example.paycheck.domain.contract.repository.WorkerContractRepository;
 import com.example.paycheck.domain.salary.entity.Salary;
 import com.example.paycheck.domain.salary.repository.SalaryRepository;
 import com.example.paycheck.domain.workrecord.entity.WorkRecord;
+import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -137,14 +138,14 @@ class SalaryServiceTest {
         WorkerContract contract = mock(WorkerContract.class);
         when(contract.getPaymentDay()).thenReturn(25);
         when(workerContractRepository.findById(contractId)).thenReturn(Optional.of(contract));
-        when(workRecordRepository.findByContractAndDateRange(anyLong(), any(), any()))
+        when(workRecordRepository.findByContractAndDateRange(anyLong(), any(), any(), any(WorkRecordStatus.class)))
                 .thenReturn(Arrays.asList());
 
         // when & then
         assertThatThrownBy(() -> salaryService.calculateSalaryByWorkRecords(contractId, 2024, 1))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("해당 기간 내 근무 기록이 없습니다");
-        verify(workRecordRepository).findByContractAndDateRange(anyLong(), any(), any());
+        verify(workRecordRepository).findByContractAndDateRange(anyLong(), any(), any(), any(WorkRecordStatus.class));
     }
 
     @Test
@@ -155,7 +156,7 @@ class SalaryServiceTest {
         WorkerContract contract = mock(WorkerContract.class);
         when(contract.getPaymentDay()).thenReturn(25);
         when(workerContractRepository.findById(contractId)).thenReturn(Optional.of(contract));
-        when(workRecordRepository.findByContractAndDateRange(anyLong(), any(), any()))
+        when(workRecordRepository.findByContractAndDateRange(anyLong(), any(), any(), any(WorkRecordStatus.class)))
                 .thenReturn(Arrays.asList());
 
         // when & then

@@ -84,7 +84,8 @@ class WorkRecordDtoTest {
         assertThat(response.getIsModified()).isFalse();
         assertThat(response.getMemo()).isEqualTo("테스트 메모");
 
-        // 급여 필드 검증
+        // 시급 및 급여 필드 검증
+        assertThat(response.getHourlyWage()).isEqualByComparingTo(BigDecimal.valueOf(10000));
         assertThat(response.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(80000));
         assertThat(response.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(15000));
         assertThat(response.getHolidaySalary()).isEqualByComparingTo(BigDecimal.valueOf(20000));
@@ -109,6 +110,7 @@ class WorkRecordDtoTest {
         WorkRecordDto.DetailedResponse response = WorkRecordDto.DetailedResponse.from(workRecord);
 
         // then
+        assertThat(response.getHourlyWage()).isEqualByComparingTo(BigDecimal.valueOf(10000));
         assertThat(response.getBaseSalary()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(response.getNightSalary()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(response.getHolidaySalary()).isEqualByComparingTo(BigDecimal.ZERO);

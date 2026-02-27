@@ -28,12 +28,6 @@ public class WorkerService {
         return WorkerDto.Response.from(worker);
     }
 
-    public WorkerDto.Response getWorkerByUserId(Long userId) {
-        Worker worker = workerRepository.findByUserId(userId)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.WORKER_NOT_FOUND, "근로자 정보를 찾을 수 없습니다."));
-        return WorkerDto.Response.from(worker);
-    }
-
     public WorkerDto.Response getWorkerByWorkerCode(String workerCode) {
         Worker worker = workerRepository.findByWorkerCode(workerCode)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.WORKER_NOT_FOUND, "근로자를 찾을 수 없습니다."));

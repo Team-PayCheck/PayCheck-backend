@@ -81,6 +81,7 @@ public class WorkRecordGenerationService {
                                 .workDate(workDate)
                                 .startTime(LocalTime.parse(schedule.getStartTime()))
                                 .endTime(LocalTime.parse(schedule.getEndTime()))
+                                .breakMinutes(schedule.getBreakMinutes() != null ? schedule.getBreakMinutes() : 0)
                                 .status(WorkRecordStatus.SCHEDULED)
                                 .build();
                         workRecords.add(workRecord);

@@ -11,6 +11,7 @@ import com.example.paycheck.domain.salary.entity.Salary;
 import com.example.paycheck.domain.salary.repository.SalaryRepository;
 import com.example.paycheck.domain.salary.util.DeductionCalculator;
 import com.example.paycheck.domain.workrecord.entity.WorkRecord;
+import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -106,7 +107,7 @@ public class SalaryService {
         LocalDate endDate = adjustDayOfMonth(LocalDate.of(year, month, 1), paymentDay).minusDays(1);
 
         List<WorkRecord> workRecords = workRecordRepository.findByContractAndDateRange(
-                contractId, startDate, endDate);
+                contractId, startDate, endDate, WorkRecordStatus.DELETED);
 
         // 기간 내 WorkRecord가 없으면 Salary 생성하지 않음
         if (workRecords.isEmpty()) {
@@ -245,10 +246,9 @@ public class SalaryService {
 
             try {
                 // REQUIRES_NEW 트랜잭션에서 저장 시도 (실패해도 메인 트랜잭션 유지)
-                salaryPersistenceService.trySave(salary);
-                // REQUIRES_NEW로 저장된 엔티티는 현재 트랜잭션의 영속성 컨텍스트에서 분리되므로 재조회 필요
-                salary = salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month)
-                        .orElseThrow(() -> new IllegalStateException("급여 데이터 동시성 오류"));
+                // 성공 시 저장된 엔티티를 그대로 사용한다.
+                // 재조회는 동시 INSERT 충돌(DataIntegrityViolationException) 경로에서만 수행한다.
+                salary = salaryPersistenceService.trySave(salary);
             } catch (DataIntegrityViolationException | PessimisticLockingFailureException e) {
                 // 동시 INSERT 또는 잠금 경합 발생 시 재조회 후 업데이트
                 log.warn("급여 동시 생성/잠금 경합 감지 - 재조회 후 업데이트 수행: contractId={}, year={}, month={}",

@@ -19,8 +19,11 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
         @Query("SELECT wr FROM WorkRecord wr " +
                         "JOIN FETCH wr.contract c " +
                         "JOIN FETCH c.worker w " +
-                        "WHERE c.id = :contractId")
-        List<WorkRecord> findByContractId(@Param("contractId") Long contractId);
+                        "WHERE c.id = :contractId " +
+                        "AND wr.status <> :deletedStatus")
+        List<WorkRecord> findByContractId(
+                        @Param("contractId") Long contractId,
+                        @Param("deletedStatus") WorkRecordStatus deletedStatus);
 
         @Query("SELECT wr FROM WorkRecord wr " +
                         "JOIN FETCH wr.contract c " +
@@ -28,22 +31,26 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
                         "JOIN FETCH c.worker wk " +
                         "WHERE w.id = :workplaceId " +
                         "AND wr.workDate BETWEEN :startDate AND :endDate " +
+                        "AND wr.status <> :deletedStatus " +
                         "ORDER BY wr.workDate ASC")
         List<WorkRecord> findByWorkplaceAndDateRange(
                         @Param("workplaceId") Long workplaceId,
                         @Param("startDate") LocalDate startDate,
-                        @Param("endDate") LocalDate endDate);
+                        @Param("endDate") LocalDate endDate,
+                        @Param("deletedStatus") WorkRecordStatus deletedStatus);
 
         @Query("SELECT wr FROM WorkRecord wr " +
                         "JOIN FETCH wr.contract c " +
                         "JOIN FETCH c.worker wk " +
                         "WHERE wk.id = :workerId " +
                         "AND wr.workDate BETWEEN :startDate AND :endDate " +
+                        "AND wr.status <> :deletedStatus " +
                         "ORDER BY wr.workDate ASC")
         List<WorkRecord> findByWorkerAndDateRange(
                         @Param("workerId") Long workerId,
                         @Param("startDate") LocalDate startDate,
-                        @Param("endDate") LocalDate endDate);
+                        @Param("endDate") LocalDate endDate,
+                        @Param("deletedStatus") WorkRecordStatus deletedStatus);
 
         @Query("SELECT wr FROM WorkRecord wr " +
                         "JOIN FETCH wr.contract c " +
@@ -60,11 +67,13 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
                         "JOIN FETCH wr.contract c " +
                         "WHERE c.id = :contractId " +
                         "AND wr.workDate BETWEEN :startDate AND :endDate " +
+                        "AND wr.status <> :deletedStatus " +
                         "ORDER BY wr.workDate ASC")
         List<WorkRecord> findByContractAndDateRange(
                         @Param("contractId") Long contractId,
                         @Param("startDate") LocalDate startDate,
-                        @Param("endDate") LocalDate endDate);
+                        @Param("endDate") LocalDate endDate,
+                        @Param("deletedStatus") WorkRecordStatus deletedStatus);
 
         @Query("SELECT DISTINCT c FROM WorkerContract c " +
                         "JOIN FETCH c.worker w " +

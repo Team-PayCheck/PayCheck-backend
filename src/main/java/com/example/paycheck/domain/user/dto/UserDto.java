@@ -2,6 +2,7 @@ package com.example.paycheck.domain.user.dto;
 
 import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.enums.UserType;
+import com.example.paycheck.domain.worker.entity.Worker;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
@@ -26,6 +27,9 @@ public class UserDto {
         private String phone;
         private UserType userType;
         private String profileImageUrl;
+        private String workerCode;
+        private String bankName;
+        private String accountNumber;
 
         public static Response from(User user) {
             return Response.builder()
@@ -35,6 +39,20 @@ public class UserDto {
                     .phone(user.getPhone())
                     .userType(user.getUserType())
                     .profileImageUrl(user.getProfileImageUrl())
+                    .build();
+        }
+
+        public static Response from(User user, Worker worker) {
+            return Response.builder()
+                    .id(user.getId())
+                    .kakaoId(user.getKakaoId())
+                    .name(user.getName())
+                    .phone(user.getPhone())
+                    .userType(user.getUserType())
+                    .profileImageUrl(user.getProfileImageUrl())
+                    .workerCode(worker.getWorkerCode())
+                    .bankName(worker.getBankName())
+                    .accountNumber(worker.getAccountNumber())
                     .build();
         }
     }
@@ -51,6 +69,7 @@ public class UserDto {
         @Pattern(regexp = "^01[0-9]-\\d{4}-\\d{4}$", message = "전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)")
         private String phone;
 
+        @Pattern(regexp = "^(https?://.+)?$", message = "프로필 이미지는 HTTP/HTTPS URL 형식이어야 합니다.")
         private String profileImageUrl;
     }
 

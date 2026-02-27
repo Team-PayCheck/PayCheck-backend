@@ -4,6 +4,8 @@ import com.example.paycheck.domain.contract.entity.WorkerContract;
 import com.example.paycheck.domain.contract.repository.WorkerContractRepository;
 import com.example.paycheck.domain.correction.entity.CorrectionRequest;
 import com.example.paycheck.domain.correction.repository.CorrectionRequestRepository;
+import com.example.paycheck.domain.notice.entity.Notice;
+import com.example.paycheck.domain.notice.repository.NoticeRepository;
 import com.example.paycheck.domain.payment.entity.Payment;
 import com.example.paycheck.domain.payment.repository.PaymentRepository;
 import com.example.paycheck.domain.salary.entity.Salary;
@@ -32,6 +34,7 @@ public class CustomPermissionEvaluator {
     private final PaymentRepository paymentRepository;
     private final CorrectionRequestRepository correctionRequestRepository;
     private final WorkerRepository workerRepository;
+    private final NoticeRepository noticeRepository;
 
     // ==================== 공통 유틸리티 ====================
 
@@ -73,12 +76,31 @@ public class CustomPermissionEvaluator {
         return worker != null && worker.getUser().getId().equals(user.getId());
     }
 
-    public boolean canAccessWorkerByUserId(Long userId) {
-        User user = getCurrentUser();
-        return user != null && user.getId().equals(userId);
-    }
-
     // ==================== WORKPLACE 권한 ====================
+
+    public boolean canAccessWorkplaceAsMember(Long workplaceId) {
+        User user = getCurrentUser();
+        if (user == null) {
+            return false;
+        }
+        Workplace workplace = workplaceRepository.findById(workplaceId).orElse(null);
+        if (workplace == null) {
+            return false;
+        }
+        if (UserType.EMPLOYER.equals(user.getUserType())) {
+            return workplace.getEmployer().getUser().getId().equals(user.getId());
+        }
+        if (UserType.WORKER.equals(user.getUserType())) {
+            Worker worker = workerRepository.findByUserId(user.getId()).orElse(null);
+            if (worker == null) {
+                return false;
+            }
+            return contractRepository.findByWorkerIdAndWorkplaceId(worker.getId(), workplaceId)
+                    .map(WorkerContract::getIsActive)
+                    .orElse(false);
+        }
+        return false;
+    }
 
     public boolean canAccessWorkplace(Long workplaceId) {
         User user = getCurrentUser();
@@ -213,5 +235,15 @@ public class CustomPermissionEvaluator {
 
     public boolean canAccessWorkplaceCorrectionRequests(Long workplaceId) {
         return canAccessWorkplace(workplaceId);
+    }
+
+    // ==================== NOTICE 권한 ====================
+
+    public boolean canAccessNotice(Long noticeId) {
+        Notice notice = noticeRepository.findByIdAndIsDeletedFalse(noticeId).orElse(null);
+        if (notice == null) {
+            return false;
+        }
+        return canAccessWorkplaceAsMember(notice.getWorkplace().getId());
     }
 }

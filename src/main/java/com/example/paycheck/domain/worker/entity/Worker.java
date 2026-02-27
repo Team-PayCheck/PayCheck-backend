@@ -2,6 +2,7 @@ package com.example.paycheck.domain.worker.entity;
 
 import com.example.paycheck.common.BaseEntity;
 import com.example.paycheck.domain.user.entity.User;
+import com.example.paycheck.global.encryption.AccountNumberEncryptor;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,7 +26,8 @@ public class Worker extends BaseEntity {
     private String workerCode;
 
     @Column(name = "account_number")
-    private String accountNumber; // AES-256 암호화 필요
+    @Convert(converter = AccountNumberEncryptor.class)
+    private String accountNumber;
 
     @Column(name = "bank_name")
     private String bankName;

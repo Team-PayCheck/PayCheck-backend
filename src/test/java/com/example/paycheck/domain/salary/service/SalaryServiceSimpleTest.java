@@ -11,6 +11,7 @@ import com.example.paycheck.domain.salary.repository.SalaryRepository;
 import com.example.paycheck.domain.salary.util.DeductionCalculator;
 import com.example.paycheck.domain.workplace.entity.Workplace;
 import com.example.paycheck.domain.workrecord.entity.WorkRecord;
+import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import com.example.paycheck.domain.worker.entity.Worker;
 import com.example.paycheck.domain.user.entity.User;
@@ -24,7 +25,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -119,7 +119,7 @@ class SalaryServiceSimpleTest {
         Integer month = 12;
 
         when(workerContractRepository.findById(contractId)).thenReturn(Optional.of(testContract));
-        when(workRecordRepository.findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class)))
+        when(workRecordRepository.findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class), any(WorkRecordStatus.class)))
                 .thenReturn(Collections.emptyList());
 
         // when & then
@@ -128,7 +128,7 @@ class SalaryServiceSimpleTest {
                 .hasMessageContaining("해당 기간 내 근무 기록이 없습니다");
 
         verify(workerContractRepository).findById(contractId);
-        verify(workRecordRepository).findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class));
+        verify(workRecordRepository).findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class), any(WorkRecordStatus.class));
     }
 
     @Test
@@ -169,40 +169,20 @@ class SalaryServiceSimpleTest {
         when(workRecord.getNightSalary()).thenReturn(BigDecimal.ZERO);
         when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
 
-        when(workRecordRepository.findByContractAndDateRange(eq(contractId), eq(febStart), eq(febEnd)))
+        when(workRecordRepository.findByContractAndDateRange(eq(contractId), eq(febStart), eq(febEnd), any(WorkRecordStatus.class)))
                 .thenReturn(Collections.singletonList(workRecord));
 
         when(weeklyAllowanceRepository.findByContractIdAndYearMonth(eq(contractId), anyInt(), anyInt()))
                 .thenReturn(Collections.emptyList());
         when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
                 .thenReturn(Collections.emptyList());
-        when(salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month))
-                .thenReturn(Optional.of(Salary.builder()
-                        .id(100L)
-                        .contract(contract)
-                        .year(year)
-                        .month(month)
-                        .totalWorkHours(BigDecimal.ONE)
-                        .basePay(BigDecimal.ONE)
-                        .overtimePay(BigDecimal.ZERO)
-                        .nightPay(BigDecimal.ZERO)
-                        .holidayPay(BigDecimal.ZERO)
-                        .totalGrossPay(BigDecimal.ONE)
-                        .fourMajorInsurance(BigDecimal.ZERO)
-                        .incomeTax(BigDecimal.ZERO)
-                        .localIncomeTax(BigDecimal.ZERO)
-                        .totalDeduction(BigDecimal.ZERO)
-                        .netPay(BigDecimal.ONE)
-                        .paymentDueDate(LocalDate.of(2024, 2, 29))
-                        .build()));
-        when(salaryPersistenceService.trySave(any(Salary.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(salaryPersistenceService.trySave(any(Salary.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
         salaryService.calculateSalaryByWorkRecords(contractId, year, month);
 
         // then
-        verify(workRecordRepository).findByContractAndDateRange(eq(contractId), eq(febStart), eq(febEnd));
+        verify(workRecordRepository).findByContractAndDateRange(eq(contractId), eq(febStart), eq(febEnd), any(WorkRecordStatus.class));
         verify(weeklyAllowanceRepository).findByContractIdAndYearMonth(eq(contractId), eq(2024), eq(2));
         verify(salaryPersistenceService).trySave(argThat(saved ->
                 saved.getPaymentDueDate().equals(LocalDate.of(2024, 2, 29))));
@@ -243,7 +223,7 @@ class SalaryServiceSimpleTest {
         when(workRecord.getNightSalary()).thenReturn(new BigDecimal("20"));
         when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
 
-        when(workRecordRepository.findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class)))
+        when(workRecordRepository.findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class), any(WorkRecordStatus.class)))
                 .thenReturn(Collections.singletonList(workRecord));
         when(weeklyAllowanceRepository.findByContractIdAndYearMonth(eq(contractId), anyInt(), anyInt()))
                 .thenReturn(Collections.emptyList());
@@ -278,7 +258,7 @@ class SalaryServiceSimpleTest {
         // then
         verify(salaryRepository, never()).save(any(Salary.class));
         verify(salaryRepository).findByContractIdAndYearAndMonthForUpdate(contractId, year, month);
-        verify(workRecordRepository).findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class));
+        verify(workRecordRepository).findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class), any(WorkRecordStatus.class));
 
         assertThat(existingSalary.getPaymentDueDate()).isEqualTo(LocalDate.of(2024, 5, 10));
         assertThat(existingSalary.getTotalWorkHours()).isEqualByComparingTo("8");
@@ -325,7 +305,7 @@ class SalaryServiceSimpleTest {
         when(workRecord.getNightSalary()).thenReturn(BigDecimal.ZERO);
         when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
 
-        when(workRecordRepository.findByContractAndDateRange(eq(contractId), eq(startDate), eq(endDate)))
+        when(workRecordRepository.findByContractAndDateRange(eq(contractId), eq(startDate), eq(endDate), any(WorkRecordStatus.class)))
                 .thenReturn(List.of(workRecord));
 
         WeeklyAllowance includedCurrent = mock(WeeklyAllowance.class);
@@ -349,17 +329,9 @@ class SalaryServiceSimpleTest {
         when(weeklyAllowanceRepository.findByContractIdAndYearMonth(contractId, 2024, 2))
                 .thenReturn(List.of(includedPreviousLastWeek));
 
-        AtomicReference<Salary> persistedSalary = new AtomicReference<>();
-
         when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
                 .thenReturn(Collections.emptyList());
-        when(salaryPersistenceService.trySave(any(Salary.class))).thenAnswer(invocation -> {
-            Salary saved = invocation.getArgument(0);
-            persistedSalary.set(saved);
-            return saved;
-        });
-        when(salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month))
-                .thenAnswer(invocation -> Optional.ofNullable(persistedSalary.get()));
+        when(salaryPersistenceService.trySave(any(Salary.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
         SalaryDto.Response response = salaryService.calculateSalaryByWorkRecords(contractId, year, month);
@@ -369,7 +341,7 @@ class SalaryServiceSimpleTest {
         assertThat(response.getOvertimePay()).isEqualByComparingTo(new BigDecimal("22000.00"));
         assertThat(response.getPaymentDueDate()).isEqualTo("2024-03-25");
 
-        verify(workRecordRepository).findByContractAndDateRange(eq(contractId), eq(startDate), eq(endDate));
+        verify(workRecordRepository).findByContractAndDateRange(eq(contractId), eq(startDate), eq(endDate), any(WorkRecordStatus.class));
         verify(weeklyAllowanceRepository).findByContractIdAndYearMonth(contractId, year, month);
         verify(weeklyAllowanceRepository).findByContractIdAndYearMonth(contractId, 2024, 2);
     }

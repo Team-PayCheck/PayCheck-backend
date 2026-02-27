@@ -24,9 +24,6 @@ public class Workplace extends BaseEntity {
     @Column(name = "business_number", unique = true, nullable = false)
     private String businessNumber;
 
-    @Column(name = "business_name", nullable = false)
-    private String businessName;
-
     @Column(name = "name", nullable = false)
     private String name;
 
@@ -44,8 +41,7 @@ public class Workplace extends BaseEntity {
     @Builder.Default
     private Boolean isLessThanFiveEmployees = true; // 5인 미만 여부 (고용주 선택)
 
-    public void update(String businessName, String name, String address, String colorCode, Boolean isLessThanFiveEmployees) {
-        if (businessName != null) this.businessName = businessName;
+    public void update(String name, String address, String colorCode, Boolean isLessThanFiveEmployees) {
         if (name != null) this.name = name;
         if (address != null) this.address = address;
         if (colorCode != null) this.colorCode = colorCode;

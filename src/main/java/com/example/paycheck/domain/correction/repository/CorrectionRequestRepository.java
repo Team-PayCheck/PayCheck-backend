@@ -4,6 +4,8 @@ import com.example.paycheck.domain.correction.entity.CorrectionRequest;
 import com.example.paycheck.domain.correction.enums.CorrectionStatus;
 import com.example.paycheck.domain.correction.enums.RequestType;
 import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -43,32 +45,48 @@ public interface CorrectionRequestRepository extends JpaRepository<CorrectionReq
                         @Param("requesterId") Long requesterId,
                         @Param("status") CorrectionStatus status);
 
-        // 사업장별 정정요청 목록 조회 (고용주용)
-        @Query("SELECT cr FROM CorrectionRequest cr " +
+        // 사업장별 정정요청 목록 조회 - 페이징 (고용주용)
+        @Query(value = "SELECT cr FROM CorrectionRequest cr " +
                         "LEFT JOIN FETCH cr.workRecord wr " +
                         "LEFT JOIN FETCH wr.contract wrc " +
                         "LEFT JOIN FETCH wrc.workplace wrw " +
                         "LEFT JOIN FETCH cr.contract cc " +
                         "LEFT JOIN FETCH cc.workplace cw " +
                         "JOIN FETCH cr.requester r " +
-                        "WHERE (wrw.id = :workplaceId OR cw.id = :workplaceId) " +
-                        "ORDER BY cr.createdAt DESC")
-        List<CorrectionRequest> findByWorkplaceId(@Param("workplaceId") Long workplaceId);
-
-        // 사업장별 + 상태별 정정요청 목록 조회 (고용주용)
-        @Query("SELECT cr FROM CorrectionRequest cr " +
-                        "LEFT JOIN FETCH cr.workRecord wr " +
-                        "LEFT JOIN FETCH wr.contract wrc " +
-                        "LEFT JOIN FETCH wrc.workplace wrw " +
-                        "LEFT JOIN FETCH cr.contract cc " +
-                        "LEFT JOIN FETCH cc.workplace cw " +
-                        "JOIN FETCH cr.requester r " +
-                        "WHERE (wrw.id = :workplaceId OR cw.id = :workplaceId) " +
-                        "AND cr.status = :status " +
-                        "ORDER BY cr.createdAt DESC")
-        List<CorrectionRequest> findByWorkplaceIdAndStatus(
+                        "WHERE (wrw.id = :workplaceId OR cw.id = :workplaceId)",
+                countQuery = "SELECT COUNT(cr) FROM CorrectionRequest cr " +
+                        "LEFT JOIN cr.workRecord wr " +
+                        "LEFT JOIN wr.contract wrc " +
+                        "LEFT JOIN wrc.workplace wrw " +
+                        "LEFT JOIN cr.contract cc " +
+                        "LEFT JOIN cc.workplace cw " +
+                        "WHERE (wrw.id = :workplaceId OR cw.id = :workplaceId)")
+        Page<CorrectionRequest> findByWorkplaceId(
                         @Param("workplaceId") Long workplaceId,
-                        @Param("status") CorrectionStatus status);
+                        Pageable pageable);
+
+        // 사업장별 + 상태별 정정요청 목록 조회 - 페이징 (고용주용)
+        @Query(value = "SELECT cr FROM CorrectionRequest cr " +
+                        "LEFT JOIN FETCH cr.workRecord wr " +
+                        "LEFT JOIN FETCH wr.contract wrc " +
+                        "LEFT JOIN FETCH wrc.workplace wrw " +
+                        "LEFT JOIN FETCH cr.contract cc " +
+                        "LEFT JOIN FETCH cc.workplace cw " +
+                        "JOIN FETCH cr.requester r " +
+                        "WHERE (wrw.id = :workplaceId OR cw.id = :workplaceId) " +
+                        "AND cr.status = :status",
+                countQuery = "SELECT COUNT(cr) FROM CorrectionRequest cr " +
+                        "LEFT JOIN cr.workRecord wr " +
+                        "LEFT JOIN wr.contract wrc " +
+                        "LEFT JOIN wrc.workplace wrw " +
+                        "LEFT JOIN cr.contract cc " +
+                        "LEFT JOIN cc.workplace cw " +
+                        "WHERE (wrw.id = :workplaceId OR cw.id = :workplaceId) " +
+                        "AND cr.status = :status")
+        Page<CorrectionRequest> findByWorkplaceIdAndStatus(
+                        @Param("workplaceId") Long workplaceId,
+                        @Param("status") CorrectionStatus status,
+                        Pageable pageable);
 
         // 사업장별 + 상태별 + 타입별 정정요청 목록 조회 (고용주용)
         @Query("SELECT cr FROM CorrectionRequest cr " +
@@ -121,7 +139,7 @@ public interface CorrectionRequestRepository extends JpaRepository<CorrectionReq
                         @Param("type") RequestType type,
                         @Param("status") CorrectionStatus status);
 
-        // 계약 정보 변경 시 미래 WorkRecord를 참조하는 CorrectionRequest 삭제
+        // 계약 정보 변경/해지 시 미래 WorkRecord를 참조하는 CorrectionRequest 삭제
         @Modifying
         @Query("DELETE FROM CorrectionRequest cr " +
                         "WHERE cr.workRecord.id IN " +

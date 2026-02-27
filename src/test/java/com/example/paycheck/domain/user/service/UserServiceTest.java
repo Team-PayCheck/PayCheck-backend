@@ -9,6 +9,7 @@ import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.enums.UserType;
 import com.example.paycheck.domain.user.repository.UserRepository;
 import com.example.paycheck.domain.worker.entity.Worker;
+import com.example.paycheck.domain.worker.repository.WorkerRepository;
 import com.example.paycheck.domain.worker.service.WorkerService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +32,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private WorkerRepository workerRepository;
 
     @Mock
     private WorkerService workerService;

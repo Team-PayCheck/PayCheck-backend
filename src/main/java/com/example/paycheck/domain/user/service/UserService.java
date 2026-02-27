@@ -9,6 +9,7 @@ import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.enums.UserType;
 import com.example.paycheck.domain.user.repository.UserRepository;
 import com.example.paycheck.domain.worker.entity.Worker;
+import com.example.paycheck.domain.worker.repository.WorkerRepository;
 import com.example.paycheck.domain.worker.service.WorkerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final WorkerRepository workerRepository;
     private final WorkerService workerService;
     private final EmployerService employerService;
     private final UserSettingsService userSettingsService;
@@ -27,6 +29,12 @@ public class UserService {
     public UserDto.Response getUserById(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
+        if (user.getUserType() == UserType.WORKER) {
+            return workerRepository.findByUserId(userId)
+                    .map(worker -> UserDto.Response.from(user, worker))
+                    .orElse(UserDto.Response.from(user));
+        }
         return UserDto.Response.from(user);
     }
 

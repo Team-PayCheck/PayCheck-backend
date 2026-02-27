@@ -80,6 +80,8 @@ public class WorkRecordDto {
         private WorkRecordStatus status;
         private Boolean isModified;
         private String memo;
+        @Schema(description = "시급")
+        private BigDecimal hourlyWage;
         @Schema(description = "기본 급여")
         private BigDecimal baseSalary;
         @Schema(description = "야간 수당")
@@ -104,6 +106,7 @@ public class WorkRecordDto {
                     .status(workRecord.getStatus())
                     .isModified(workRecord.getIsModified())
                     .memo(workRecord.getMemo())
+                    .hourlyWage(workRecord.getContract().getHourlyWage())
                     .baseSalary(workRecord.getBaseSalary())
                     .nightSalary(workRecord.getNightSalary())
                     .holidaySalary(workRecord.getHolidaySalary())

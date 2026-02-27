@@ -29,6 +29,12 @@ public class AuthController {
     @Value("${jwt.refresh-expiration}")
     private long refreshExpirationTime; // 밀리초 단위
 
+    @Value("${cookie.secure:true}")
+    private boolean cookieSecure;
+
+    @Value("${cookie.same-site:None}")
+    private String cookieSameSite;
+
     @Operation(summary = "카카오 로그인", description = "카카오 액세스 토큰을 검증하고 자체 JWT를 발급합니다.")
     @PostMapping("/kakao/login")
     public ApiResponse<AuthDto.LoginResponse> kakaoLogin(
@@ -107,10 +113,10 @@ public class AuthController {
     private void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
         Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken);
         cookie.setHttpOnly(true);
-        cookie.setSecure(true); // HTTPS에서만 전송
+        cookie.setSecure(cookieSecure);
         cookie.setPath("/");
         cookie.setMaxAge((int) (refreshExpirationTime / 1000)); // 밀리초를 초로 변환
-        cookie.setAttribute("SameSite", "Strict"); // CSRF 방어
+        cookie.setAttribute("SameSite", cookieSameSite);
         response.addCookie(cookie);
     }
 
@@ -120,9 +126,10 @@ public class AuthController {
     private void deleteRefreshTokenCookie(HttpServletResponse response) {
         Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE_NAME, null);
         cookie.setHttpOnly(true);
-        cookie.setSecure(true);
+        cookie.setSecure(cookieSecure);
         cookie.setPath("/");
         cookie.setMaxAge(0);
+        cookie.setAttribute("SameSite", cookieSameSite);
         response.addCookie(cookie);
     }
 
