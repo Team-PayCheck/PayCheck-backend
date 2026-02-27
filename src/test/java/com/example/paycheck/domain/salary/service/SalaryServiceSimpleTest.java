@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -173,9 +174,29 @@ class SalaryServiceSimpleTest {
 
         when(weeklyAllowanceRepository.findByContractIdAndYearMonth(eq(contractId), anyInt(), anyInt()))
                 .thenReturn(Collections.emptyList());
+        when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
+                .thenReturn(Collections.emptyList());
         when(salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month))
-                .thenReturn(Optional.empty());
-        when(salaryPersistenceService.trySave(any(Salary.class))).thenAnswer(invocation -> invocation.getArgument(0));
+                .thenReturn(Optional.of(Salary.builder()
+                        .id(100L)
+                        .contract(contract)
+                        .year(year)
+                        .month(month)
+                        .totalWorkHours(BigDecimal.ONE)
+                        .basePay(BigDecimal.ONE)
+                        .overtimePay(BigDecimal.ZERO)
+                        .nightPay(BigDecimal.ZERO)
+                        .holidayPay(BigDecimal.ZERO)
+                        .totalGrossPay(BigDecimal.ONE)
+                        .fourMajorInsurance(BigDecimal.ZERO)
+                        .incomeTax(BigDecimal.ZERO)
+                        .localIncomeTax(BigDecimal.ZERO)
+                        .totalDeduction(BigDecimal.ZERO)
+                        .netPay(BigDecimal.ONE)
+                        .paymentDueDate(LocalDate.of(2024, 2, 29))
+                        .build()));
+        when(salaryPersistenceService.trySave(any(Salary.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
         salaryService.calculateSalaryByWorkRecords(contractId, year, month);
@@ -246,6 +267,8 @@ class SalaryServiceSimpleTest {
                 .paymentDueDate(LocalDate.of(2024, 5, 10))
                 .build();
 
+        when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
+                .thenReturn(Collections.singletonList(existingSalary));
         when(salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month))
                 .thenReturn(Optional.of(existingSalary));
 
@@ -326,9 +349,17 @@ class SalaryServiceSimpleTest {
         when(weeklyAllowanceRepository.findByContractIdAndYearMonth(contractId, 2024, 2))
                 .thenReturn(List.of(includedPreviousLastWeek));
 
+        AtomicReference<Salary> persistedSalary = new AtomicReference<>();
+
         when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
                 .thenReturn(Collections.emptyList());
-        when(salaryRepository.save(any(Salary.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(salaryPersistenceService.trySave(any(Salary.class))).thenAnswer(invocation -> {
+            Salary saved = invocation.getArgument(0);
+            persistedSalary.set(saved);
+            return saved;
+        });
+        when(salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month))
+                .thenAnswer(invocation -> Optional.ofNullable(persistedSalary.get()));
 
         // when
         SalaryDto.Response response = salaryService.calculateSalaryByWorkRecords(contractId, year, month);
