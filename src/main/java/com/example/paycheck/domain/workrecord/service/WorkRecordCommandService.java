@@ -94,6 +94,7 @@ public class WorkRecordCommandService {
         // COMPLETED 상태면 정확한 휴일 정보와 사업장 규모를 반영하여 재계산
         if (status == WorkRecordStatus.COMPLETED) {
             calculationService.calculateWorkRecordDetails(savedRecord);
+            calculationService.validateWorkRecordConsistency(savedRecord);
             workRecordRepository.save(savedRecord);
         }
 
@@ -172,6 +173,7 @@ public class WorkRecordCommandService {
             // COMPLETED 상태면 정확한 휴일 정보와 사업장 규모를 반영하여 재계산
             if (workRecord.getStatus() == WorkRecordStatus.COMPLETED) {
                 calculationService.calculateWorkRecordDetails(workRecord);
+                calculationService.validateWorkRecordConsistency(workRecord);
                 workRecordRepository.save(workRecord);
             }
 
@@ -200,11 +202,18 @@ public class WorkRecordCommandService {
     public void completeWorkRecord(Long workRecordId) {
         WorkRecord workRecord = workRecordRepository.findById(workRecordId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.WORK_RECORD_NOT_FOUND, "근무 기록을 찾을 수 없습니다."));
+        completeWorkRecord(workRecord);
+    }
+
+    /**
+     * 조회된 WorkRecord를 완료 처리 (스케줄러/배치 재사용용)
+     */
+    public void completeWorkRecord(WorkRecord workRecord) {
         workRecord.complete();
-        workRecordRepository.save(workRecord);
 
         // 정확한 휴일 정보와 사업장 규모를 반영하여 재계산
         calculationService.calculateWorkRecordDetails(workRecord);
+        calculationService.validateWorkRecordConsistency(workRecord);
         workRecordRepository.save(workRecord);
 
         // 근무 완료 시 급여 재계산 (COMPLETED 상태가 되어야 급여에 포함됨)
@@ -343,6 +352,7 @@ public class WorkRecordCommandService {
 
         for (WorkRecord completedRecord : completedRecords) {
             calculationService.calculateWorkRecordDetails(completedRecord);
+            calculationService.validateWorkRecordConsistency(completedRecord);
         }
 
         // 7. 계산된 WorkRecord 일괄 업데이트

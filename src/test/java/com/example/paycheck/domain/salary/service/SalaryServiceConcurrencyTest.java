@@ -118,6 +118,8 @@ class SalaryServiceConcurrencyTest {
                 .build();
 
         // 비관적 잠금 메서드가 호출되어야 함
+        when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
+                .thenReturn(Collections.singletonList(existingSalary));
         when(salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month))
                 .thenReturn(Optional.of(existingSalary));
 
@@ -125,6 +127,7 @@ class SalaryServiceConcurrencyTest {
         salaryService.calculateSalaryByWorkRecords(contractId, year, month);
 
         // then
+        verify(salaryRepository).findByContractIdAndYearAndMonth(contractId, year, month);
         verify(salaryRepository).findByContractIdAndYearAndMonthForUpdate(contractId, year, month);
         verify(salaryPersistenceService, never()).trySave(any(Salary.class));
     }
@@ -143,9 +146,12 @@ class SalaryServiceConcurrencyTest {
         when(weeklyAllowanceRepository.findByContractIdAndYearMonth(eq(contractId), anyInt(), anyInt()))
                 .thenReturn(Collections.emptyList());
 
-        // 첫 번째 조회: 기존 급여 없음
+        // 일반 조회: 기존 급여 없음
+        when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
+                .thenReturn(Collections.emptyList());
+
+        // 예외 발생 후 FOR UPDATE 재조회에서 기존 급여를 획득
         when(salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month))
-                .thenReturn(Optional.empty())
                 .thenReturn(Optional.of(Salary.builder()
                         .id(10L)
                         .contract(mockContract)
@@ -173,8 +179,8 @@ class SalaryServiceConcurrencyTest {
         salaryService.calculateSalaryByWorkRecords(contractId, year, month);
 
         // then
-        // 첫 번째 조회 + 예외 발생 후 재조회 = 총 2번 호출
-        verify(salaryRepository, times(2)).findByContractIdAndYearAndMonthForUpdate(contractId, year, month);
+        verify(salaryRepository).findByContractIdAndYearAndMonth(contractId, year, month);
+        verify(salaryRepository, times(1)).findByContractIdAndYearAndMonthForUpdate(contractId, year, month);
         verify(salaryPersistenceService).trySave(any(Salary.class));
     }
 
@@ -192,9 +198,31 @@ class SalaryServiceConcurrencyTest {
         when(weeklyAllowanceRepository.findByContractIdAndYearMonth(eq(contractId), anyInt(), anyInt()))
                 .thenReturn(Collections.emptyList());
 
-        // 기존 급여 없음
+        // 일반 조회: 기존 급여 없음
+        when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
+                .thenReturn(Collections.emptyList());
+
+        Salary lockedSalary = Salary.builder()
+                .id(10L)
+                .contract(mockContract)
+                .year(year)
+                .month(month)
+                .totalWorkHours(BigDecimal.ZERO)
+                .basePay(BigDecimal.ZERO)
+                .overtimePay(BigDecimal.ZERO)
+                .nightPay(BigDecimal.ZERO)
+                .holidayPay(BigDecimal.ZERO)
+                .totalGrossPay(BigDecimal.ZERO)
+                .fourMajorInsurance(BigDecimal.ZERO)
+                .incomeTax(BigDecimal.ZERO)
+                .localIncomeTax(BigDecimal.ZERO)
+                .totalDeduction(BigDecimal.ZERO)
+                .netPay(BigDecimal.ZERO)
+                .paymentDueDate(LocalDate.of(2024, 5, 25))
+                .build();
+
         when(salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month))
-                .thenReturn(Optional.empty());
+                .thenReturn(Optional.of(lockedSalary));
 
         when(salaryPersistenceService.trySave(any(Salary.class))).thenAnswer(invocation -> {
             Salary saved = invocation.getArgument(0);
@@ -222,6 +250,7 @@ class SalaryServiceConcurrencyTest {
         var response = salaryService.calculateSalaryByWorkRecords(contractId, year, month);
 
         // then
+        verify(salaryRepository).findByContractIdAndYearAndMonth(contractId, year, month);
         verify(salaryRepository).findByContractIdAndYearAndMonthForUpdate(contractId, year, month);
         verify(salaryPersistenceService).trySave(any(Salary.class));
         assertThat(response).isNotNull();
@@ -262,6 +291,8 @@ class SalaryServiceConcurrencyTest {
                 .paymentDueDate(LocalDate.of(2024, 5, 25))
                 .build();
 
+        when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
+                .thenReturn(Collections.singletonList(existingSalary));
         when(salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month))
                 .thenReturn(Optional.of(existingSalary));
 
@@ -269,6 +300,7 @@ class SalaryServiceConcurrencyTest {
         salaryService.calculateSalaryByWorkRecords(contractId, year, month);
 
         // then
+        verify(salaryRepository).findByContractIdAndYearAndMonth(contractId, year, month);
         verify(salaryRepository).findByContractIdAndYearAndMonthForUpdate(contractId, year, month);
         verify(salaryPersistenceService, never()).trySave(any(Salary.class));
 
