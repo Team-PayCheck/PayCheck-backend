@@ -16,6 +16,7 @@ import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -198,13 +199,18 @@ public class SalaryService {
             netPay = BigDecimal.ZERO;
         }
 
-        // 비관적 잠금으로 기존 급여 조회 (동시성 제어)
-        Optional<Salary> existingSalary = salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month);
+        // 존재 여부는 일반 조회로 확인하고, 기존 행이 있을 때만 FOR UPDATE 잠금을 건다.
+        // 없는 행에 대해 FOR UPDATE를 먼저 수행하면, REQUIRES_NEW INSERT와 gap lock 충돌이 날 수 있다.
+        Optional<Salary> existingSalary = salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month)
+                .stream()
+                .findFirst();
         Salary salary;
 
         if (existingSalary.isPresent()) {
+            salary = salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month)
+                    .orElseThrow(() -> new IllegalStateException("급여 데이터 동시성 오류"));
+
             // 기존 급여 정보 업데이트
-            salary = existingSalary.get();
             salary.updateCalculatedFields(
                     totalWorkHours,
                     totalBasePay,
@@ -243,9 +249,10 @@ public class SalaryService {
                 // 성공 시 저장된 엔티티를 그대로 사용한다.
                 // 재조회는 동시 INSERT 충돌(DataIntegrityViolationException) 경로에서만 수행한다.
                 salary = salaryPersistenceService.trySave(salary);
-            } catch (DataIntegrityViolationException e) {
-                // 동시 INSERT 발생 시 (Unique Constraint 위반) 재조회 후 업데이트
-                log.warn("급여 동시 생성 감지 - 재조회 후 업데이트 수행: contractId={}, year={}, month={}", contractId, year, month);
+            } catch (DataIntegrityViolationException | PessimisticLockingFailureException e) {
+                // 동시 INSERT 또는 잠금 경합 발생 시 재조회 후 업데이트
+                log.warn("급여 동시 생성/잠금 경합 감지 - 재조회 후 업데이트 수행: contractId={}, year={}, month={}",
+                        contractId, year, month);
                 salary = salaryRepository.findByContractIdAndYearAndMonthForUpdate(contractId, year, month)
                         .orElseThrow(() -> new IllegalStateException("급여 데이터 동시성 오류"));
                 salary.updateCalculatedFields(

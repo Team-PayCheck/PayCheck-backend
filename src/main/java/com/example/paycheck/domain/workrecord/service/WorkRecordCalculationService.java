@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
@@ -78,6 +79,40 @@ public class WorkRecordCalculationService {
 
             workRecord.calculateHoursWithHolidayInfo(isHoliday, isSmallWorkplace);
             workRecord.calculateSalaryWithAllowanceRules(isSmallWorkplace);
+        }
+    }
+
+    /**
+     * WorkRecord 계산 결과 정합성 검증
+     */
+    public void validateWorkRecordConsistency(WorkRecord workRecord) {
+        Integer totalWorkMinutes = workRecord.getTotalWorkMinutes();
+        if (totalWorkMinutes == null || totalWorkMinutes < 0) {
+            throw new IllegalStateException(
+                    String.format("WorkRecord 필드 정합성 검증 실패: totalWorkMinutes=%s", totalWorkMinutes));
+        }
+
+        validateNotNegative("totalHours", workRecord.getTotalHours());
+        validateNotNegative("baseSalary", workRecord.getBaseSalary());
+        validateNotNegative("nightSalary", workRecord.getNightSalary());
+        validateNotNegative("holidaySalary", workRecord.getHolidaySalary());
+        validateNotNegative("totalSalary", workRecord.getTotalSalary());
+
+        BigDecimal expectedTotalSalary = workRecord.getBaseSalary()
+                .add(workRecord.getNightSalary())
+                .add(workRecord.getHolidaySalary());
+
+        if (workRecord.getTotalSalary().compareTo(expectedTotalSalary) != 0) {
+            throw new IllegalStateException(String.format(
+                    "WorkRecord 급여 정합성 검증 실패: workRecordId=%d, totalSalary=%s, expected=%s",
+                    workRecord.getId(), workRecord.getTotalSalary(), expectedTotalSalary));
+        }
+    }
+
+    private void validateNotNegative(String fieldName, BigDecimal value) {
+        if (value == null || value.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalStateException(
+                    String.format("WorkRecord 필드 정합성 검증 실패: %s=%s", fieldName, value));
         }
     }
 }
