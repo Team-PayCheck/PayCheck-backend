@@ -1,6 +1,5 @@
 package com.example.paycheck.domain.workrecord.scheduler;
 
-import com.example.paycheck.domain.workrecord.entity.WorkRecord;
 import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import com.example.paycheck.domain.workrecord.service.WorkRecordCommandService;
@@ -43,29 +42,26 @@ class WorkRecordSchedulerTest {
     @DisplayName("종료된 SCHEDULED 근무 자동 완료 성공")
     void autoCompletePastScheduledWorkRecords_Success() {
         // given
-        WorkRecord first = WorkRecord.builder().id(1L).build();
-        WorkRecord second = WorkRecord.builder().id(2L).build();
-
-        when(workRecordRepository.findPastScheduledWorkRecords(
+        when(workRecordRepository.findPastScheduledWorkRecordIds(
                 eq(WorkRecordStatus.SCHEDULED),
                 any(LocalDate.class),
                 any(LocalTime.class),
                 any(LocalDate.class)))
-                .thenReturn(List.of(first, second));
+                .thenReturn(List.of(1L, 2L));
 
         // when
         workRecordScheduler.autoCompletePastScheduledWorkRecords();
 
         // then
-        verify(workRecordCommandService).completeWorkRecord(first);
-        verify(workRecordCommandService).completeWorkRecord(second);
+        verify(workRecordCommandService).completeWorkRecord(1L);
+        verify(workRecordCommandService).completeWorkRecord(2L);
     }
 
     @Test
     @DisplayName("종료된 SCHEDULED 근무 자동 완료 - 대상 없음")
     void autoCompletePastScheduledWorkRecords_NoTargets() {
         // given
-        when(workRecordRepository.findPastScheduledWorkRecords(
+        when(workRecordRepository.findPastScheduledWorkRecordIds(
                 eq(WorkRecordStatus.SCHEDULED),
                 any(LocalDate.class),
                 any(LocalTime.class),
@@ -76,6 +72,6 @@ class WorkRecordSchedulerTest {
         workRecordScheduler.autoCompletePastScheduledWorkRecords();
 
         // then
-        verify(workRecordCommandService, never()).completeWorkRecord(any(WorkRecord.class));
+        verify(workRecordCommandService, never()).completeWorkRecord(any(Long.class));
     }
 }

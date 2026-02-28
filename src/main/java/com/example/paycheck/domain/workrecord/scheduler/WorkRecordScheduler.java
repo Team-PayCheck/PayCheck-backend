@@ -1,7 +1,6 @@
 package com.example.paycheck.domain.workrecord.scheduler;
 
 import com.example.paycheck.domain.contract.entity.WorkerContract;
-import com.example.paycheck.domain.workrecord.entity.WorkRecord;
 import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import com.example.paycheck.domain.workrecord.service.WorkRecordCommandService;
@@ -75,13 +74,13 @@ public class WorkRecordScheduler {
             LocalTime currentTime = LocalTime.now();
             LocalDate previousDate = currentDate.minusDays(1);
 
-            List<WorkRecord> targets = workRecordRepository.findPastScheduledWorkRecords(
+            List<Long> targetIds = workRecordRepository.findPastScheduledWorkRecordIds(
                     WorkRecordStatus.SCHEDULED,
                     currentDate,
                     currentTime,
                     previousDate);
 
-            if (targets.isEmpty()) {
+            if (targetIds.isEmpty()) {
                 log.info("자동 완료 대상 근무 기록이 없습니다.");
                 return;
             }
@@ -89,18 +88,18 @@ public class WorkRecordScheduler {
             int successCount = 0;
             int failCount = 0;
 
-            for (WorkRecord target : targets) {
+            for (Long workRecordId : targetIds) {
                 try {
-                    workRecordCommandService.completeWorkRecord(target);
+                    workRecordCommandService.completeWorkRecord(workRecordId);
                     successCount++;
                 } catch (Exception e) {
-                    log.error("근무 자동 완료 실패: WorkRecord ID={}, Error={}", target.getId(), e.getMessage(), e);
+                    log.error("근무 자동 완료 실패: WorkRecord ID={}, Error={}", workRecordId, e.getMessage(), e);
                     failCount++;
                 }
             }
 
             log.info("===== 종료된 SCHEDULED 근무 자동 완료 스케줄러 완료 ===== (대상: {}, 성공: {}, 실패: {})",
-                    targets.size(), successCount, failCount);
+                    targetIds.size(), successCount, failCount);
         } catch (Exception e) {
             log.error("근무 자동 완료 스케줄러 실행 중 오류 발생", e);
         }
