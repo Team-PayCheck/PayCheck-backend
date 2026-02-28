@@ -42,6 +42,12 @@ public enum NotificationActionType {
     VIEW_WORKPLACE_INVITATION,
 
     /**
+     * 공지사항 상세 조회
+     * - 새로운 공지사항으로 이동
+     */
+    VIEW_NOTICE,
+
+    /**
      * 액션 없음
      * - 단순 정보성 알림
      */

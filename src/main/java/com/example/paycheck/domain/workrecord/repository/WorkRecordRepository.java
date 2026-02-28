@@ -137,4 +137,24 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
                         @Param("contractId") Long contractId,
                         @Param("workDates") List<LocalDate> workDates,
                         @Param("deletedStatus") WorkRecordStatus deletedStatus);
+
+        // 현재 시점 기준으로 종료된 SCHEDULED 근무 기록 ID 조회 (자동 완료 배치용)
+        // ID만 조회하여 메모리 효율 확보, 각 레코드는 completeWorkRecord(Long)에서 개별 트랜잭션으로 처리
+        @Query("SELECT wr.id FROM WorkRecord wr " +
+                        "WHERE wr.status = :status " +
+                        "AND ( " +
+                        "   (wr.endTime > wr.startTime " +
+                        "       AND (wr.workDate < :currentDate " +
+                        "            OR (wr.workDate = :currentDate AND wr.endTime <= :currentTime))) " +
+                        "   OR " +
+                        "   (wr.endTime <= wr.startTime " +
+                        "       AND (wr.workDate < :previousDate " +
+                        "            OR (wr.workDate = :previousDate AND wr.endTime <= :currentTime))) " +
+                        ") " +
+                        "ORDER BY wr.workDate ASC, wr.endTime ASC")
+        List<Long> findPastScheduledWorkRecordIds(
+                        @Param("status") WorkRecordStatus status,
+                        @Param("currentDate") LocalDate currentDate,
+                        @Param("currentTime") LocalTime currentTime,
+                        @Param("previousDate") LocalDate previousDate);
 }

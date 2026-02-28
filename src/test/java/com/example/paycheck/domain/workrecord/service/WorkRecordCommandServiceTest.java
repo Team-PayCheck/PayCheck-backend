@@ -164,6 +164,8 @@ class WorkRecordCommandServiceTest {
 
         // then
         verify(testWorkRecord).complete();
+        verify(calculationService).calculateWorkRecordDetails(testWorkRecord);
+        verify(calculationService).validateWorkRecordConsistency(testWorkRecord);
         verify(coordinatorService).handleWorkRecordCompletion(testWorkRecord);
     }
 

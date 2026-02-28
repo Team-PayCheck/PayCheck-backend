@@ -2,22 +2,32 @@ package com.example.paycheck.domain.notice.service;
 
 import com.example.paycheck.common.exception.NotFoundException;
 import com.example.paycheck.common.exception.UnauthorizedException;
+import com.example.paycheck.domain.contract.entity.WorkerContract;
+import com.example.paycheck.domain.contract.repository.WorkerContractRepository;
 import com.example.paycheck.domain.employer.entity.Employer;
+import com.example.paycheck.domain.notification.enums.NotificationActionType;
+import com.example.paycheck.domain.notification.enums.NotificationType;
+import com.example.paycheck.domain.notification.event.NotificationEvent;
 import com.example.paycheck.domain.notice.dto.NoticeDto;
 import com.example.paycheck.domain.notice.entity.Notice;
 import com.example.paycheck.domain.notice.enums.NoticeCategory;
 import com.example.paycheck.domain.notice.repository.NoticeRepository;
 import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.enums.UserType;
+import com.example.paycheck.domain.worker.entity.Worker;
 import com.example.paycheck.domain.workplace.entity.Workplace;
 import com.example.paycheck.domain.workplace.repository.WorkplaceRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,11 +48,22 @@ class NoticeServiceTest {
     @Mock
     private WorkplaceRepository workplaceRepository;
 
+    @Mock
+    private WorkerContractRepository contractRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+    @Spy
+    private ObjectMapper objectMapper = new ObjectMapper();
+
     @InjectMocks
     private NoticeService noticeService;
 
     private User authorUser;
     private User otherUser;
+    private Worker otherWorker;
+    private WorkerContract activeContract;
     private Employer employer;
     private Workplace workplace;
     private Notice notice;
@@ -62,6 +83,12 @@ class NoticeServiceTest {
                 .kakaoId("kakao-other")
                 .name("다른 사용자")
                 .userType(UserType.WORKER)
+                .build();
+
+        otherWorker = Worker.builder()
+                .id(10L)
+                .user(otherUser)
+                .workerCode("ABC123")
                 .build();
 
         employer = Employer.builder()
@@ -88,6 +115,13 @@ class NoticeServiceTest {
                 .content("위생사항 엄수")
                 .expiresAt(futureExpiry)
                 .build();
+
+        activeContract = WorkerContract.builder()
+                .id(100L)
+                .workplace(workplace)
+                .worker(otherWorker)
+                .isActive(true)
+                .build();
     }
 
     // ==================== createNotice ====================
@@ -105,6 +139,8 @@ class NoticeServiceTest {
 
         when(workplaceRepository.findById(1L)).thenReturn(Optional.of(workplace));
         when(noticeRepository.save(any())).thenReturn(notice);
+        when(contractRepository.findByWorkplaceIdAndIsActive(1L, true))
+                .thenReturn(List.of(activeContract));
 
         // when
         NoticeDto.Response result = noticeService.createNotice(1L, authorUser, request);
@@ -116,6 +152,17 @@ class NoticeServiceTest {
         assertThat(result.getAuthorName()).isEqualTo("작성자");
         verify(workplaceRepository).findById(1L);
         verify(noticeRepository).save(any());
+        verify(contractRepository).findByWorkplaceIdAndIsActive(1L, true);
+
+        ArgumentCaptor<NotificationEvent> eventCaptor = ArgumentCaptor.forClass(NotificationEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+
+        NotificationEvent event = eventCaptor.getValue();
+        assertThat(event.getUser().getId()).isEqualTo(otherUser.getId());
+        assertThat(event.getType()).isEqualTo(NotificationType.NOTICE_CREATED);
+        assertThat(event.getActionType()).isEqualTo(NotificationActionType.VIEW_NOTICE);
+        assertThat(event.getActionData()).contains("\"noticeId\":1");
+        assertThat(event.getActionData()).contains("\"workplaceId\":1");
     }
 
     @Test
@@ -137,6 +184,143 @@ class NoticeServiceTest {
                 .hasMessageContaining("사업장을 찾을 수 없습니다");
 
         verify(noticeRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("공지사항 작성 성공 - 알림 발행 실패 시에도 롤백되지 않음")
+    void createNotice_Success_WhenNotificationPublishFails() {
+        // given
+        NoticeDto.CreateRequest request = NoticeDto.CreateRequest.builder()
+                .category(NoticeCategory.URGENT)
+                .title("긴급 공지")
+                .content("위생사항 엄수")
+                .expiresAt(futureExpiry)
+                .build();
+
+        when(workplaceRepository.findById(1L)).thenReturn(Optional.of(workplace));
+        when(noticeRepository.save(any())).thenReturn(notice);
+        when(contractRepository.findByWorkplaceIdAndIsActive(1L, true))
+                .thenReturn(List.of(activeContract));
+        doThrow(new RuntimeException("알림 발행 실패"))
+                .when(eventPublisher).publishEvent(any(NotificationEvent.class));
+
+        // when
+        NoticeDto.Response result = noticeService.createNotice(1L, authorUser, request);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+        verify(workplaceRepository).findById(1L);
+        verify(noticeRepository).save(any());
+        verify(eventPublisher).publishEvent(any(NotificationEvent.class));
+    }
+
+    @Test
+    @DisplayName("공지사항 작성 성공 - 사업장 고용주가 null이어도 근로자 알림 발행")
+    void createNotice_Success_WhenEmployerIsNull() {
+        // given
+        Workplace workplaceWithoutEmployer = Workplace.builder()
+                .id(1L)
+                .employer(null)
+                .businessNumber("123-45-67890")
+                .name("테스트 사업장")
+                .isActive(true)
+                .build();
+
+        Notice noticeWithoutEmployer = Notice.builder()
+                .id(1L)
+                .workplace(workplaceWithoutEmployer)
+                .author(authorUser)
+                .category(NoticeCategory.URGENT)
+                .title("긴급 공지")
+                .content("위생사항 엄수")
+                .expiresAt(futureExpiry)
+                .build();
+
+        WorkerContract contractInWorkplaceWithoutEmployer = WorkerContract.builder()
+                .id(101L)
+                .workplace(workplaceWithoutEmployer)
+                .worker(otherWorker)
+                .isActive(true)
+                .build();
+
+        NoticeDto.CreateRequest request = NoticeDto.CreateRequest.builder()
+                .category(NoticeCategory.URGENT)
+                .title("긴급 공지")
+                .content("위생사항 엄수")
+                .expiresAt(futureExpiry)
+                .build();
+
+        when(workplaceRepository.findById(1L)).thenReturn(Optional.of(workplaceWithoutEmployer));
+        when(noticeRepository.save(any())).thenReturn(noticeWithoutEmployer);
+        when(contractRepository.findByWorkplaceIdAndIsActive(1L, true))
+                .thenReturn(List.of(contractInWorkplaceWithoutEmployer));
+
+        // when
+        NoticeDto.Response result = noticeService.createNotice(1L, authorUser, request);
+
+        // then
+        assertThat(result).isNotNull();
+        ArgumentCaptor<NotificationEvent> eventCaptor = ArgumentCaptor.forClass(NotificationEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().getUser().getId()).isEqualTo(otherUser.getId());
+        assertThat(eventCaptor.getValue().getType()).isEqualTo(NotificationType.NOTICE_CREATED);
+    }
+
+    @Test
+    @DisplayName("공지사항 작성 성공 - 한 수신자 알림 발행 실패해도 나머지는 계속 발행")
+    void createNotice_Success_WhenOneRecipientPublishFails() {
+        // given
+        User secondUser = User.builder()
+                .id(3L)
+                .kakaoId("kakao-other-2")
+                .name("두번째 사용자")
+                .userType(UserType.WORKER)
+                .build();
+        Worker secondWorker = Worker.builder()
+                .id(11L)
+                .user(secondUser)
+                .workerCode("DEF456")
+                .build();
+        WorkerContract secondContract = WorkerContract.builder()
+                .id(102L)
+                .workplace(workplace)
+                .worker(secondWorker)
+                .isActive(true)
+                .build();
+
+        NoticeDto.CreateRequest request = NoticeDto.CreateRequest.builder()
+                .category(NoticeCategory.URGENT)
+                .title("긴급 공지")
+                .content("위생사항 엄수")
+                .expiresAt(futureExpiry)
+                .build();
+
+        when(workplaceRepository.findById(1L)).thenReturn(Optional.of(workplace));
+        when(noticeRepository.save(any())).thenReturn(notice);
+        when(contractRepository.findByWorkplaceIdAndIsActive(1L, true))
+                .thenReturn(List.of(activeContract, secondContract));
+
+        doAnswer(invocation -> {
+            NotificationEvent event = invocation.getArgument(0);
+            if (event.getUser().getId().equals(otherUser.getId())) {
+                throw new RuntimeException("첫 번째 수신자 발행 실패");
+            }
+            return null;
+        }).when(eventPublisher).publishEvent(any(NotificationEvent.class));
+
+        // when
+        NoticeDto.Response result = noticeService.createNotice(1L, authorUser, request);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+
+        ArgumentCaptor<NotificationEvent> eventCaptor = ArgumentCaptor.forClass(NotificationEvent.class);
+        verify(eventPublisher, times(2)).publishEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getAllValues())
+                .extracting(event -> event.getUser().getId())
+                .containsExactly(otherUser.getId(), secondUser.getId());
     }
 
     // ==================== getNotices ====================
