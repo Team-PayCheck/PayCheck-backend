@@ -79,5 +79,5 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin release
           git checkout release
-          git merge origin/main --ff-only
+          git merge origin/main --no-ff
           git push origin release
