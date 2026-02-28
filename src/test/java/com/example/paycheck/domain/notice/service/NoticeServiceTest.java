@@ -223,7 +223,6 @@ class NoticeServiceTest {
                 .id(1L)
                 .employer(null)
                 .businessNumber("123-45-67890")
-                .businessName("테스트 사업체")
                 .name("테스트 사업장")
                 .isActive(true)
                 .build();
