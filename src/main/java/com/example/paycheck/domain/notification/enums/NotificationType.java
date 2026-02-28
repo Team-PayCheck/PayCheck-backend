@@ -13,6 +13,7 @@ public enum NotificationType {
     PAYMENT_FAILED,             // 급여 미입금/송금 실패
     INVITATION,                 // 근무지 초대
     RESIGNATION,                // 퇴사 처리
+    NOTICE_CREATED,             // 공지사항 등록
     UNREAD_CORRECTION_REQUEST,  // 읽지 않은 정정 요청
     WORK_RECORD_CONFIRMATION    // 급여 지급일 전날 근무 기록 확인 알림
 }

@@ -384,4 +384,22 @@ class UserSettingsServiceTest {
         assertThat(result.isShouldSend()).isTrue();
         assertThat(result.getChannels()).contains("push");
     }
+
+    @Test
+    @DisplayName("알림 채널 조회 (NotificationType) - NOTICE_CREATED는 글로벌/채널만 따름")
+    void getNotificationChannels_TypeEnum_NoticeCreated() {
+        // given
+        Long userId = 1L;
+        UserSettings settings = mock(UserSettings.class);
+        when(settings.getNotificationEnabled()).thenReturn(true);
+        when(settings.getPushEnabled()).thenReturn(true);
+        when(userSettingsRepository.findByUserId(userId)).thenReturn(Optional.of(settings));
+
+        // when
+        NotificationChannels result = userSettingsService.getNotificationChannels(userId, NotificationType.NOTICE_CREATED);
+
+        // then
+        assertThat(result.isShouldSend()).isTrue();
+        assertThat(result.getChannels()).contains("push");
+    }
 }

@@ -164,6 +164,7 @@ public class UserSettingsService {
             case "correction_request" -> NotificationType.CORRECTION_RESPONSE;
             case "invitation" -> NotificationType.INVITATION;
             case "resignation" -> NotificationType.RESIGNATION;
+            case "notice", "notice_created" -> NotificationType.NOTICE_CREATED;
             default -> null;
         };
     }
@@ -180,6 +181,8 @@ public class UserSettingsService {
                 -> settings.getPaymentAlertEnabled();
             case INVITATION -> settings.getInvitationAlertEnabled();
             case RESIGNATION -> settings.getResignationAlertEnabled();
+            // 공지사항은 별도 토글이 없으므로 글로벌 알림 + 채널 활성화만 확인
+            case NOTICE_CREATED -> true;
         };
     }
 }
