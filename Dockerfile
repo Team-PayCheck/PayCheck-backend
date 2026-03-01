@@ -20,8 +20,8 @@ EXPOSE 8080
 # -Xss256k: 스레드 스택 기본값(512k) 절반으로 절약
 ENTRYPOINT ["java", \
   "-XX:+UseSerialGC", \
-  "-XX:MaxRAMPercentage=60.0", \
+  "-XX:MaxRAMPercentage=75.0", \
   "-XX:MetaspaceSize=64m", \
-  "-XX:MaxMetaspaceSize=128m", \
+  "-XX:MaxMetaspaceSize=160m", \
   "-Xss256k", \
   "-jar", "app.jar"]
