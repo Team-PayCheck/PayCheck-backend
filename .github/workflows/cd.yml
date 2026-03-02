@@ -85,11 +85,14 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # 이미지 이름 소문자 변환 (Docker는 대문자 허용 안 함)
+            IMAGE=$(echo "ghcr.io/${{ github.repository }}:latest" | tr '[:upper:]' '[:lower:]')
+
             # GHCR 로그인
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
 
             # 최신 이미지 pull
-            docker pull ghcr.io/${{ github.repository }}:latest
+            docker pull $IMAGE
 
             # 기존 컨테이너 중지 및 제거
             docker stop paycheck-backend || true
@@ -109,7 +112,7 @@ jobs:
               -e CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }} \
               -e ENCRYPTION_AES_KEY=${{ secrets.ENCRYPTION_AES_KEY }} \
               -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-              ghcr.io/${{ github.repository }}:latest
+              $IMAGE
 
             # 사용하지 않는 이미지 정리
             docker image prune -f
