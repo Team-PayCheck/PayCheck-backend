@@ -6,19 +6,11 @@ on:
     types: [ completed ]
     branches: [ "main" ]
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 jobs:
-  docker-build-and-push:
-    name: Docker Build & Push
+  build-and-deploy:
+    name: Build & Deploy
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - name: Checkout
@@ -48,71 +40,30 @@ jobs:
       - name: Build JAR (skip tests)
         run: ./gradlew clean build -x test
 
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
+      - name: Upload JAR to EC2
+        uses: appleboy/scp-action@v0.1.7
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=latest
-            type=sha,prefix=sha-,format=short
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "build/libs/*.jar"
+          target: "/opt/paycheck/"
+          strip_components: 2
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-  deploy-to-ec2:
-    name: Deploy to EC2
-    runs-on: ubuntu-latest
-    needs: docker-build-and-push
-
-    steps:
-      - name: Deploy to EC2 via SSH
+      - name: Restart application on EC2
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
+          username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 이미지 이름 소문자 변환 (Docker는 대문자 허용 안 함)
-            IMAGE=$(echo "ghcr.io/${{ github.repository }}:latest" | tr '[:upper:]' '[:lower:]')
+            # JAR 파일 이름을 app.jar로 통일
+            cd /opt/paycheck
+            mv -f *.jar app.jar
 
-            # GHCR 로그인
-            echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+            # 서비스 재시작
+            sudo systemctl restart paycheck
 
-            # 최신 이미지 pull
-            docker pull $IMAGE
-
-            # 기존 컨테이너 중지 및 제거
-            docker stop paycheck-backend || true
-            docker rm paycheck-backend || true
-
-            # 새 컨테이너 실행 (EC2 t2.micro 1GB RAM 중 700MB를 컨테이너에 할당)
-            docker run -d \
-              --name paycheck-backend \
-              --memory=700m \
-              --restart unless-stopped \
-              -p 8080:8080 \
-              -e DB_HOST=${{ secrets.DB_HOST }} \
-              -e DB_PORT=3306 \
-              -e DB_NAME=paycheck \
-              -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
-              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-              -e CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }} \
-              -e ENCRYPTION_AES_KEY=${{ secrets.ENCRYPTION_AES_KEY }} \
-              -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-              $IMAGE
-
-            # 사용하지 않는 이미지 정리
-            docker image prune -f
+            # 서비스 상태 확인 (10초 대기 후)
+            sleep 10
+            sudo systemctl is-active paycheck
