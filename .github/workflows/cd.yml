@@ -38,7 +38,9 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build JAR (skip tests)
-        run: ./gradlew clean build -x test
+        run: |
+          ./gradlew clean build -x test
+          rm -f build/libs/*-plain.jar
 
       - name: Upload JAR to EC2
         uses: appleboy/scp-action@v0.1.7
@@ -57,13 +59,15 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # JAR 파일 이름을 app.jar로 통일
             cd /opt/paycheck
+
+            # 기존 JAR 제거 후 새 JAR을 app.jar로 이름 변경
+            rm -f app.jar *-plain.jar
             mv -f *.jar app.jar
 
             # 서비스 재시작
             sudo systemctl restart paycheck
 
-            # 서비스 상태 확인 (10초 대기 후)
-            sleep 10
+            # 서비스 상태 확인 (15초 대기 후 - Spring Boot 시작 대기)
+            sleep 15
             sudo systemctl is-active paycheck
