@@ -1,5 +1,6 @@
 package com.example.paycheck.domain.notification.event;
 
+import com.example.paycheck.domain.fcm.service.FcmService;
 import com.example.paycheck.domain.notification.entity.Notification;
 import com.example.paycheck.domain.notification.repository.NotificationRepository;
 import com.example.paycheck.domain.notification.service.SseEmitterService;
@@ -23,6 +24,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class NotificationEventListener {
     private final NotificationRepository notificationRepository;
     private final SseEmitterService sseEmitterService;
+    private final FcmService fcmService;
     private final UserSettingsService userSettingsService;
     private final UserRepository userRepository;
 
@@ -67,9 +69,15 @@ public class NotificationEventListener {
 
             Notification savedNotification = notificationRepository.save(notification);
 
-            // SSE를 통한 실시간 알림 전송 (push 채널이 활성화된 경우)
+            // push 채널이 활성화된 경우 SSE + FCM 전송
             if (channels.getChannels().contains(NotificationChannel.PUSH.getValue())) {
                 sseEmitterService.sendNotification(userId, savedNotification);
+
+                try {
+                    fcmService.sendToUser(userId, savedNotification);
+                } catch (Exception e) {
+                    log.error("FCM 전송 실패 (알림 저장은 완료): userId={}", userId, e);
+                }
             }
         } catch (Exception e) {
             log.error("알림 저장/전송 실패: userId={}, type={}, actionType={}",
