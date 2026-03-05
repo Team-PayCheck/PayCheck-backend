@@ -243,6 +243,90 @@ class WeeklyAllowanceTest {
     }
 
     @Test
+    @DisplayName("연장수당 계산 - 5인 미만 사업장은 45시간 근무해도 연장수당 없음")
+    void calculateOvertime_SmallWorkplace_ZeroEvenOver40Hours() {
+        // given
+        weeklyAllowance = WeeklyAllowance.builder()
+                .contract(mockContract)
+                .weekStartDate(LocalDate.of(2024, 1, 1))
+                .weekEndDate(LocalDate.of(2024, 1, 7))
+                .totalWorkHours(BigDecimal.valueOf(45))
+                .build();
+
+        // when
+        weeklyAllowance.calculateOvertime(true); // isSmallWorkplace=true
+
+        // then
+        assertThat(weeklyAllowance.getOvertimeHours()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(weeklyAllowance.getOvertimeAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    @DisplayName("5인 미만 사업장 전체 플로우 - COMPLETED만 집계, 연장수당 0")
+    void calculateAll_SmallWorkplace_NoOvertime() {
+        // given
+        WorkRecord completedRecord = mock(WorkRecord.class);
+        when(completedRecord.getStatus()).thenReturn(WorkRecordStatus.COMPLETED);
+        when(completedRecord.getTotalHours()).thenReturn(BigDecimal.valueOf(25));
+
+        WorkRecord scheduledRecord = mock(WorkRecord.class);
+        when(scheduledRecord.getStatus()).thenReturn(WorkRecordStatus.SCHEDULED);
+
+        WorkRecord deletedRecord = mock(WorkRecord.class);
+        when(deletedRecord.getStatus()).thenReturn(WorkRecordStatus.DELETED);
+
+        weeklyAllowance.getWorkRecords().addAll(Arrays.asList(completedRecord, scheduledRecord, deletedRecord));
+
+        // when
+        weeklyAllowance.calculateTotalWorkHours();
+        weeklyAllowance.calculateWeeklyPaidLeave();
+        weeklyAllowance.calculateOvertime(true); // isSmallWorkplace=true
+
+        // then
+        assertThat(weeklyAllowance.getTotalWorkHours()).isEqualByComparingTo(BigDecimal.valueOf(25));
+        assertThat(weeklyAllowance.getWeeklyPaidLeaveAmount()).isGreaterThan(BigDecimal.ZERO); // 15시간 이상 → 주휴수당 지급
+        assertThat(weeklyAllowance.getOvertimeHours()).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(weeklyAllowance.getOvertimeAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    @DisplayName("주휴수당 계산 - 14시간 59분(14.98시간)은 15시간 미만으로 미지급")
+    void calculateWeeklyPaidLeave_JustUnder15Hours() {
+        // given
+        weeklyAllowance = WeeklyAllowance.builder()
+                .contract(mockContract)
+                .weekStartDate(LocalDate.of(2024, 1, 1))
+                .weekEndDate(LocalDate.of(2024, 1, 7))
+                .totalWorkHours(new BigDecimal("14.98"))
+                .build();
+
+        // when
+        weeklyAllowance.calculateWeeklyPaidLeave();
+
+        // then
+        assertThat(weeklyAllowance.getWeeklyPaidLeaveAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    @DisplayName("주휴수당 계산 - 정확히 40시간 근무 시 (40/40)×8×10000 = 80000원")
+    void calculateWeeklyPaidLeave_Exactly40Hours() {
+        // given
+        weeklyAllowance = WeeklyAllowance.builder()
+                .contract(mockContract)
+                .weekStartDate(LocalDate.of(2024, 1, 1))
+                .weekEndDate(LocalDate.of(2024, 1, 7))
+                .totalWorkHours(BigDecimal.valueOf(40))
+                .build();
+
+        // when
+        weeklyAllowance.calculateWeeklyPaidLeave();
+
+        // then
+        // (40 / 40) × 8 × 10000 = 80000
+        assertThat(weeklyAllowance.getWeeklyPaidLeaveAmount()).isEqualByComparingTo(new BigDecimal("80000"));
+    }
+
+    @Test
     @DisplayName("전체 계산 플로우 - 계산 순서 테스트")
     void calculateAll_FullFlow() {
         // given

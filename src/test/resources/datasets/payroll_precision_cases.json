@@ -11,6 +11,36 @@
       "hourlyWage": "10000",
       "totalWorkHours": "40.01",
       "expectedWon": "80000"
+    },
+    {
+      "name": "paid-leave-exactly-15h-wage-10000",
+      "hourlyWage": "10000",
+      "totalWorkHours": "15.00",
+      "expectedWon": "30400"
+    },
+    {
+      "name": "paid-leave-exactly-40h-wage-10000",
+      "hourlyWage": "10000",
+      "totalWorkHours": "40.00",
+      "expectedWon": "80000"
+    },
+    {
+      "name": "paid-leave-14h59m-under-threshold",
+      "hourlyWage": "10000",
+      "totalWorkHours": "14.98",
+      "expectedWon": "0"
+    },
+    {
+      "name": "paid-leave-30h-wage-9860-fractional",
+      "hourlyWage": "9860",
+      "totalWorkHours": "30.00",
+      "expectedWon": "59160"
+    },
+    {
+      "name": "paid-leave-20h-wage-10003-precision",
+      "hourlyWage": "10003",
+      "totalWorkHours": "20.00",
+      "expectedWon": "40012"
     }
   ],
   "workRecord": [
@@ -35,6 +65,72 @@
       "isHoliday": false,
       "isSmallWorkplace": false,
       "expectedWon": "150345"
+    },
+    {
+      "name": "holiday-weekday-8h-no-night-wage-10000",
+      "hourlyWage": "10000",
+      "workDate": "2024-01-01",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 0,
+      "isHoliday": true,
+      "isSmallWorkplace": false,
+      "expectedWon": "120000"
+    },
+    {
+      "name": "holiday-night-8h-wage-10000",
+      "hourlyWage": "10000",
+      "workDate": "2024-01-14",
+      "startTime": "22:00",
+      "endTime": "06:00",
+      "breakMinutes": 0,
+      "isHoliday": true,
+      "isSmallWorkplace": false,
+      "expectedWon": "160000"
+    },
+    {
+      "name": "holiday-10h-no-night-overtime-wage-10000",
+      "hourlyWage": "10000",
+      "workDate": "2024-01-14",
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "breakMinutes": 0,
+      "isHoliday": true,
+      "isSmallWorkplace": false,
+      "expectedWon": "160000"
+    },
+    {
+      "name": "small-workplace-holiday-10h-no-surcharge",
+      "hourlyWage": "10000",
+      "workDate": "2024-01-14",
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "breakMinutes": 0,
+      "isHoliday": true,
+      "isSmallWorkplace": true,
+      "expectedWon": "100000"
+    },
+    {
+      "name": "small-workplace-night-10h-no-surcharge",
+      "hourlyWage": "10000",
+      "workDate": "2024-01-15",
+      "startTime": "20:00",
+      "endTime": "06:00",
+      "breakMinutes": 0,
+      "isHoliday": false,
+      "isSmallWorkplace": true,
+      "expectedWon": "100000"
+    },
+    {
+      "name": "weekday-fractional-wage-9860-8h",
+      "hourlyWage": "9860",
+      "workDate": "2024-01-15",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 0,
+      "isHoliday": false,
+      "isSmallWorkplace": false,
+      "expectedWon": "78880"
     }
   ]
 }

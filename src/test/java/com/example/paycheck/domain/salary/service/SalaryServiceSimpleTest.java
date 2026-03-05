@@ -345,4 +345,186 @@ class SalaryServiceSimpleTest {
         verify(weeklyAllowanceRepository).findByContractIdAndYearMonth(contractId, year, month);
         verify(weeklyAllowanceRepository).findByContractIdAndYearMonth(contractId, 2024, 2);
     }
+
+    // ===========================================
+    // 실제 계산값 검증 테스트
+    // ===========================================
+
+    private WorkerContract createMockContractWithFullChain(Long contractId, int paymentDay, DeductionCalculator.PayrollDeductionType deductionType) {
+        WorkerContract contract = mock(WorkerContract.class);
+        when(contract.getId()).thenReturn(contractId);
+        when(contract.getPaymentDay()).thenReturn(paymentDay);
+        when(contract.getPayrollDeductionType()).thenReturn(deductionType);
+
+        User workerUser = mock(User.class);
+        when(workerUser.getName()).thenReturn("테스트근로자");
+
+        Worker worker = mock(Worker.class);
+        when(worker.getId()).thenReturn(100L);
+        when(worker.getUser()).thenReturn(workerUser);
+
+        Workplace workplace = mock(Workplace.class);
+        when(workplace.getId()).thenReturn(200L);
+        when(workplace.getName()).thenReturn("테스트사업장");
+
+        when(contract.getWorker()).thenReturn(worker);
+        when(contract.getWorkplace()).thenReturn(workplace);
+
+        return contract;
+    }
+
+    private void setupCommonMocks(Long contractId, WorkerContract contract, List<WorkRecord> workRecords, List<WeeklyAllowance> currentAllowances, List<WeeklyAllowance> previousAllowances, Integer year, Integer month) {
+        when(workerContractRepository.findById(contractId)).thenReturn(Optional.of(contract));
+        when(workRecordRepository.findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class), any(WorkRecordStatus.class)))
+                .thenReturn(workRecords);
+        // 당월 WeeklyAllowance
+        when(weeklyAllowanceRepository.findByContractIdAndYearMonth(eq(contractId), eq(year), eq(month)))
+                .thenReturn(currentAllowances);
+        // 전월 WeeklyAllowance (전월 년/월 계산)
+        LocalDate previousMonth = LocalDate.of(year, month, 1).minusMonths(1);
+        when(weeklyAllowanceRepository.findByContractIdAndYearMonth(eq(contractId), eq(previousMonth.getYear()), eq(previousMonth.getMonthValue())))
+                .thenReturn(previousAllowances);
+        when(salaryRepository.findByContractIdAndYearAndMonth(contractId, year, month))
+                .thenReturn(Collections.emptyList());
+        when(salaryPersistenceService.trySave(any(Salary.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    }
+
+    @Test
+    @DisplayName("PART_TIME_NONE 공제 없음 - totalGrossPay == netPay, totalDeduction == 0")
+    void calculateSalary_PartTimeNone_NoDeduction() {
+        // given
+        Long contractId = 10L;
+        WorkerContract contract = createMockContractWithFullChain(contractId, 25, DeductionCalculator.PayrollDeductionType.PART_TIME_NONE);
+
+        WorkRecord workRecord = mock(WorkRecord.class);
+        when(workRecord.getTotalHours()).thenReturn(new BigDecimal("8"));
+        when(workRecord.getBaseSalary()).thenReturn(new BigDecimal("100000"));
+        when(workRecord.getNightSalary()).thenReturn(BigDecimal.ZERO);
+        when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+
+        setupCommonMocks(contractId, contract, List.of(workRecord), Collections.emptyList(), Collections.emptyList(), 2024, 5);
+
+        // when
+        SalaryDto.Response response = salaryService.calculateSalaryByWorkRecords(contractId, 2024, 5);
+
+        // then
+        assertThat(response.getBasePay()).isEqualByComparingTo("100000");
+        assertThat(response.getTotalGrossPay()).isEqualByComparingTo("100000");
+        assertThat(response.getTotalDeduction()).isEqualByComparingTo("0");
+        assertThat(response.getNetPay()).isEqualByComparingTo("100000");
+    }
+
+    @Test
+    @DisplayName("FREELANCER 3.3% 공제 - 200만원 → 소득세 60000, 지방세 6000, net=1934000")
+    void calculateSalary_Freelancer_ThreePointThreePercent() {
+        // given
+        Long contractId = 10L;
+        WorkerContract contract = createMockContractWithFullChain(contractId, 25, DeductionCalculator.PayrollDeductionType.FREELANCER);
+
+        WorkRecord workRecord = mock(WorkRecord.class);
+        when(workRecord.getTotalHours()).thenReturn(new BigDecimal("160"));
+        when(workRecord.getBaseSalary()).thenReturn(new BigDecimal("2000000"));
+        when(workRecord.getNightSalary()).thenReturn(BigDecimal.ZERO);
+        when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+
+        setupCommonMocks(contractId, contract, List.of(workRecord), Collections.emptyList(), Collections.emptyList(), 2024, 5);
+
+        // when
+        SalaryDto.Response response = salaryService.calculateSalaryByWorkRecords(contractId, 2024, 5);
+
+        // then
+        assertThat(response.getTotalGrossPay()).isEqualByComparingTo("2000000");
+        assertThat(response.getIncomeTax()).isEqualByComparingTo("60000"); // 2000000 × 0.03
+        assertThat(response.getLocalIncomeTax()).isEqualByComparingTo("6000"); // 2000000 × 0.003
+        assertThat(response.getTotalDeduction()).isEqualByComparingTo("66000");
+        assertThat(response.getNetPay()).isEqualByComparingTo("1934000");
+    }
+
+    @Test
+    @DisplayName("주휴수당 포함 - basePay + weeklyPaidLeave = totalGrossPay")
+    void calculateSalary_WithWeeklyPaidLeave() {
+        // given
+        Long contractId = 10L;
+        WorkerContract contract = createMockContractWithFullChain(contractId, 25, DeductionCalculator.PayrollDeductionType.PART_TIME_NONE);
+
+        WorkRecord workRecord = mock(WorkRecord.class);
+        when(workRecord.getTotalHours()).thenReturn(new BigDecimal("40"));
+        when(workRecord.getBaseSalary()).thenReturn(new BigDecimal("400000"));
+        when(workRecord.getNightSalary()).thenReturn(BigDecimal.ZERO);
+        when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+
+        // 마지막 주차가 아닌 WeeklyAllowance (paymentDay=25, weekStartDate=5/5~5/11)
+        WeeklyAllowance allowance = mock(WeeklyAllowance.class);
+        when(allowance.getWeekStartDate()).thenReturn(LocalDate.of(2024, 5, 6));
+        when(allowance.getWeekEndDate()).thenReturn(LocalDate.of(2024, 5, 12));
+        when(allowance.getWeeklyPaidLeaveAmount()).thenReturn(new BigDecimal("80000"));
+        when(allowance.getOvertimeAmount()).thenReturn(BigDecimal.ZERO);
+
+        setupCommonMocks(contractId, contract, List.of(workRecord), List.of(allowance), Collections.emptyList(), 2024, 5);
+
+        // when
+        SalaryDto.Response response = salaryService.calculateSalaryByWorkRecords(contractId, 2024, 5);
+
+        // then
+        assertThat(response.getBasePay()).isEqualByComparingTo("400000");
+        assertThat(response.getTotalGrossPay()).isEqualByComparingTo("480000"); // 400000 + 80000
+        assertThat(response.getNetPay()).isEqualByComparingTo("480000"); // PART_TIME_NONE
+    }
+
+    @Test
+    @DisplayName("야간+연장+주휴 복합 - 각 항목 합산이 totalGrossPay와 일치")
+    void calculateSalary_NightOvertimeWeeklyPaidLeave_Combined() {
+        // given
+        Long contractId = 10L;
+        WorkerContract contract = createMockContractWithFullChain(contractId, 25, DeductionCalculator.PayrollDeductionType.PART_TIME_NONE);
+
+        WorkRecord workRecord = mock(WorkRecord.class);
+        when(workRecord.getTotalHours()).thenReturn(new BigDecimal("10"));
+        when(workRecord.getBaseSalary()).thenReturn(new BigDecimal("80000"));
+        when(workRecord.getNightSalary()).thenReturn(new BigDecimal("40000"));
+        when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+
+        WeeklyAllowance allowance = mock(WeeklyAllowance.class);
+        when(allowance.getWeekStartDate()).thenReturn(LocalDate.of(2024, 5, 6));
+        when(allowance.getWeekEndDate()).thenReturn(LocalDate.of(2024, 5, 12));
+        when(allowance.getWeeklyPaidLeaveAmount()).thenReturn(new BigDecimal("20000"));
+        when(allowance.getOvertimeAmount()).thenReturn(new BigDecimal("15000"));
+
+        setupCommonMocks(contractId, contract, List.of(workRecord), List.of(allowance), Collections.emptyList(), 2024, 5);
+
+        // when
+        SalaryDto.Response response = salaryService.calculateSalaryByWorkRecords(contractId, 2024, 5);
+
+        // then
+        assertThat(response.getBasePay()).isEqualByComparingTo("80000");
+        assertThat(response.getNightPay()).isEqualByComparingTo("40000");
+        assertThat(response.getOvertimePay()).isEqualByComparingTo("15000");
+        // totalGrossPay = basePay(80000) + nightPay(40000) + weeklyPaidLeave(20000) + overtimePay(15000)
+        assertThat(response.getTotalGrossPay()).isEqualByComparingTo("155000");
+    }
+
+    @Test
+    @DisplayName("0원 급여 + TAX_AND_INSURANCE → PART_TIME_NONE으로 강제 전환, 공제 0")
+    void calculateSalary_ZeroGross_TaxAndInsurance_ForcedToNone() {
+        // given
+        Long contractId = 10L;
+        WorkerContract contract = createMockContractWithFullChain(contractId, 25, DeductionCalculator.PayrollDeductionType.PART_TIME_TAX_AND_INSURANCE);
+
+        WorkRecord workRecord = mock(WorkRecord.class);
+        when(workRecord.getTotalHours()).thenReturn(new BigDecimal("8"));
+        when(workRecord.getBaseSalary()).thenReturn(BigDecimal.ZERO);
+        when(workRecord.getNightSalary()).thenReturn(BigDecimal.ZERO);
+        when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+
+        setupCommonMocks(contractId, contract, List.of(workRecord), Collections.emptyList(), Collections.emptyList(), 2024, 5);
+
+        // when
+        SalaryDto.Response response = salaryService.calculateSalaryByWorkRecords(contractId, 2024, 5);
+
+        // then
+        assertThat(response.getTotalGrossPay()).isEqualByComparingTo("0");
+        assertThat(response.getTotalDeduction()).isEqualByComparingTo("0");
+        assertThat(response.getNetPay()).isEqualByComparingTo("0");
+        assertThat(response.getFourMajorInsurance()).isEqualByComparingTo("0");
+    }
 }
