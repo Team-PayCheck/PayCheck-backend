@@ -55,11 +55,26 @@ public class Salary extends BaseEntity {
     @Column(name = "holiday_pay", precision = 12, scale = 2)
     private BigDecimal holidayPay;
 
+    @Column(name = "weekly_paid_leave_amount", precision = 12, scale = 2)
+    private BigDecimal weeklyPaidLeaveAmount;
+
     @Column(name = "total_gross_pay", precision = 12, scale = 2)
     private BigDecimal totalGrossPay;
 
     @Column(name = "four_major_insurance", precision = 12, scale = 2)
     private BigDecimal fourMajorInsurance;
+
+    @Column(name = "national_pension", precision = 12, scale = 2)
+    private BigDecimal nationalPension;
+
+    @Column(name = "health_insurance", precision = 12, scale = 2)
+    private BigDecimal healthInsurance;
+
+    @Column(name = "long_term_care", precision = 12, scale = 2)
+    private BigDecimal longTermCare;
+
+    @Column(name = "employment_insurance", precision = 12, scale = 2)
+    private BigDecimal employmentInsurance;
 
     @Column(name = "income_tax", precision = 12, scale = 2)
     private BigDecimal incomeTax;
@@ -82,8 +97,13 @@ public class Salary extends BaseEntity {
             BigDecimal overtimePay,
             BigDecimal nightPay,
             BigDecimal holidayPay,
+            BigDecimal weeklyPaidLeaveAmount,
             BigDecimal totalGrossPay,
             BigDecimal fourMajorInsurance,
+            BigDecimal nationalPension,
+            BigDecimal healthInsurance,
+            BigDecimal longTermCare,
+            BigDecimal employmentInsurance,
             BigDecimal incomeTax,
             BigDecimal localIncomeTax,
             BigDecimal totalDeduction,
@@ -94,8 +114,13 @@ public class Salary extends BaseEntity {
         this.overtimePay = overtimePay;
         this.nightPay = nightPay;
         this.holidayPay = holidayPay;
+        this.weeklyPaidLeaveAmount = weeklyPaidLeaveAmount;
         this.totalGrossPay = totalGrossPay;
         this.fourMajorInsurance = fourMajorInsurance;
+        this.nationalPension = nationalPension;
+        this.healthInsurance = healthInsurance;
+        this.longTermCare = longTermCare;
+        this.employmentInsurance = employmentInsurance;
         this.incomeTax = incomeTax;
         this.localIncomeTax = localIncomeTax;
         this.totalDeduction = totalDeduction;

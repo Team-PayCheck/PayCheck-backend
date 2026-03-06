@@ -217,8 +217,13 @@ public class SalaryService {
                     totalOvertimePay,
                     totalNightPay,
                     totalHolidayPay,
+                    totalWeeklyPaidLeaveAmount,
                     totalGrossPay,
                     fourMajorInsurance,
+                    taxResult.nationalPension,
+                    taxResult.healthInsurance,
+                    taxResult.longTermCare,
+                    taxResult.employmentInsurance,
                     incomeTax,
                     localIncomeTax,
                     totalDeduction,
@@ -235,8 +240,13 @@ public class SalaryService {
                     .overtimePay(totalOvertimePay)
                     .nightPay(totalNightPay)
                     .holidayPay(totalHolidayPay)
+                    .weeklyPaidLeaveAmount(totalWeeklyPaidLeaveAmount)
                     .totalGrossPay(totalGrossPay)
                     .fourMajorInsurance(fourMajorInsurance)
+                    .nationalPension(taxResult.nationalPension)
+                    .healthInsurance(taxResult.healthInsurance)
+                    .longTermCare(taxResult.longTermCare)
+                    .employmentInsurance(taxResult.employmentInsurance)
                     .incomeTax(incomeTax)
                     .localIncomeTax(localIncomeTax)
                     .totalDeduction(totalDeduction)
@@ -261,8 +271,13 @@ public class SalaryService {
                         totalOvertimePay,
                         totalNightPay,
                         totalHolidayPay,
+                        totalWeeklyPaidLeaveAmount,
                         totalGrossPay,
                         fourMajorInsurance,
+                        taxResult.nationalPension,
+                        taxResult.healthInsurance,
+                        taxResult.longTermCare,
+                        taxResult.employmentInsurance,
                         incomeTax,
                         localIncomeTax,
                         totalDeduction,

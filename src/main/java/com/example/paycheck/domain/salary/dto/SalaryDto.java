@@ -30,8 +30,13 @@ public class SalaryDto {
         private BigDecimal overtimePay;
         private BigDecimal nightPay;
         private BigDecimal holidayPay;
+        private BigDecimal weeklyPaidLeaveAmount;
         private BigDecimal totalGrossPay;
         private BigDecimal fourMajorInsurance;
+        private BigDecimal nationalPension;
+        private BigDecimal healthInsurance;
+        private BigDecimal longTermCare;
+        private BigDecimal employmentInsurance;
         private BigDecimal incomeTax;
         private BigDecimal localIncomeTax;
         private BigDecimal totalDeduction;
@@ -53,8 +58,13 @@ public class SalaryDto {
                     .overtimePay(salary.getOvertimePay())
                     .nightPay(salary.getNightPay())
                     .holidayPay(salary.getHolidayPay())
+                    .weeklyPaidLeaveAmount(salary.getWeeklyPaidLeaveAmount())
                     .totalGrossPay(salary.getTotalGrossPay())
                     .fourMajorInsurance(salary.getFourMajorInsurance())
+                    .nationalPension(salary.getNationalPension())
+                    .healthInsurance(salary.getHealthInsurance())
+                    .longTermCare(salary.getLongTermCare())
+                    .employmentInsurance(salary.getEmploymentInsurance())
                     .incomeTax(salary.getIncomeTax())
                     .localIncomeTax(salary.getLocalIncomeTax())
                     .totalDeduction(salary.getTotalDeduction())

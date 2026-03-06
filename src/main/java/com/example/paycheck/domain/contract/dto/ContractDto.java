@@ -116,23 +116,31 @@ public class ContractDto {
     @Schema(name = "ContractListResponse")
     public static class ListResponse {
         private Long id;
+        private Long workplaceId;
+        private String workplaceName;
         private String workerName;
         private String workerCode;
         private String workerPhone;
         private BigDecimal hourlyWage;
         private LocalDate contractStartDate;
         private LocalDate contractEndDate;
+        private Integer paymentDay;
+        private DeductionCalculator.PayrollDeductionType payrollDeductionType;
         private Boolean isActive;
 
         public static ListResponse from(WorkerContract contract) {
             return ListResponse.builder()
                     .id(contract.getId())
+                    .workplaceId(contract.getWorkplace().getId())
+                    .workplaceName(contract.getWorkplace().getName())
                     .workerName(contract.getWorker().getUser().getName())
                     .workerCode(contract.getWorker().getWorkerCode())
                     .workerPhone(contract.getWorker().getUser().getPhone())
                     .hourlyWage(contract.getHourlyWage())
                     .contractStartDate(contract.getContractStartDate())
                     .contractEndDate(contract.getContractEndDate())
+                    .paymentDay(contract.getPaymentDay())
+                    .payrollDeductionType(contract.getPayrollDeductionType())
                     .isActive(contract.getIsActive())
                     .build();
         }
