@@ -220,7 +220,16 @@ public class CustomPermissionEvaluator {
             return false;
         }
         CorrectionRequest request = correctionRequestRepository.findById(correctionRequestId).orElse(null);
-        return request != null && request.getWorkRecord().getContract().getWorkplace()
+        if (request == null) {
+            return false;
+        }
+
+        // CREATE 타입: workRecord가 null이므로 contract를 통해 권한 확인
+        WorkerContract contract = request.getWorkRecord() != null
+                ? request.getWorkRecord().getContract()
+                : request.getContract();
+
+        return contract != null && contract.getWorkplace()
                 .getEmployer().getUser().getId().equals(user.getId());
     }
 
