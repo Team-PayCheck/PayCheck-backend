@@ -79,6 +79,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
            "JOIN FETCH s.contract c " +
            "JOIN FETCH c.worker w " +
            "JOIN FETCH w.user u " +
+           "JOIN FETCH c.workplace wp " +
            "WHERE u.id = :userId " +
            "ORDER BY s.year DESC, s.month DESC")
     List<Payment> findByWorkerUserId(@Param("userId") Long userId);
@@ -88,6 +89,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
            "JOIN FETCH s.contract c " +
            "JOIN FETCH c.worker w " +
            "JOIN FETCH w.user u " +
+           "JOIN FETCH c.workplace wp " +
            "WHERE u.id = :userId " +
            "AND s.year = :year " +
            "AND s.month = :month " +

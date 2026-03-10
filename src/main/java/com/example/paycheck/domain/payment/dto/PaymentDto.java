@@ -76,6 +76,8 @@ public class PaymentDto {
         private Long id;
         private Long salaryId;
         private String workerName;
+        private Long workplaceId;
+        private String workplaceName;
         private Integer year;
         private Integer month;
         private BigDecimal netPay;
@@ -88,6 +90,8 @@ public class PaymentDto {
                     .id(payment.getId())
                     .salaryId(payment.getSalary().getId())
                     .workerName(payment.getSalary().getContract().getWorker().getUser().getName())
+                    .workplaceId(payment.getSalary().getContract().getWorkplace().getId())
+                    .workplaceName(payment.getSalary().getContract().getWorkplace().getName())
                     .year(payment.getSalary().getYear())
                     .month(payment.getSalary().getMonth())
                     .netPay(payment.getSalary().getNetPay())
