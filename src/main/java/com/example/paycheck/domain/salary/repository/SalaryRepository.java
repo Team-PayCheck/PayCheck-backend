@@ -19,19 +19,41 @@ public interface SalaryRepository extends JpaRepository<Salary, Long> {
             "JOIN FETCH s.contract c " +
             "JOIN FETCH c.worker w " +
             "JOIN FETCH w.user u " +
+            "LEFT JOIN FETCH s.payment " +
             "WHERE w.id = :workerId " +
             "ORDER BY s.year DESC, s.month DESC")
     List<Salary> findByWorkerId(@Param("workerId") Long workerId);
 
     @Query("SELECT DISTINCT s FROM Salary s " +
             "JOIN FETCH s.contract c " +
-            "JOIN FETCH c.workplace w " +
-            "WHERE w.id = :workplaceId " +
+            "JOIN FETCH c.workplace wp " +
+            "JOIN FETCH c.worker w " +
+            "JOIN FETCH w.user u " +
+            "LEFT JOIN FETCH s.payment " +
+            "WHERE wp.id = :workplaceId " +
             "ORDER BY s.year DESC, s.month DESC")
     List<Salary> findByWorkplaceId(@Param("workplaceId") Long workplaceId);
 
+    @Query("SELECT DISTINCT s FROM Salary s " +
+            "JOIN FETCH s.contract c " +
+            "JOIN FETCH c.workplace wp " +
+            "JOIN FETCH c.worker w " +
+            "JOIN FETCH w.user u " +
+            "LEFT JOIN FETCH s.payment " +
+            "WHERE wp.id = :workplaceId " +
+            "AND s.year = :year " +
+            "AND s.month = :month " +
+            "ORDER BY s.year DESC, s.month DESC")
+    List<Salary> findByWorkplaceIdAndYearAndMonth(
+            @Param("workplaceId") Long workplaceId,
+            @Param("year") Integer year,
+            @Param("month") Integer month);
+
     @Query("SELECT s FROM Salary s " +
             "JOIN FETCH s.contract c " +
+            "JOIN FETCH c.worker w " +
+            "JOIN FETCH w.user u " +
+            "LEFT JOIN FETCH s.payment " +
             "WHERE c.id = :contractId " +
             "ORDER BY s.year DESC, s.month DESC")
     List<Salary> findByContractId(@Param("contractId") Long contractId);

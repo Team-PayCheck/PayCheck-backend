@@ -26,8 +26,10 @@ public class WorkplaceDto {
         private String businessNumber;
 
         @NotBlank(message = "근무지명은 필수입니다.")
+        @Size(max = 100, message = "근무지명은 100자 이하로 입력해주세요.")
         private String name;
 
+        @Size(max = 200, message = "주소는 200자 이하로 입력해주세요.")
         private String address;
 
         @Pattern(regexp = "^#([A-Fa-f0-9]{6})$", message = "색상 코드 형식이 올바르지 않습니다. (예: #FF5733)")

@@ -341,4 +341,135 @@ class WorkRecordCalculationServiceTest {
                     .hasMessageContaining("baseSalary=null");
         }
     }
+
+    @Nested
+    @DisplayName("경계값 테스트")
+    class BoundaryValueTests {
+
+        @Test
+        @DisplayName("자정 넘는 근무 (23:00→07:00) - 야간 7시간 + 주간 1시간, 5인 이상 평일")
+        void midnightCrossing_23to07_NightAndDayMix() {
+            // given
+            when(mockWorkplace.getIsLessThanFiveEmployees()).thenReturn(false);
+            when(holidayService.isPublicHoliday(LocalDate.of(2024, 1, 15))).thenReturn(false); // 월요일
+
+            WorkRecord workRecord = buildWorkRecord(
+                    LocalDate.of(2024, 1, 15),
+                    LocalTime.of(23, 0),
+                    LocalTime.of(7, 0));
+
+            // when
+            calculationService.calculateWorkRecordDetails(workRecord);
+
+            // then
+            assertThat(workRecord.getTotalHours()).isEqualByComparingTo(new BigDecimal("8.00"));
+            assertThat(workRecord.getNightHours()).isEqualByComparingTo(new BigDecimal("7.00"));
+            assertThat(workRecord.getRegularHours()).isEqualByComparingTo(new BigDecimal("1.00"));
+            assertThat(workRecord.getBaseSalary()).isEqualByComparingTo(new BigDecimal("10000"));      // 1h × 10000
+            assertThat(workRecord.getNightSalary()).isEqualByComparingTo(new BigDecimal("105000"));    // 7h × 10000 × 1.5
+            assertThat(workRecord.getHolidaySalary()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(workRecord.getTotalSalary()).isEqualByComparingTo(new BigDecimal("115000"));
+        }
+
+        @Test
+        @DisplayName("정확히 8시간 근무 (09:00→17:00) - 연장수당 미발생 경계")
+        void exactly8Hours_NoOvertime() {
+            // given
+            when(mockWorkplace.getIsLessThanFiveEmployees()).thenReturn(false);
+            when(holidayService.isPublicHoliday(LocalDate.of(2024, 1, 15))).thenReturn(false); // 월요일
+
+            WorkRecord workRecord = buildWorkRecord(
+                    LocalDate.of(2024, 1, 15),
+                    LocalTime.of(9, 0),
+                    LocalTime.of(17, 0));
+
+            // when
+            calculationService.calculateWorkRecordDetails(workRecord);
+
+            // then
+            assertThat(workRecord.getTotalHours()).isEqualByComparingTo(new BigDecimal("8.00"));
+            assertThat(workRecord.getNightHours()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(workRecord.getRegularHours()).isEqualByComparingTo(new BigDecimal("8.00"));
+            assertThat(workRecord.getBaseSalary()).isEqualByComparingTo(new BigDecimal("80000"));      // 8h × 10000
+            assertThat(workRecord.getNightSalary()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(workRecord.getHolidaySalary()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(workRecord.getTotalSalary()).isEqualByComparingTo(new BigDecimal("80000"));
+        }
+
+        @Test
+        @DisplayName("8시간 1분 초과 근무 (09:00→17:01) - 연장수당 발생 경계")
+        void justOver8Hours_OvertimeTriggered() {
+            // given
+            when(mockWorkplace.getIsLessThanFiveEmployees()).thenReturn(false);
+            when(holidayService.isPublicHoliday(LocalDate.of(2024, 1, 15))).thenReturn(false); // 월요일
+
+            WorkRecord workRecord = buildWorkRecord(
+                    LocalDate.of(2024, 1, 15),
+                    LocalTime.of(9, 0),
+                    LocalTime.of(17, 1));
+
+            // when
+            calculationService.calculateWorkRecordDetails(workRecord);
+
+            // then
+            assertThat(workRecord.getTotalHours()).isEqualByComparingTo(new BigDecimal("8.02"));       // 481분/60 = 8.02
+            assertThat(workRecord.getNightHours()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(workRecord.getRegularHours()).isEqualByComparingTo(new BigDecimal("8.02"));
+            // Case 2: 야간 없음, 8시간 초과 → baseSalary = 8 × 10000 + 0.02 × 10000 × 1.5 = 80300
+            assertThat(workRecord.getBaseSalary()).isEqualByComparingTo(new BigDecimal("80300"));
+            assertThat(workRecord.getNightSalary()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(workRecord.getHolidaySalary()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(workRecord.getTotalSalary()).isEqualByComparingTo(new BigDecimal("80300"));
+        }
+
+        @Test
+        @DisplayName("22:00 정각 시작 야간 근무 (22:00→06:00) - 전체 8시간이 야간")
+        void fullNightShift_22to06() {
+            // given
+            when(mockWorkplace.getIsLessThanFiveEmployees()).thenReturn(false);
+            when(holidayService.isPublicHoliday(LocalDate.of(2024, 1, 15))).thenReturn(false); // 월요일
+
+            WorkRecord workRecord = buildWorkRecord(
+                    LocalDate.of(2024, 1, 15),
+                    LocalTime.of(22, 0),
+                    LocalTime.of(6, 0));
+
+            // when
+            calculationService.calculateWorkRecordDetails(workRecord);
+
+            // then
+            assertThat(workRecord.getTotalHours()).isEqualByComparingTo(new BigDecimal("8.00"));
+            assertThat(workRecord.getNightHours()).isEqualByComparingTo(new BigDecimal("8.00"));
+            assertThat(workRecord.getRegularHours()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(workRecord.getBaseSalary()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(workRecord.getNightSalary()).isEqualByComparingTo(new BigDecimal("120000"));    // 8h × 10000 × 1.5
+            assertThat(workRecord.getHolidaySalary()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(workRecord.getTotalSalary()).isEqualByComparingTo(new BigDecimal("120000"));
+        }
+
+        @Test
+        @DisplayName("22:00 정각에 끝나는 근무 (14:00→22:00) - 야간 시간 0")
+        void endsAtExactly22_NoNightHours() {
+            // given
+            when(mockWorkplace.getIsLessThanFiveEmployees()).thenReturn(false);
+            when(holidayService.isPublicHoliday(LocalDate.of(2024, 1, 15))).thenReturn(false); // 월요일
+
+            WorkRecord workRecord = buildWorkRecord(
+                    LocalDate.of(2024, 1, 15),
+                    LocalTime.of(14, 0),
+                    LocalTime.of(22, 0));
+
+            // when
+            calculationService.calculateWorkRecordDetails(workRecord);
+
+            // then
+            assertThat(workRecord.getTotalHours()).isEqualByComparingTo(new BigDecimal("8.00"));
+            assertThat(workRecord.getNightHours()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(workRecord.getRegularHours()).isEqualByComparingTo(new BigDecimal("8.00"));
+            assertThat(workRecord.getBaseSalary()).isEqualByComparingTo(new BigDecimal("80000"));      // 8h × 10000
+            assertThat(workRecord.getNightSalary()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(workRecord.getHolidaySalary()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(workRecord.getTotalSalary()).isEqualByComparingTo(new BigDecimal("80000"));
+        }
+    }
 }

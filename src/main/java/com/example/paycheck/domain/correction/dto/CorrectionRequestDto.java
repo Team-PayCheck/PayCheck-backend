@@ -6,7 +6,9 @@ import com.example.paycheck.domain.correction.enums.RequestType;
 import com.example.paycheck.domain.user.entity.User;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -47,8 +49,10 @@ public class CorrectionRequestDto {
         private LocalTime requestedEndTime;
 
         // CREATE 타입에서 선택적
+        @Min(value = 0, message = "휴게 시간은 0분 이상이어야 합니다.")
         private Integer requestedBreakMinutes;
-        
+
+        @Size(max = 500, message = "메모는 500자 이하로 입력해주세요.")
         private String requestedMemo;
     }
 

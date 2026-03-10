@@ -16,7 +16,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.Arrays;
 import java.util.List;
@@ -101,7 +103,8 @@ class NotificationServiceTest {
         when(notificationRepository.countByUserAndIsReadFalse(testUser)).thenReturn(1L);
 
         // when
-        NotificationPageResponse result = notificationService.getNotifications(testUser, null, 1, 10);
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
+        NotificationPageResponse result = notificationService.getNotifications(testUser, null, pageable);
 
         // then
         assertThat(result).isNotNull();
@@ -120,7 +123,8 @@ class NotificationServiceTest {
         when(notificationRepository.countByUserAndIsReadFalse(testUser)).thenReturn(1L);
 
         // when
-        NotificationPageResponse result = notificationService.getNotifications(testUser, false, 1, 10);
+        Pageable pageable = PageRequest.of(0, 10, Sort.by("createdAt").descending());
+        NotificationPageResponse result = notificationService.getNotifications(testUser, false, pageable);
 
         // then
         assertThat(result).isNotNull();

@@ -14,7 +14,8 @@ import java.time.LocalTime;
 @Entity
 @Table(name = "work_record",
         indexes = {
-                @Index(name = "idx_contract_date_status", columnList = "contract_id,work_date,status")
+                @Index(name = "idx_contract_date_status", columnList = "contract_id,work_date,status"),
+                @Index(name = "idx_weekly_allowance_id", columnList = "weekly_allowance_id")
         })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

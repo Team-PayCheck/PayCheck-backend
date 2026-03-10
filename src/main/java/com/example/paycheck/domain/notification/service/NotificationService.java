@@ -3,9 +3,7 @@ package com.example.paycheck.domain.notification.service;
 import com.example.paycheck.common.exception.NotFoundException;
 import com.example.paycheck.domain.notification.entity.Notification;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import com.example.paycheck.domain.notification.dto.NotificationResponse;
 import com.example.paycheck.domain.notification.dto.NotificationPageResponse;
 import com.example.paycheck.domain.notification.repository.NotificationRepository;
@@ -36,8 +34,7 @@ public class NotificationService {
     }
 
     @Transactional(readOnly = true)
-    public NotificationPageResponse getNotifications(User user, Boolean isRead, int page, int size) {
-        Pageable pageable = PageRequest.of(Math.max(0, page - 1), size, Sort.by("createdAt").descending());
+    public NotificationPageResponse getNotifications(User user, Boolean isRead, Pageable pageable) {
         Page<Notification> p;
         if (isRead == null) {
             p = notificationRepository.findByUser(user, pageable);
@@ -52,8 +49,8 @@ public class NotificationService {
 
         return NotificationPageResponse.builder()
                 .notifications(dtoList)
-                .page(page)
-                .size(size)
+                .page(pageable.getPageNumber())
+                .size(pageable.getPageSize())
                 .totalPages(p.getTotalPages())
                 .totalElements(p.getTotalElements())
                 .unreadCount(unreadCount)

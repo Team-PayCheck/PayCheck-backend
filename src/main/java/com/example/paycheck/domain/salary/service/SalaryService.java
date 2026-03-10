@@ -61,9 +61,8 @@ public class SalaryService {
      * 사업장별 연월 급여 목록 조회
      */
     public List<SalaryDto.ListResponse> getSalariesByWorkplaceAndYearMonth(Long workplaceId, Integer year, Integer month) {
-        return salaryRepository.findByWorkplaceId(workplaceId)
+        return salaryRepository.findByWorkplaceIdAndYearAndMonth(workplaceId, year, month)
                 .stream()
-                .filter(s -> s.getYear().equals(year) && s.getMonth().equals(month))
                 .map(SalaryDto.ListResponse::from)
                 .collect(Collectors.toList());
     }

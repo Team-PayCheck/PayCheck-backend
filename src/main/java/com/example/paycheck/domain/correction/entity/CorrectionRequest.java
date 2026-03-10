@@ -14,7 +14,11 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "correction_request")
+@Table(name = "correction_request",
+        indexes = {
+                @Index(name = "idx_work_record_id_status", columnList = "work_record_id,status"),
+                @Index(name = "idx_requester_id", columnList = "requester_id")
+        })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor

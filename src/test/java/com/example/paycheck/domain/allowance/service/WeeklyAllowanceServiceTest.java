@@ -6,12 +6,14 @@ import com.example.paycheck.domain.allowance.repository.WeeklyAllowanceRepositor
 import com.example.paycheck.domain.contract.entity.WorkerContract;
 import com.example.paycheck.domain.contract.repository.WorkerContractRepository;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -140,5 +142,106 @@ class WeeklyAllowanceServiceTest {
         // when & then
         assertThatThrownBy(() -> weeklyAllowanceService.recalculateAllowances(1L))
                 .isInstanceOf(NotFoundException.class);
+    }
+
+    @Nested
+    @DisplayName("WeeklyAllowance 엔티티 경계값 테스트")
+    class WeeklyAllowanceBoundaryTest {
+
+        private WeeklyAllowance createAllowance(BigDecimal totalWorkHours, BigDecimal hourlyWage) {
+            WorkerContract contract = mock(WorkerContract.class);
+            lenient().when(contract.getHourlyWage()).thenReturn(hourlyWage);
+
+            return WeeklyAllowance.builder()
+                    .contract(contract)
+                    .totalWorkHours(totalWorkHours)
+                    .weekStartDate(LocalDate.of(2024, 1, 15))
+                    .weekEndDate(LocalDate.of(2024, 1, 21))
+                    .build();
+        }
+
+        @Test
+        @DisplayName("주휴수당 - 정확히 15시간 근무 시 지급 (경계 포함)")
+        void calculateWeeklyPaidLeave_Exactly15Hours_ShouldPay() {
+            // given
+            WeeklyAllowance allowance = createAllowance(
+                    new BigDecimal("15.00"), new BigDecimal("10000"));
+
+            // when
+            allowance.calculateWeeklyPaidLeave();
+
+            // then
+            // 15 / 40 = 0.38 (HALF_UP) → 0.38 * 8 = 3.04 → 3.04 * 10000 = 30400
+            assertThat(allowance.getWeeklyPaidLeaveAmount())
+                    .isEqualByComparingTo(new BigDecimal("30400"));
+        }
+
+        @Test
+        @DisplayName("주휴수당 - 14.99시간 근무 시 미지급 (경계 미만)")
+        void calculateWeeklyPaidLeave_14_99Hours_ShouldNotPay() {
+            // given
+            WeeklyAllowance allowance = createAllowance(
+                    new BigDecimal("14.99"), new BigDecimal("10000"));
+
+            // when
+            allowance.calculateWeeklyPaidLeave();
+
+            // then
+            assertThat(allowance.getWeeklyPaidLeaveAmount())
+                    .isEqualByComparingTo(BigDecimal.ZERO);
+        }
+
+        @Test
+        @DisplayName("연장수당 - 정확히 40시간 근무 시 미발생 (경계)")
+        void calculateOvertime_Exactly40Hours_ShouldNotPay() {
+            // given
+            WeeklyAllowance allowance = createAllowance(
+                    new BigDecimal("40.00"), new BigDecimal("10000"));
+
+            // when
+            allowance.calculateOvertime(false);
+
+            // then
+            assertThat(allowance.getOvertimeHours())
+                    .isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(allowance.getOvertimeAmount())
+                    .isEqualByComparingTo(BigDecimal.ZERO);
+        }
+
+        @Test
+        @DisplayName("연장수당 - 40.01시간 근무 시 발생 (경계 초과)")
+        void calculateOvertime_40_01Hours_ShouldPay() {
+            // given
+            WeeklyAllowance allowance = createAllowance(
+                    new BigDecimal("40.01"), new BigDecimal("10000"));
+
+            // when
+            allowance.calculateOvertime(false);
+
+            // then
+            // overtimeHours = 40.01 - 40 = 0.01
+            // overtimeAmount = 0.01 * 10000 * 1.5 = 150.0
+            assertThat(allowance.getOvertimeHours())
+                    .isEqualByComparingTo(new BigDecimal("0.01"));
+            assertThat(allowance.getOvertimeAmount())
+                    .isEqualByComparingTo(new BigDecimal("150.0"));
+        }
+
+        @Test
+        @DisplayName("연장수당 - 40시간 초과 + 5인 미만 사업장 시 미발생")
+        void calculateOvertime_Over40Hours_SmallWorkplace_ShouldNotPay() {
+            // given
+            WeeklyAllowance allowance = createAllowance(
+                    new BigDecimal("45.00"), new BigDecimal("10000"));
+
+            // when
+            allowance.calculateOvertime(true);
+
+            // then
+            assertThat(allowance.getOvertimeHours())
+                    .isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(allowance.getOvertimeAmount())
+                    .isEqualByComparingTo(BigDecimal.ZERO);
+        }
     }
 }

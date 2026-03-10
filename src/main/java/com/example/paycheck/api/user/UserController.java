@@ -54,7 +54,7 @@ public class UserController {
     @PutMapping("/me/account")
     public ApiResponse<WorkerDto.Response> updateMyAccount(
             @AuthenticationPrincipal User user,
-            @RequestBody WorkerDto.UpdateRequest request) {
+            @Valid @RequestBody WorkerDto.UpdateRequest request) {
         if (user.getUserType() != UserType.WORKER) {
             throw new UnauthorizedException(ErrorCode.WORKER_ONLY, "근로자만 계좌 정보를 수정할 수 있습니다.");
         }

@@ -65,7 +65,7 @@ public class EmployerWorkRecordController {
     @PutMapping("/{id}")
     public ApiResponse<WorkRecordDto.Response> updateWorkRecord(
             @Parameter(description = "근무 기록 ID", required = true) @PathVariable Long id,
-            @RequestBody WorkRecordDto.UpdateRequest request) {
+            @Valid @RequestBody WorkRecordDto.UpdateRequest request) {
         return ApiResponse.success(workRecordCommandService.updateWorkRecord(id, request));
     }
 

@@ -9,6 +9,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,13 +35,10 @@ public class NotificationController {
     @GetMapping
     public ApiResponse<NotificationPageResponse> getMyNotifications(
         @AuthenticationPrincipal User user,
-        @Parameter(description = "읽음 여부 필터 (true: 읽은 알림만, false: 읽지 않은 알림만)") @RequestParam(value = "is_read", required = false) Boolean is_read,
-        @Parameter(description = "페이지 번호 (기본값: 1)") @RequestParam(value = "page", required = false) Integer page,
-        @Parameter(description = "페이지 크기 (기본값: 20)") @RequestParam(value = "size", required = false) Integer size
+        @Parameter(description = "읽음 여부 필터 (true: 읽은 알림만, false: 읽지 않은 알림만)") @RequestParam(value = "is_read", required = false) Boolean isRead,
+        @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ){
-        int p = (page == null) ? 1 : page;
-        int s = (size == null) ? 20 : size;
-        NotificationPageResponse resp = notificationService.getNotifications(user, is_read, p, s);
+        NotificationPageResponse resp = notificationService.getNotifications(user, isRead, pageable);
         return ApiResponse.success(resp);
     }
 

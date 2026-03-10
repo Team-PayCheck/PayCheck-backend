@@ -15,7 +15,8 @@ import java.util.List;
 @Entity
 @Table(name = "weekly_allowance",
         indexes = {
-                @Index(name = "idx_contract_id", columnList = "contract_id")
+                @Index(name = "idx_contract_id", columnList = "contract_id"),
+                @Index(name = "idx_contract_week_range", columnList = "contract_id,week_start_date,week_end_date")
         })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

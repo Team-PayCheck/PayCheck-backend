@@ -68,6 +68,13 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(ErrorCode.INVALID_INPUT_VALUE, "요청 값이 올바르지 않습니다.", fieldErrors);
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleIllegalStateException(IllegalStateException e) {
+        log.error("IllegalStateException: {}", e.getMessage());
+        return ApiResponse.error("ILLEGAL_STATE", e.getMessage());
+    }
+
     @ExceptionHandler({
             PessimisticLockException.class,
             LockTimeoutException.class,

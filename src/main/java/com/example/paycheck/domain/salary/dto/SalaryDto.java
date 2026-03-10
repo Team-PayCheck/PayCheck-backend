@@ -42,6 +42,10 @@ public class SalaryDto {
         private BigDecimal totalDeduction;
         private BigDecimal netPay;
         private String paymentDueDate;
+        @Schema(description = "송금 ID (미송금 시 null)")
+        private Long paymentId;
+        @Schema(description = "송금 상태 (PENDING/COMPLETED/FAILED, 미송금 시 null)")
+        private String paymentStatus;
 
         public static Response from(Salary salary) {
             return Response.builder()
@@ -70,6 +74,8 @@ public class SalaryDto {
                     .totalDeduction(salary.getTotalDeduction())
                     .netPay(salary.getNetPay())
                     .paymentDueDate(salary.getPaymentDueDate() != null ? salary.getPaymentDueDate().toString() : null)
+                    .paymentId(salary.getPayment() != null ? salary.getPayment().getId() : null)
+                    .paymentStatus(salary.getPayment() != null ? salary.getPayment().getStatus().name() : null)
                     .build();
         }
     }
@@ -88,6 +94,8 @@ public class SalaryDto {
         private BigDecimal totalGrossPay;
         private BigDecimal netPay;
         private String paymentDueDate;
+        @Schema(description = "송금 상태 (PENDING/COMPLETED/FAILED, 미송금 시 null)")
+        private String paymentStatus;
 
         public static ListResponse from(Salary salary) {
             return ListResponse.builder()
@@ -99,6 +107,7 @@ public class SalaryDto {
                     .totalGrossPay(salary.getTotalGrossPay())
                     .netPay(salary.getNetPay())
                     .paymentDueDate(salary.getPaymentDueDate() != null ? salary.getPaymentDueDate().toString() : null)
+                    .paymentStatus(salary.getPayment() != null ? salary.getPayment().getStatus().name() : null)
                     .build();
         }
     }

@@ -2,6 +2,7 @@ package com.example.paycheck.domain.salary.entity;
 
 import com.example.paycheck.common.BaseEntity;
 import com.example.paycheck.domain.contract.entity.WorkerContract;
+import com.example.paycheck.domain.payment.entity.Payment;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -90,6 +91,9 @@ public class Salary extends BaseEntity {
 
     @Column(name = "payment_due_date")
     private LocalDate paymentDueDate;
+
+    @OneToOne(mappedBy = "salary", fetch = FetchType.LAZY)
+    private Payment payment;
 
     public void updateCalculatedFields(
             BigDecimal totalWorkHours,
