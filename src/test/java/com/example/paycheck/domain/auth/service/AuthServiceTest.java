@@ -8,6 +8,7 @@ import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.enums.UserType;
 import com.example.paycheck.domain.user.repository.UserRepository;
 import com.example.paycheck.domain.user.service.UserService;
+import com.example.paycheck.domain.user.service.UserWithdrawService;
 import com.example.paycheck.domain.employer.repository.EmployerRepository;
 import com.example.paycheck.domain.worker.repository.WorkerRepository;
 import com.example.paycheck.domain.worker.entity.Worker;
@@ -21,6 +22,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -45,6 +47,9 @@ class AuthServiceTest {
 
     @Mock
     private EmployerRepository employerRepository;
+
+    @Mock
+    private UserWithdrawService userWithdrawService;
 
     @Mock
     private WorkerRepository workerRepository;
@@ -479,6 +484,44 @@ class AuthServiceTest {
         verify(userRepository).findByKakaoId("dev_999");
         verify(userRepository).save(any(User.class));
         verify(tokenService).generateTokenPair(999L);
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴 성공")
+    void withdraw_Success() {
+        // given
+        doNothing().when(userWithdrawService).withdraw(testUser);
+
+        // when
+        authService.withdraw(testUser);
+
+        // then
+        verify(oAuthService).unlinkKakaoAccount(testUser.getKakaoId());
+        verify(userWithdrawService).withdraw(testUser);
+    }
+
+    @Test
+    @DisplayName("카카오 로그인 실패 - 탈퇴한 사용자")
+    void loginWithKakao_DeletedUser_ThrowsException() {
+        // given
+        String kakaoAccessToken = "kakao_access_token";
+        User deletedUser = User.builder()
+                .id(2L)
+                .kakaoId("test_kakao_id")
+                .name("탈퇴한 사용자")
+                .userType(UserType.WORKER)
+                .build();
+        deletedUser.withdraw();
+
+        when(oAuthService.getKakaoUserInfo(kakaoAccessToken)).thenReturn(kakaoUserInfo);
+        when(userRepository.findByKakaoId(kakaoUserInfo.kakaoId())).thenReturn(Optional.of(deletedUser));
+
+        // when & then
+        assertThatThrownBy(() -> authService.loginWithKakao(kakaoAccessToken))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("탈퇴한 계정입니다");
+
+        verify(tokenService, never()).generateTokenPair(anyLong());
     }
 
     @Test

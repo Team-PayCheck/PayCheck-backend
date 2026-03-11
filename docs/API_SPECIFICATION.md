@@ -8,6 +8,7 @@
 | 1.1 | 카카오 로그인 | POST | `/api/auth/kakao/login` | 카카오 소셜 로그인 (신규 사용자 자동 등록) | 대기 | 대기 | - | [링크](#11-카카오-로그인) |
 | 1.2 | 로그아웃 | POST | `/api/auth/logout` | 로그아웃 및 토큰 무효화 | 대기 | 대기 | - | [링크](#12-로그아웃) |
 | 1.3 | 토큰 갱신 | POST | `/api/auth/refresh` | Access Token 갱신 | 대기 | 대기 | - | [링크](#13-토큰-갱신) |
+| 1.4 | 회원 탈퇴 | DELETE | `/api/auth/withdraw` | 회원 탈퇴 및 카카오 연결 해제 | 대기 | 완료 | 2026-03-11 | [링크](#14-회원-탈퇴) |
 | **2. 사용자 API** ||||||||
 | 2.1 | 내 정보 조회 | GET | `/api/users/me` | 로그인한 사용자 정보 | 대기 | 대기 | - | [링크](#21-내-정보-조회) |
 | 2.2 | 내 정보 수정 | PUT | `/api/users/me` | 사용자 정보 수정 | 대기 | 대기 | - | [링크](#22-내-정보-수정) |
@@ -153,6 +154,37 @@
   "data": {
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+---
+
+### 1.4 회원 탈퇴
+
+**Request:**
+- Method: `DELETE`
+- URL: `/api/auth/withdraw`
+- Header: `Authorization: Bearer {accessToken}`
+- Body: 없음
+
+**Response (성공):**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "회원 탈퇴가 완료되었습니다."
+  }
+}
+```
+
+**Response (이미 탈퇴한 사용자):**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "USER_ALREADY_DELETED",
+    "message": "이미 탈퇴한 사용자입니다."
   }
 }
 ```

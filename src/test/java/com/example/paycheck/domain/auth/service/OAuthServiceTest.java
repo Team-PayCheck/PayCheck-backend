@@ -14,6 +14,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.*;
+
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -134,6 +136,39 @@ class OAuthServiceTest {
             // when & then
             assertThatThrownBy(() -> oAuthService.resolveDisplayName(userInfo))
                     .isInstanceOf(BadRequestException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("unlinkKakaoAccount")
+    class UnlinkKakaoAccount {
+
+        @Test
+        @DisplayName("카카오 연결 해제를 정상적으로 호출한다")
+        void success() {
+            // given
+            String kakaoId = "12345";
+            doNothing().when(kakaoOAuthClient).unlinkUser(kakaoId);
+
+            // when
+            oAuthService.unlinkKakaoAccount(kakaoId);
+
+            // then
+            verify(kakaoOAuthClient).unlinkUser(kakaoId);
+        }
+
+        @Test
+        @DisplayName("카카오 연결 해제 실패 시 예외를 삼키고 정상 리턴한다")
+        void swallowsExceptionOnFailure() {
+            // given
+            String kakaoId = "12345";
+            doThrow(new RuntimeException("카카오 서버 오류"))
+                    .when(kakaoOAuthClient).unlinkUser(kakaoId);
+
+            // when & then (예외가 발생하지 않아야 함)
+            oAuthService.unlinkKakaoAccount(kakaoId);
+
+            verify(kakaoOAuthClient).unlinkUser(kakaoId);
         }
     }
 }

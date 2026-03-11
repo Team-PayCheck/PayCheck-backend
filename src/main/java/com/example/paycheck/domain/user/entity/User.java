@@ -5,6 +5,8 @@ import com.example.paycheck.domain.user.enums.UserType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "users")
 @Getter
@@ -33,9 +35,20 @@ public class User extends BaseEntity {
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     public void updateProfile(String name, String phone, String profileImageUrl) {
         if (name != null) this.name = name;
         if (phone != null) this.phone = phone;
         if (profileImageUrl != null) this.profileImageUrl = profileImageUrl;
+    }
+
+    public void withdraw() {
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isDeleted() {
+        return this.deletedAt != null;
     }
 }

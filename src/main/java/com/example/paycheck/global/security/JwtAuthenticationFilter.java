@@ -48,6 +48,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 User user = userRepository.findById(userId)
                         .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
+                // 탈퇴한 사용자 차단
+                if (user.isDeleted()) {
+                    throw new RuntimeException("탈퇴한 사용자입니다: " + userId);
+                }
+
                 // UserDetails 생성
                 CustomUserDetails userDetails = new CustomUserDetails(user);
 

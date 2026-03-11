@@ -138,6 +138,15 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
                         @Param("workDates") List<LocalDate> workDates,
                         @Param("deletedStatus") WorkRecordStatus deletedStatus);
 
+        // 특정 계약의 특정 상태 WorkRecord를 다른 상태로 벌크 업데이트
+        @Modifying
+        @Query("UPDATE WorkRecord wr SET wr.status = :newStatus " +
+                        "WHERE wr.contract.id = :contractId AND wr.status = :currentStatus")
+        int bulkUpdateStatusByContractIdAndStatus(
+                        @Param("contractId") Long contractId,
+                        @Param("currentStatus") WorkRecordStatus currentStatus,
+                        @Param("newStatus") WorkRecordStatus newStatus);
+
         // 현재 시점 기준으로 종료된 SCHEDULED 근무 기록 ID 조회 (자동 완료 배치용)
         // ID만 조회하여 메모리 효율 확보, 각 레코드는 completeWorkRecord(Long)에서 개별 트랜잭션으로 처리
         @Query("SELECT wr.id FROM WorkRecord wr " +

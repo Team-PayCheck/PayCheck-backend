@@ -34,6 +34,7 @@ erDiagram
         string phone "전화번호"
         enum user_type "USER_TYPE(EMPLOYER, WORKER)"
         string profile_image_url "프로필 이미지 URL"
+        datetime deleted_at "탈퇴일시 (nullable, 소프트 삭제)"
         datetime created_at
         datetime updated_at
     }

@@ -11,6 +11,7 @@ import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.enums.UserType;
 import com.example.paycheck.domain.user.repository.UserRepository;
 import com.example.paycheck.domain.user.service.UserService;
+import com.example.paycheck.domain.user.service.UserWithdrawService;
 import com.example.paycheck.domain.worker.entity.Worker;
 import com.example.paycheck.domain.worker.repository.WorkerRepository;
 import com.example.paycheck.global.oauth.kakao.dto.KakaoUserInfo;
@@ -39,6 +40,7 @@ public class AuthService {
     private final TokenService tokenService;
     private final UserRepository userRepository;
     private final UserService userService;
+    private final UserWithdrawService userWithdrawService;
     private final EmployerRepository employerRepository;
     private final WorkerRepository workerRepository;
 
@@ -83,6 +85,11 @@ public class AuthService {
                         "등록되지 않은 카카오 계정입니다. 회원가입을 진행해주세요."
                 ));
 
+        // 탈퇴한 사용자 로그인 차단
+        if (user.isDeleted()) {
+            throw new BadRequestException(ErrorCode.USER_ALREADY_DELETED, "탈퇴한 계정입니다. 다시 가입해주세요.");
+        }
+
         // 토큰 생성
         TokenService.TokenPair tokenPair = tokenService.generateTokenPair(user.getId());
 
@@ -108,6 +115,20 @@ public class AuthService {
     @Transactional
     public void logout(Long userId) {
         tokenService.revokeRefreshToken(userId);
+    }
+
+    /**
+     * 회원 탈퇴
+     * 카카오 연결 해제(어드민 키 방식) 후 내부 데이터 정리 및 소프트 삭제
+     *
+     * @param user 탈퇴할 사용자
+     */
+    public void withdraw(User user) {
+        // 카카오 연결 해제 (best-effort, 트랜잭션 밖, 어드민 키 방식)
+        oAuthService.unlinkKakaoAccount(user.getKakaoId());
+
+        // 탈퇴 처리 (트랜잭션)
+        userWithdrawService.withdraw(user);
     }
 
     /**

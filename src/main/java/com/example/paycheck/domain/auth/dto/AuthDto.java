@@ -117,6 +117,23 @@ public class AuthDto {
     }
 
     /**
+     * 회원 탈퇴 응답 DTO
+     */
+    @Getter
+    @AllArgsConstructor
+    @Builder
+    @Schema(name = "AuthWithdrawResponse")
+    public static class WithdrawResponse {
+        private String message;
+
+        public static WithdrawResponse success() {
+            return WithdrawResponse.builder()
+                    .message("회원 탈퇴가 완료되었습니다.")
+                    .build();
+        }
+    }
+
+    /**
      * 개발용 임시 로그인 요청 DTO
      */
     @Getter

@@ -74,6 +74,21 @@ public class AuthController {
         return ApiResponse.success(AuthDto.LogoutResponse.success());
     }
 
+    @Operation(summary = "회원 탈퇴", description = "사용자 계정을 탈퇴 처리하고 관련 데이터를 정리합니다. " +
+            "카카오 연결 해제는 서버에서 어드민 키로 자동 처리됩니다.")
+    @DeleteMapping("/withdraw")
+    public ApiResponse<AuthDto.WithdrawResponse> withdraw(
+            @AuthenticationPrincipal User user,
+            HttpServletResponse response) {
+
+        authService.withdraw(user);
+
+        // Refresh Token 쿠키 삭제
+        deleteRefreshTokenCookie(response);
+
+        return ApiResponse.success(AuthDto.WithdrawResponse.success());
+    }
+
     @Operation(summary = "토큰 갱신", description = "Cookie의 Refresh Token을 사용하여 새로운 Access Token을 발급합니다.")
     @PostMapping("/refresh")
     public ApiResponse<AuthDto.RefreshResponse> refresh(
