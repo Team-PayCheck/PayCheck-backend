@@ -3,6 +3,8 @@ package com.example.paycheck.domain.contract.service;
 import com.example.paycheck.common.exception.BadRequestException;
 import com.example.paycheck.common.exception.ErrorCode;
 import com.example.paycheck.common.exception.NotFoundException;
+import com.example.paycheck.domain.allowance.repository.WeeklyAllowanceRepository;
+import com.example.paycheck.domain.allowance.service.WeeklyAllowanceService;
 import com.example.paycheck.domain.contract.dto.ContractDto;
 import com.example.paycheck.domain.contract.entity.WorkerContract;
 import com.example.paycheck.domain.contract.repository.WorkerContractRepository;
@@ -14,6 +16,7 @@ import com.example.paycheck.domain.worker.entity.Worker;
 import com.example.paycheck.domain.worker.repository.WorkerRepository;
 import com.example.paycheck.domain.workplace.entity.Workplace;
 import com.example.paycheck.domain.workplace.repository.WorkplaceRepository;
+import com.example.paycheck.domain.workrecord.service.WorkRecordCoordinatorService;
 import com.example.paycheck.domain.workrecord.service.WorkRecordGenerationService;
 import com.example.paycheck.domain.workrecord.service.WorkRecordCommandService;
 import com.example.paycheck.domain.contract.dto.WorkScheduleDto;
@@ -25,6 +28,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +45,9 @@ public class ContractService {
     private final WorkerRepository workerRepository;
     private final WorkRecordGenerationService workRecordGenerationService;
     private final WorkRecordCommandService workRecordCommandService;
+    private final WeeklyAllowanceService weeklyAllowanceService;
+    private final WeeklyAllowanceRepository weeklyAllowanceRepository;
+    private final WorkRecordCoordinatorService workRecordCoordinatorService;
     private final ObjectMapper objectMapper;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -149,7 +156,20 @@ public class ContractService {
         // 미래 예정된 근무 기록 일괄 soft-delete
         workRecordCommandService.deleteFutureWorkRecords(contractId);
 
+        // 종료 주의 주휴수당 재계산 + 급여 재계산
+        recalculateTerminationWeekAllowanceAndSalary(contract);
+
         publishResignationEvent(contract);
+    }
+
+    private void recalculateTerminationWeekAllowanceAndSalary(WorkerContract contract) {
+        LocalDate terminationDate = contract.getContractEndDate();
+        weeklyAllowanceRepository.findByContractAndWeek(contract.getId(), terminationDate)
+            .ifPresent(allowance -> {
+                weeklyAllowanceService.recalculateAllowances(allowance.getId());
+                workRecordCoordinatorService.recalculateSalaryForDate(
+                    contract.getId(), contract.getPaymentDay(), terminationDate);
+            });
     }
 
     private String convertWorkSchedulesToJson(List<WorkScheduleDto> workSchedules) {

@@ -104,7 +104,15 @@ public class WeeklyAllowance extends BaseEntity {
     }
 
     // 주휴수당 계산
-    public void calculateWeeklyPaidLeave() {
+    // hasNextWeekRecords: 다음 주에 유효한 근무 기록이 있는지 여부
+    // 주휴수당은 다음 주에도 근로를 제공할 것을 전제로 지급 (한국 노동법)
+    public void calculateWeeklyPaidLeave(boolean hasNextWeekRecords) {
+        // 다음 주에 근무 기록이 없으면 주휴수당 미지급
+        if (!hasNextWeekRecords) {
+            this.weeklyPaidLeaveAmount = BigDecimal.ZERO;
+            return;
+        }
+
         // 주 15시간 이상 근무 시 주휴수당 지급
         if (this.totalWorkHours.compareTo(MINIMUM_HOURS_FOR_PAID_LEAVE) >= 0) {
             // 주휴수당 = (1주 소정근로 시간 / 40) × 8 × 시급

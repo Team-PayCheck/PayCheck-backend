@@ -2,6 +2,8 @@ package com.example.paycheck.domain.user.service;
 
 import com.example.paycheck.common.exception.BadRequestException;
 import com.example.paycheck.common.exception.ErrorCode;
+import com.example.paycheck.domain.allowance.repository.WeeklyAllowanceRepository;
+import com.example.paycheck.domain.allowance.service.WeeklyAllowanceService;
 import com.example.paycheck.domain.auth.repository.RefreshTokenRepository;
 import com.example.paycheck.domain.contract.entity.WorkerContract;
 import com.example.paycheck.domain.contract.repository.WorkerContractRepository;
@@ -18,11 +20,13 @@ import com.example.paycheck.domain.workplace.entity.Workplace;
 import com.example.paycheck.domain.workplace.repository.WorkplaceRepository;
 import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
+import com.example.paycheck.domain.workrecord.service.WorkRecordCoordinatorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Slf4j
@@ -36,6 +40,9 @@ public class UserWithdrawService {
     private final WorkplaceRepository workplaceRepository;
     private final WorkerContractRepository workerContractRepository;
     private final WorkRecordRepository workRecordRepository;
+    private final WeeklyAllowanceService weeklyAllowanceService;
+    private final WeeklyAllowanceRepository weeklyAllowanceRepository;
+    private final WorkRecordCoordinatorService workRecordCoordinatorService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final FcmTokenRepository fcmTokenRepository;
     private final NotificationRepository notificationRepository;
@@ -85,6 +92,7 @@ public class UserWithdrawService {
                         contract.getId(),
                         WorkRecordStatus.SCHEDULED,
                         WorkRecordStatus.DELETED);
+                recalculateTerminationWeekAllowanceAndSalary(contract);
             }
         }
     }
@@ -108,8 +116,22 @@ public class UserWithdrawService {
                         contract.getId(),
                         WorkRecordStatus.SCHEDULED,
                         WorkRecordStatus.DELETED);
+                recalculateTerminationWeekAllowanceAndSalary(contract);
             }
         }
+    }
+
+    /**
+     * 계약 종료 주의 주휴수당 재계산 + 급여 재계산
+     */
+    private void recalculateTerminationWeekAllowanceAndSalary(WorkerContract contract) {
+        LocalDate terminationDate = contract.getContractEndDate();
+        weeklyAllowanceRepository.findByContractAndWeek(contract.getId(), terminationDate)
+            .ifPresent(allowance -> {
+                weeklyAllowanceService.recalculateAllowances(allowance.getId());
+                workRecordCoordinatorService.recalculateSalaryForDate(
+                    contract.getId(), contract.getPaymentDay(), terminationDate);
+            });
     }
 
     /**

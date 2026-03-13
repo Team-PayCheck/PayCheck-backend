@@ -2,6 +2,7 @@ package com.example.paycheck.domain.workrecord.service;
 
 import com.example.paycheck.common.exception.NotFoundException;
 import com.example.paycheck.domain.allowance.entity.WeeklyAllowance;
+import com.example.paycheck.domain.allowance.repository.WeeklyAllowanceRepository;
 import com.example.paycheck.domain.allowance.service.WeeklyAllowanceService;
 import com.example.paycheck.domain.contract.entity.WorkerContract;
 import com.example.paycheck.domain.salary.service.SalaryService;
@@ -19,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.*;
@@ -30,6 +32,9 @@ class WorkRecordCoordinatorServiceTest {
 
     @Mock
     private WeeklyAllowanceService weeklyAllowanceService;
+
+    @Mock
+    private WeeklyAllowanceRepository weeklyAllowanceRepository;
 
     @Mock
     private SalaryService salaryService;
@@ -44,6 +49,10 @@ class WorkRecordCoordinatorServiceTest {
         mockContract = mock(WorkerContract.class);
         lenient().when(mockContract.getId()).thenReturn(1L);
         lenient().when(mockContract.getPaymentDay()).thenReturn(25);
+
+        // recalculatePreviousWeekAllowance()에서 호출되는 repository mock 설정
+        lenient().when(weeklyAllowanceRepository.findByContractAndWeek(anyLong(), any(LocalDate.class)))
+                .thenReturn(Optional.empty());
     }
 
     private WorkRecord createMockWorkRecord(WorkRecordStatus status, LocalDate workDate, WeeklyAllowance allowance) {

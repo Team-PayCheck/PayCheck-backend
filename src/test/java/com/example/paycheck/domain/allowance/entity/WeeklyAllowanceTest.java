@@ -99,7 +99,7 @@ class WeeklyAllowanceTest {
                 .build();
 
         // when
-        weeklyAllowance.calculateWeeklyPaidLeave();
+        weeklyAllowance.calculateWeeklyPaidLeave(true);
 
         // then
         assertThat(weeklyAllowance.getWeeklyPaidLeaveAmount()).isEqualTo(BigDecimal.ZERO);
@@ -117,7 +117,7 @@ class WeeklyAllowanceTest {
                 .build();
 
         // when
-        weeklyAllowance.calculateWeeklyPaidLeave();
+        weeklyAllowance.calculateWeeklyPaidLeave(true);
 
         // then
         // (20 / 40) × 8 × 10000 = 40000
@@ -136,7 +136,7 @@ class WeeklyAllowanceTest {
                 .build();
 
         // when
-        weeklyAllowance.calculateWeeklyPaidLeave();
+        weeklyAllowance.calculateWeeklyPaidLeave(true);
 
         // then
         // (15 / 40) × 8 × 10000 = 30000
@@ -156,7 +156,7 @@ class WeeklyAllowanceTest {
                 .build();
 
         // when
-        weeklyAllowance.calculateWeeklyPaidLeave();
+        weeklyAllowance.calculateWeeklyPaidLeave(true);
 
         // then
         // (15.01 / 40) = 0.38 (scale=2, HALF_UP) -> 0.38 * 8 * 10003 = 30409.12
@@ -279,7 +279,7 @@ class WeeklyAllowanceTest {
 
         // when
         weeklyAllowance.calculateTotalWorkHours();
-        weeklyAllowance.calculateWeeklyPaidLeave();
+        weeklyAllowance.calculateWeeklyPaidLeave(true);
         weeklyAllowance.calculateOvertime(true); // isSmallWorkplace=true
 
         // then
@@ -301,7 +301,7 @@ class WeeklyAllowanceTest {
                 .build();
 
         // when
-        weeklyAllowance.calculateWeeklyPaidLeave();
+        weeklyAllowance.calculateWeeklyPaidLeave(true);
 
         // then
         assertThat(weeklyAllowance.getWeeklyPaidLeaveAmount()).isEqualByComparingTo(BigDecimal.ZERO);
@@ -319,11 +319,84 @@ class WeeklyAllowanceTest {
                 .build();
 
         // when
-        weeklyAllowance.calculateWeeklyPaidLeave();
+        weeklyAllowance.calculateWeeklyPaidLeave(true);
 
         // then
         // (40 / 40) × 8 × 10000 = 80000
         assertThat(weeklyAllowance.getWeeklyPaidLeaveAmount()).isEqualByComparingTo(new BigDecimal("80000"));
+    }
+
+    @Test
+    @DisplayName("주휴수당 계산 - 다음 주 근무 기록 없으면 15시간 이상이어도 미지급")
+    void calculateWeeklyPaidLeave_NoNextWeekRecords_ZeroPay() {
+        // given
+        weeklyAllowance = WeeklyAllowance.builder()
+                .contract(mockContract)
+                .weekStartDate(LocalDate.of(2024, 1, 1))
+                .weekEndDate(LocalDate.of(2024, 1, 7))
+                .totalWorkHours(BigDecimal.valueOf(20))
+                .build();
+
+        // when
+        weeklyAllowance.calculateWeeklyPaidLeave(false);
+
+        // then
+        assertThat(weeklyAllowance.getWeeklyPaidLeaveAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    @DisplayName("주휴수당 계산 - 다음 주 근무 기록 있고 15시간 이상이면 정상 지급")
+    void calculateWeeklyPaidLeave_HasNextWeekRecords_NormalPay() {
+        // given
+        weeklyAllowance = WeeklyAllowance.builder()
+                .contract(mockContract)
+                .weekStartDate(LocalDate.of(2024, 1, 1))
+                .weekEndDate(LocalDate.of(2024, 1, 7))
+                .totalWorkHours(BigDecimal.valueOf(20))
+                .build();
+
+        // when
+        weeklyAllowance.calculateWeeklyPaidLeave(true);
+
+        // then
+        // (20 / 40) × 8 × 10000 = 40000
+        assertThat(weeklyAllowance.getWeeklyPaidLeaveAmount()).isEqualByComparingTo(new BigDecimal("40000.00"));
+    }
+
+    @Test
+    @DisplayName("주휴수당 계산 - 다음 주 근무 기록 있지만 15시간 미만이면 미지급")
+    void calculateWeeklyPaidLeave_HasNextWeekRecords_Under15Hours_ZeroPay() {
+        // given
+        weeklyAllowance = WeeklyAllowance.builder()
+                .contract(mockContract)
+                .weekStartDate(LocalDate.of(2024, 1, 1))
+                .weekEndDate(LocalDate.of(2024, 1, 7))
+                .totalWorkHours(BigDecimal.valueOf(14))
+                .build();
+
+        // when
+        weeklyAllowance.calculateWeeklyPaidLeave(true);
+
+        // then
+        assertThat(weeklyAllowance.getWeeklyPaidLeaveAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    @DisplayName("주휴수당 계산 - 다음 주 근무 기록 없고 15시간 미만이면 미지급")
+    void calculateWeeklyPaidLeave_NoNextWeekRecords_Under15Hours_ZeroPay() {
+        // given
+        weeklyAllowance = WeeklyAllowance.builder()
+                .contract(mockContract)
+                .weekStartDate(LocalDate.of(2024, 1, 1))
+                .weekEndDate(LocalDate.of(2024, 1, 7))
+                .totalWorkHours(BigDecimal.valueOf(14))
+                .build();
+
+        // when
+        weeklyAllowance.calculateWeeklyPaidLeave(false);
+
+        // then
+        assertThat(weeklyAllowance.getWeeklyPaidLeaveAmount()).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
@@ -342,7 +415,7 @@ class WeeklyAllowanceTest {
 
         // when
         weeklyAllowance.calculateTotalWorkHours();
-        weeklyAllowance.calculateWeeklyPaidLeave();
+        weeklyAllowance.calculateWeeklyPaidLeave(true);
         weeklyAllowance.calculateOvertime(false); // large workplace
 
         // then

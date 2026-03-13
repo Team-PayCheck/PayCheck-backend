@@ -6,6 +6,8 @@ import com.example.paycheck.domain.allowance.entity.WeeklyAllowance;
 import com.example.paycheck.domain.allowance.repository.WeeklyAllowanceRepository;
 import com.example.paycheck.domain.contract.entity.WorkerContract;
 import com.example.paycheck.domain.contract.repository.WorkerContractRepository;
+import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
+import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ public class WeeklyAllowanceService {
 
     private final WeeklyAllowanceRepository weeklyAllowanceRepository;
     private final WorkerContractRepository workerContractRepository;
+    private final WorkRecordRepository workRecordRepository;
 
     public List<WeeklyAllowance> getWeeklyAllowancesByContract(Long contractId) {
         return weeklyAllowanceRepository.findByContractId(contractId);
@@ -78,9 +81,15 @@ public class WeeklyAllowanceService {
         // 사업장 규모 확인
         boolean isSmallWorkplace = allowance.getContract().getWorkplace().getIsLessThanFiveEmployees();
 
-        // 수당 재계산 (사업장 규모 고려)
+        // 다음 주 근무 기록 존재 여부 확인 (주휴수당 지급 조건)
+        LocalDate nextWeekStart = allowance.getWeekEndDate().plusDays(1);
+        LocalDate nextWeekEnd = nextWeekStart.plusDays(6);
+        boolean hasNextWeekRecords = workRecordRepository.existsByContractIdAndWorkDateBetweenAndStatusNot(
+                allowance.getContract().getId(), nextWeekStart, nextWeekEnd, WorkRecordStatus.DELETED);
+
+        // 수당 재계산 (사업장 규모, 다음 주 근무 여부 고려)
         allowance.calculateTotalWorkHours();
-        allowance.calculateWeeklyPaidLeave();
+        allowance.calculateWeeklyPaidLeave(hasNextWeekRecords);
         allowance.calculateOvertime(isSmallWorkplace);
 
         return weeklyAllowanceRepository.save(allowance);
@@ -160,8 +169,14 @@ public class WeeklyAllowanceService {
 
         for (WeeklyAllowance allowance : allowances) {
             boolean isSmallWorkplace = allowance.getContract().getWorkplace().getIsLessThanFiveEmployees();
+
+            LocalDate nextWeekStart = allowance.getWeekEndDate().plusDays(1);
+            LocalDate nextWeekEnd = nextWeekStart.plusDays(6);
+            boolean hasNextWeekRecords = workRecordRepository.existsByContractIdAndWorkDateBetweenAndStatusNot(
+                    allowance.getContract().getId(), nextWeekStart, nextWeekEnd, WorkRecordStatus.DELETED);
+
             allowance.calculateTotalWorkHours();
-            allowance.calculateWeeklyPaidLeave();
+            allowance.calculateWeeklyPaidLeave(hasNextWeekRecords);
             allowance.calculateOvertime(isSmallWorkplace);
         }
 

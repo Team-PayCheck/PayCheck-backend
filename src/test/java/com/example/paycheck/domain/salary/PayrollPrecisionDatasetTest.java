@@ -38,7 +38,7 @@ class PayrollPrecisionDatasetTest {
                     .totalWorkHours(new BigDecimal(testCase.totalWorkHours))
                     .build();
 
-            allowance.calculateWeeklyPaidLeave();
+            allowance.calculateWeeklyPaidLeave(true);
 
             BigDecimal actualWon = roundToWon(allowance.getWeeklyPaidLeaveAmount());
             assertThat(actualWon)

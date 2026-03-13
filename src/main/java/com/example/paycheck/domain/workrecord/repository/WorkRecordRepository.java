@@ -115,6 +115,17 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
                         @Param("date") LocalDate date,
                         @Param("status") WorkRecordStatus status);
 
+        // 특정 기간 내 유효한(삭제되지 않은) 근무 기록 존재 여부 확인 (주휴수당 다음 주 판단용)
+        @Query("SELECT COUNT(wr) > 0 FROM WorkRecord wr " +
+                        "WHERE wr.contract.id = :contractId " +
+                        "AND wr.workDate BETWEEN :startDate AND :endDate " +
+                        "AND wr.status <> :deletedStatus")
+        boolean existsByContractIdAndWorkDateBetweenAndStatusNot(
+                        @Param("contractId") Long contractId,
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate,
+                        @Param("deletedStatus") WorkRecordStatus deletedStatus);
+
         // 동일한 시간대에 유효한(삭제되지 않은) 근무 기록 존재 여부 확인
         @Query("SELECT COUNT(wr) > 0 FROM WorkRecord wr " +
                         "WHERE wr.contract.id = :contractId " +

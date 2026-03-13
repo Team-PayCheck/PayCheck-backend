@@ -2,6 +2,7 @@ package com.example.paycheck.domain.workrecord.service;
 
 import com.example.paycheck.common.exception.NotFoundException;
 import com.example.paycheck.domain.allowance.entity.WeeklyAllowance;
+import com.example.paycheck.domain.allowance.repository.WeeklyAllowanceRepository;
 import com.example.paycheck.domain.allowance.service.WeeklyAllowanceService;
 import com.example.paycheck.domain.salary.service.SalaryService;
 import com.example.paycheck.domain.workrecord.entity.WorkRecord;
@@ -10,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,6 +28,7 @@ import java.util.stream.Collectors;
 public class WorkRecordCoordinatorService {
 
     private final WeeklyAllowanceService weeklyAllowanceService;
+    private final WeeklyAllowanceRepository weeklyAllowanceRepository;
     private final SalaryService salaryService;
 
     /**
@@ -41,6 +45,9 @@ public class WorkRecordCoordinatorService {
             // WeeklyAllowance의 수당 재계산 (SCHEDULED, COMPLETED만 주휴수당 계산에 포함)
             weeklyAllowanceService.recalculateAllowances(workRecord.getWeeklyAllowance().getId());
         }
+
+        // 이번 주 근무 기록 변경이 이전 주 주휴수당에 영향을 줄 수 있으므로 이전 주도 재계산
+        recalculatePreviousWeekAllowance(workRecord);
     }
 
     /**
@@ -100,6 +107,9 @@ public class WorkRecordCoordinatorService {
         if (deletedStatus == WorkRecordStatus.COMPLETED) {
             recalculateSalaryForWorkRecord(workRecord);
         }
+
+        // 이번 주 근무 기록 삭제가 이전 주 주휴수당에 영향을 줄 수 있으므로 이전 주도 재계산
+        recalculatePreviousWeekAllowance(workRecord);
     }
 
     /**
@@ -116,26 +126,45 @@ public class WorkRecordCoordinatorService {
      * workDate와 paymentDay를 기준으로 해당 급여의 year/month를 계산하여 재계산
      */
     private void recalculateSalaryForWorkRecord(WorkRecord workRecord) {
-        LocalDate workDate = workRecord.getWorkDate();
-        Integer paymentDay = workRecord.getContract().getPaymentDay();
+        recalculateSalaryForDate(
+                workRecord.getContract().getId(),
+                workRecord.getContract().getPaymentDay(),
+                workRecord.getWorkDate());
+    }
 
-        // workDate가 paymentDay 이상이면 다음 달 급여에 포함, 미만이면 당월 급여에 포함
-        Integer year = workDate.getYear();
-        Integer month = workDate.getMonthValue();
+    /**
+     * 특정 날짜 기준으로 해당 월의 급여 재계산
+     * 계약 종료 등 WorkRecord 없이 날짜 기준으로 재계산이 필요한 경우 사용
+     */
+    public void recalculateSalaryForDate(Long contractId, Integer paymentDay, LocalDate date) {
+        int year = date.getYear();
+        int month = date.getMonthValue();
 
-        if (workDate.getDayOfMonth() >= paymentDay) {
-            // 다음 달 급여에 포함
-            LocalDate nextMonth = workDate.plusMonths(1);
+        if (date.getDayOfMonth() >= paymentDay) {
+            LocalDate nextMonth = date.plusMonths(1);
             year = nextMonth.getYear();
             month = nextMonth.getMonthValue();
         }
 
         try {
-            salaryService.recalculateSalaryAfterWorkRecordUpdate(
-                    workRecord.getContract().getId(), year, month);
+            salaryService.recalculateSalaryAfterWorkRecordUpdate(contractId, year, month);
         } catch (NotFoundException e) {
             // 급여가 아직 생성되지 않은 경우 무시 (정상 케이스)
         }
+    }
+
+    /**
+     * 이전 주의 WeeklyAllowance 재계산
+     * 이번 주 근무 기록 변경이 이전 주의 주휴수당(다음 주 근무 여부 기반)에 영향을 줌
+     */
+    private void recalculatePreviousWeekAllowance(WorkRecord workRecord) {
+        LocalDate workDate = workRecord.getWorkDate();
+        LocalDate previousWeekStart = workDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).minusWeeks(1);
+
+        weeklyAllowanceRepository.findByContractAndWeek(
+                workRecord.getContract().getId(), previousWeekStart)
+            .ifPresent(prevAllowance ->
+                weeklyAllowanceService.recalculateAllowances(prevAllowance.getId()));
     }
 
     /**

@@ -2,6 +2,9 @@ package com.example.paycheck.domain.contract.service;
 
 import com.example.paycheck.common.exception.BadRequestException;
 import com.example.paycheck.common.exception.NotFoundException;
+import com.example.paycheck.domain.allowance.entity.WeeklyAllowance;
+import com.example.paycheck.domain.allowance.repository.WeeklyAllowanceRepository;
+import com.example.paycheck.domain.allowance.service.WeeklyAllowanceService;
 import com.example.paycheck.domain.contract.dto.ContractDto;
 import com.example.paycheck.domain.contract.entity.WorkerContract;
 import com.example.paycheck.domain.contract.repository.WorkerContractRepository;
@@ -9,6 +12,8 @@ import com.example.paycheck.domain.worker.entity.Worker;
 import com.example.paycheck.domain.worker.repository.WorkerRepository;
 import com.example.paycheck.domain.workplace.entity.Workplace;
 import com.example.paycheck.domain.workplace.repository.WorkplaceRepository;
+import com.example.paycheck.domain.workrecord.service.WorkRecordCommandService;
+import com.example.paycheck.domain.workrecord.service.WorkRecordCoordinatorService;
 import com.example.paycheck.domain.workrecord.service.WorkRecordGenerationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -17,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -46,7 +52,22 @@ class ContractServiceTest {
     private WorkRecordGenerationService workRecordGenerationService;
 
     @Mock
+    private WorkRecordCommandService workRecordCommandService;
+
+    @Mock
+    private WeeklyAllowanceService weeklyAllowanceService;
+
+    @Mock
+    private WeeklyAllowanceRepository weeklyAllowanceRepository;
+
+    @Mock
+    private WorkRecordCoordinatorService workRecordCoordinatorService;
+
+    @Mock
     private ObjectMapper objectMapper;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private ContractService contractService;
@@ -174,5 +195,76 @@ class ContractServiceTest {
         // when & then
         assertThatThrownBy(() -> contractService.getContractById(1L))
                 .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("계약 종료 시 WeeklyAllowance 재계산 호출")
+    void terminateContract_RecalculatesWeeklyAllowance() {
+        // given
+        WorkerContract contract = mock(WorkerContract.class);
+        Worker worker = mock(Worker.class);
+        com.example.paycheck.domain.user.entity.User workerUser = mock(com.example.paycheck.domain.user.entity.User.class);
+        Workplace workplace = mock(Workplace.class);
+        com.example.paycheck.domain.employer.entity.Employer employer = mock(com.example.paycheck.domain.employer.entity.Employer.class);
+        com.example.paycheck.domain.user.entity.User employerUser = mock(com.example.paycheck.domain.user.entity.User.class);
+        WeeklyAllowance allowance = mock(WeeklyAllowance.class);
+
+        when(contractRepository.findById(1L)).thenReturn(Optional.of(contract));
+        when(contract.getId()).thenReturn(1L);
+        when(contract.getContractEndDate()).thenReturn(LocalDate.of(2024, 3, 15));
+        when(contract.getPaymentDay()).thenReturn(10);
+        when(contract.getWorker()).thenReturn(worker);
+        when(contract.getWorkplace()).thenReturn(workplace);
+        when(worker.getUser()).thenReturn(workerUser);
+        when(workplace.getEmployer()).thenReturn(employer);
+        when(workplace.getId()).thenReturn(1L);
+        when(employer.getUser()).thenReturn(employerUser);
+        when(allowance.getId()).thenReturn(100L);
+
+        when(weeklyAllowanceRepository.findByContractAndWeek(1L, LocalDate.of(2024, 3, 15)))
+                .thenReturn(Optional.of(allowance));
+
+        // when
+        contractService.terminateContract(1L);
+
+        // then
+        verify(contract).terminate();
+        verify(workRecordCommandService).deleteFutureWorkRecords(1L);
+        verify(weeklyAllowanceService).recalculateAllowances(100L);
+        verify(workRecordCoordinatorService).recalculateSalaryForDate(1L, 10, LocalDate.of(2024, 3, 15));
+    }
+
+    @Test
+    @DisplayName("계약 종료 시 해당 주에 WeeklyAllowance 없으면 재계산 스킵")
+    void terminateContract_NoWeeklyAllowance_SkipsRecalculation() {
+        // given
+        WorkerContract contract = mock(WorkerContract.class);
+        Worker worker = mock(Worker.class);
+        com.example.paycheck.domain.user.entity.User workerUser = mock(com.example.paycheck.domain.user.entity.User.class);
+        Workplace workplace = mock(Workplace.class);
+        com.example.paycheck.domain.employer.entity.Employer employer = mock(com.example.paycheck.domain.employer.entity.Employer.class);
+        com.example.paycheck.domain.user.entity.User employerUser = mock(com.example.paycheck.domain.user.entity.User.class);
+
+        when(contractRepository.findById(1L)).thenReturn(Optional.of(contract));
+        when(contract.getId()).thenReturn(1L);
+        when(contract.getContractEndDate()).thenReturn(LocalDate.of(2024, 3, 15));
+        when(contract.getWorker()).thenReturn(worker);
+        when(contract.getWorkplace()).thenReturn(workplace);
+        when(worker.getUser()).thenReturn(workerUser);
+        when(workplace.getEmployer()).thenReturn(employer);
+        when(workplace.getId()).thenReturn(1L);
+        when(employer.getUser()).thenReturn(employerUser);
+
+        when(weeklyAllowanceRepository.findByContractAndWeek(1L, LocalDate.of(2024, 3, 15)))
+                .thenReturn(Optional.empty());
+
+        // when
+        contractService.terminateContract(1L);
+
+        // then
+        verify(contract).terminate();
+        verify(workRecordCommandService).deleteFutureWorkRecords(1L);
+        verify(weeklyAllowanceService, never()).recalculateAllowances(anyLong());
+        verify(workRecordCoordinatorService, never()).recalculateSalaryForDate(anyLong(), any(), any());
     }
 }

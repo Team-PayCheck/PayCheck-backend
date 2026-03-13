@@ -297,6 +297,13 @@ class SalaryCalculationIntegrationTest {
         createAndCalculateWorkRecord(contract, weekStart.plusDays(2),
                 LocalTime.of(9, 0), LocalTime.of(17, 0), false, false, allowance);
 
+        // 다음 주 근무 기록 추가 (주휴수당 지급 조건: 다음 주에도 근무 기록이 있어야 함)
+        LocalDate nextWeekStart = weekStart.plusWeeks(1);
+        LocalDate nextWeekEnd = nextWeekStart.plusDays(6);
+        WeeklyAllowance nextWeekAllowance = createWeeklyAllowance(contract, nextWeekStart, nextWeekEnd);
+        createAndCalculateWorkRecord(contract, nextWeekStart,
+                LocalTime.of(9, 0), LocalTime.of(17, 0), false, false, nextWeekAllowance);
+
         // WeeklyAllowance 수당 계산 (서비스 사용 - @Transactional 내에서 lazy loading 처리)
         weeklyAllowanceService.recalculateAllowances(allowance.getId());
 
@@ -305,7 +312,8 @@ class SalaryCalculationIntegrationTest {
                 contract.getId(), currentYear, currentMonth);
 
         // then
-        assertThat(response.getBasePay()).isEqualByComparingTo("240000");
+        // basePay = 이번 주 8h × 3일 + 다음 주 8h × 1일 = 320000
+        assertThat(response.getBasePay()).isEqualByComparingTo("320000");
         // totalGrossPay > basePay (주휴수당 포함)
         assertThat(response.getTotalGrossPay()).isGreaterThan(response.getBasePay());
     }

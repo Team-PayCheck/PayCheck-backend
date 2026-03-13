@@ -5,6 +5,8 @@ import com.example.paycheck.domain.allowance.entity.WeeklyAllowance;
 import com.example.paycheck.domain.allowance.repository.WeeklyAllowanceRepository;
 import com.example.paycheck.domain.contract.entity.WorkerContract;
 import com.example.paycheck.domain.contract.repository.WorkerContractRepository;
+import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
+import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -22,6 +24,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +36,9 @@ class WeeklyAllowanceServiceTest {
 
     @Mock
     private WorkerContractRepository workerContractRepository;
+
+    @Mock
+    private WorkRecordRepository workRecordRepository;
 
     @InjectMocks
     private WeeklyAllowanceService weeklyAllowanceService;
@@ -114,13 +120,18 @@ class WeeklyAllowanceServiceTest {
         com.example.paycheck.domain.workplace.entity.Workplace mockWorkplace = mock(com.example.paycheck.domain.workplace.entity.Workplace.class);
 
         when(allowance.getContract()).thenReturn(mockContract);
+        when(allowance.getWeekEndDate()).thenReturn(LocalDate.of(2024, 1, 7));
+        when(mockContract.getId()).thenReturn(1L);
         when(mockContract.getWorkplace()).thenReturn(mockWorkplace);
         when(mockWorkplace.getIsLessThanFiveEmployees()).thenReturn(false);
 
         when(weeklyAllowanceRepository.findById(1L)).thenReturn(Optional.of(allowance));
         when(weeklyAllowanceRepository.save(allowance)).thenReturn(allowance);
+        when(workRecordRepository.existsByContractIdAndWorkDateBetweenAndStatusNot(
+                eq(1L), any(LocalDate.class), any(LocalDate.class), eq(WorkRecordStatus.DELETED)))
+                .thenReturn(true);
         doNothing().when(allowance).calculateTotalWorkHours();
-        doNothing().when(allowance).calculateWeeklyPaidLeave();
+        doNothing().when(allowance).calculateWeeklyPaidLeave(anyBoolean());
         doNothing().when(allowance).calculateOvertime(anyBoolean());
 
         // when
@@ -129,7 +140,7 @@ class WeeklyAllowanceServiceTest {
         // then
         assertThat(result).isEqualTo(allowance);
         verify(allowance).calculateTotalWorkHours();
-        verify(allowance).calculateWeeklyPaidLeave();
+        verify(allowance).calculateWeeklyPaidLeave(anyBoolean());
         verify(allowance).calculateOvertime(anyBoolean());
     }
 
@@ -142,6 +153,93 @@ class WeeklyAllowanceServiceTest {
         // when & then
         assertThatThrownBy(() -> weeklyAllowanceService.recalculateAllowances(1L))
                 .isInstanceOf(NotFoundException.class);
+    }
+
+    @Nested
+    @DisplayName("주휴수당 다음 주 근무 기록 기반 판단 테스트")
+    class WeeklyPaidLeaveNextWeekTest {
+
+        @Test
+        @DisplayName("다음 주 근무 기록 있을 때 주휴수당 정상 계산")
+        void recalculateAllowances_HasNextWeekRecords_CalculatesNormally() {
+            // given
+            WeeklyAllowance allowance = mock(WeeklyAllowance.class);
+            WorkerContract mockContract = mock(WorkerContract.class);
+            com.example.paycheck.domain.workplace.entity.Workplace mockWorkplace = mock(com.example.paycheck.domain.workplace.entity.Workplace.class);
+
+            when(allowance.getContract()).thenReturn(mockContract);
+            when(allowance.getWeekEndDate()).thenReturn(LocalDate.of(2024, 1, 7));
+            when(mockContract.getId()).thenReturn(1L);
+            when(mockContract.getWorkplace()).thenReturn(mockWorkplace);
+            when(mockWorkplace.getIsLessThanFiveEmployees()).thenReturn(false);
+
+            when(weeklyAllowanceRepository.findById(1L)).thenReturn(Optional.of(allowance));
+            when(weeklyAllowanceRepository.save(allowance)).thenReturn(allowance);
+            when(workRecordRepository.existsByContractIdAndWorkDateBetweenAndStatusNot(
+                    eq(1L), eq(LocalDate.of(2024, 1, 8)), eq(LocalDate.of(2024, 1, 14)), eq(WorkRecordStatus.DELETED)))
+                    .thenReturn(true);
+
+            // when
+            weeklyAllowanceService.recalculateAllowances(1L);
+
+            // then
+            verify(allowance).calculateWeeklyPaidLeave(true);
+        }
+
+        @Test
+        @DisplayName("다음 주 근무 기록 없을 때 주휴수당 미지급으로 계산")
+        void recalculateAllowances_NoNextWeekRecords_ZeroPay() {
+            // given
+            WeeklyAllowance allowance = mock(WeeklyAllowance.class);
+            WorkerContract mockContract = mock(WorkerContract.class);
+            com.example.paycheck.domain.workplace.entity.Workplace mockWorkplace = mock(com.example.paycheck.domain.workplace.entity.Workplace.class);
+
+            when(allowance.getContract()).thenReturn(mockContract);
+            when(allowance.getWeekEndDate()).thenReturn(LocalDate.of(2024, 1, 7));
+            when(mockContract.getId()).thenReturn(1L);
+            when(mockContract.getWorkplace()).thenReturn(mockWorkplace);
+            when(mockWorkplace.getIsLessThanFiveEmployees()).thenReturn(false);
+
+            when(weeklyAllowanceRepository.findById(1L)).thenReturn(Optional.of(allowance));
+            when(weeklyAllowanceRepository.save(allowance)).thenReturn(allowance);
+            when(workRecordRepository.existsByContractIdAndWorkDateBetweenAndStatusNot(
+                    eq(1L), eq(LocalDate.of(2024, 1, 8)), eq(LocalDate.of(2024, 1, 14)), eq(WorkRecordStatus.DELETED)))
+                    .thenReturn(false);
+
+            // when
+            weeklyAllowanceService.recalculateAllowances(1L);
+
+            // then
+            verify(allowance).calculateWeeklyPaidLeave(false);
+        }
+
+        @Test
+        @DisplayName("다음 주 근무 기록이 모두 DELETED이면 주휴수당 미지급")
+        void recalculateAllowances_AllDeletedNextWeekRecords_ZeroPay() {
+            // given
+            WeeklyAllowance allowance = mock(WeeklyAllowance.class);
+            WorkerContract mockContract = mock(WorkerContract.class);
+            com.example.paycheck.domain.workplace.entity.Workplace mockWorkplace = mock(com.example.paycheck.domain.workplace.entity.Workplace.class);
+
+            when(allowance.getContract()).thenReturn(mockContract);
+            when(allowance.getWeekEndDate()).thenReturn(LocalDate.of(2024, 1, 7));
+            when(mockContract.getId()).thenReturn(1L);
+            when(mockContract.getWorkplace()).thenReturn(mockWorkplace);
+            when(mockWorkplace.getIsLessThanFiveEmployees()).thenReturn(false);
+
+            when(weeklyAllowanceRepository.findById(1L)).thenReturn(Optional.of(allowance));
+            when(weeklyAllowanceRepository.save(allowance)).thenReturn(allowance);
+            // DELETED 상태만 있으면 existsBy...StatusNot은 false 반환
+            when(workRecordRepository.existsByContractIdAndWorkDateBetweenAndStatusNot(
+                    eq(1L), eq(LocalDate.of(2024, 1, 8)), eq(LocalDate.of(2024, 1, 14)), eq(WorkRecordStatus.DELETED)))
+                    .thenReturn(false);
+
+            // when
+            weeklyAllowanceService.recalculateAllowances(1L);
+
+            // then
+            verify(allowance).calculateWeeklyPaidLeave(false);
+        }
     }
 
     @Nested
@@ -168,7 +266,7 @@ class WeeklyAllowanceServiceTest {
                     new BigDecimal("15.00"), new BigDecimal("10000"));
 
             // when
-            allowance.calculateWeeklyPaidLeave();
+            allowance.calculateWeeklyPaidLeave(true);
 
             // then
             // 15 / 40 = 0.38 (HALF_UP) → 0.38 * 8 = 3.04 → 3.04 * 10000 = 30400
@@ -184,7 +282,7 @@ class WeeklyAllowanceServiceTest {
                     new BigDecimal("14.99"), new BigDecimal("10000"));
 
             // when
-            allowance.calculateWeeklyPaidLeave();
+            allowance.calculateWeeklyPaidLeave(true);
 
             // then
             assertThat(allowance.getWeeklyPaidLeaveAmount())

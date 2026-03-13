@@ -8,6 +8,8 @@ import com.example.paycheck.domain.employer.entity.Employer;
 import com.example.paycheck.domain.employer.repository.EmployerRepository;
 import com.example.paycheck.domain.fcm.repository.FcmTokenRepository;
 import com.example.paycheck.domain.notification.repository.NotificationRepository;
+import com.example.paycheck.domain.allowance.repository.WeeklyAllowanceRepository;
+import com.example.paycheck.domain.allowance.service.WeeklyAllowanceService;
 import com.example.paycheck.domain.settings.repository.UserSettingsRepository;
 import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.enums.UserType;
@@ -17,6 +19,7 @@ import com.example.paycheck.domain.workplace.entity.Workplace;
 import com.example.paycheck.domain.workplace.repository.WorkplaceRepository;
 import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
+import com.example.paycheck.domain.workrecord.service.WorkRecordCoordinatorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -56,6 +59,12 @@ class UserWithdrawServiceTest {
     private NotificationRepository notificationRepository;
     @Mock
     private UserSettingsRepository userSettingsRepository;
+    @Mock
+    private WeeklyAllowanceService weeklyAllowanceService;
+    @Mock
+    private WeeklyAllowanceRepository weeklyAllowanceRepository;
+    @Mock
+    private WorkRecordCoordinatorService workRecordCoordinatorService;
 
     @InjectMocks
     private UserWithdrawService userWithdrawService;
