@@ -2,6 +2,7 @@ package com.example.paycheck.api.notification;
 
 import com.example.paycheck.common.dto.ApiResponse;
 import com.example.paycheck.domain.notification.dto.NotificationPageResponse;
+import com.example.paycheck.domain.notification.dto.UnreadCountResponse;
 import com.example.paycheck.domain.notification.service.NotificationService;
 import com.example.paycheck.domain.notification.service.SseEmitterService;
 import com.example.paycheck.domain.user.entity.User;
@@ -50,8 +51,9 @@ public class NotificationController {
 
     @Operation(summary = "읽지 않은 알림 개수 조회", description = "로그인한 사용자의 읽지 않은 알림 개수를 조회합니다.")
     @GetMapping("/unread-count")
-    public ApiResponse<Long> getUnreadCount(@AuthenticationPrincipal User user) {
-        return ApiResponse.success(notificationService.getUnreadCount(user));
+    public ApiResponse<UnreadCountResponse> getUnreadCount(@AuthenticationPrincipal User user) {
+        long count = notificationService.getUnreadCount(user);
+        return ApiResponse.success(new UnreadCountResponse(count));
     }
 
     @Operation(summary = "알림 읽음 처리", description = "특정 알림을 읽음 상태로 변경합니다.")
