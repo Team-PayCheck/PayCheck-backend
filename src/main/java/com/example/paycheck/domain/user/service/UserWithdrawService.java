@@ -2,6 +2,7 @@ package com.example.paycheck.domain.user.service;
 
 import com.example.paycheck.common.exception.BadRequestException;
 import com.example.paycheck.common.exception.ErrorCode;
+import com.example.paycheck.common.exception.NotFoundException;
 import com.example.paycheck.domain.allowance.repository.WeeklyAllowanceRepository;
 import com.example.paycheck.domain.allowance.service.WeeklyAllowanceService;
 import com.example.paycheck.domain.auth.repository.RefreshTokenRepository;
@@ -14,6 +15,7 @@ import com.example.paycheck.domain.notification.repository.NotificationRepositor
 import com.example.paycheck.domain.settings.repository.UserSettingsRepository;
 import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.enums.UserType;
+import com.example.paycheck.domain.user.repository.UserRepository;
 import com.example.paycheck.domain.worker.entity.Worker;
 import com.example.paycheck.domain.worker.repository.WorkerRepository;
 import com.example.paycheck.domain.workplace.entity.Workplace;
@@ -47,6 +49,7 @@ public class UserWithdrawService {
     private final FcmTokenRepository fcmTokenRepository;
     private final NotificationRepository notificationRepository;
     private final UserSettingsRepository userSettingsRepository;
+    private final UserRepository userRepository;
 
     /**
      * 회원 탈퇴 처리
@@ -63,7 +66,11 @@ public class UserWithdrawService {
         }
 
         cleanupCommonData(user);
-        user.withdraw();
+
+        // detached 엔티티를 managed 엔티티로 다시 로드하여 변경사항이 DB에 반영되도록 함
+        User managedUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+        managedUser.withdraw();
 
         log.info("회원 탈퇴 완료: userId={}, userType={}", user.getId(), user.getUserType());
     }

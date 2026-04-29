@@ -12,6 +12,7 @@ import com.example.paycheck.domain.allowance.repository.WeeklyAllowanceRepositor
 import com.example.paycheck.domain.allowance.service.WeeklyAllowanceService;
 import com.example.paycheck.domain.settings.repository.UserSettingsRepository;
 import com.example.paycheck.domain.user.entity.User;
+import com.example.paycheck.domain.user.repository.UserRepository;
 import com.example.paycheck.domain.user.enums.UserType;
 import com.example.paycheck.domain.worker.entity.Worker;
 import com.example.paycheck.domain.worker.repository.WorkerRepository;
@@ -65,6 +66,8 @@ class UserWithdrawServiceTest {
     private WeeklyAllowanceRepository weeklyAllowanceRepository;
     @Mock
     private WorkRecordCoordinatorService workRecordCoordinatorService;
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private UserWithdrawService userWithdrawService;
@@ -118,6 +121,7 @@ class UserWithdrawServiceTest {
         when(workRecordRepository.bulkUpdateStatusByContractIdAndStatus(
                 eq(contract.getId()), eq(WorkRecordStatus.SCHEDULED), eq(WorkRecordStatus.DELETED)))
                 .thenReturn(3);
+        when(userRepository.findById(employer.getId())).thenReturn(Optional.of(employer));
 
         // when
         userWithdrawService.withdraw(employer);
@@ -160,6 +164,7 @@ class UserWithdrawServiceTest {
         when(workerRepository.findByUserId(worker.getId())).thenReturn(Optional.of(workerEntity));
         when(workerContractRepository.findByWorkerId(workerEntity.getId()))
                 .thenReturn(List.of(activeContract, inactiveContract));
+        when(userRepository.findById(worker.getId())).thenReturn(Optional.of(worker));
 
         // when
         userWithdrawService.withdraw(worker);
@@ -192,6 +197,7 @@ class UserWithdrawServiceTest {
     void withdraw_cleanupsCommonData() {
         // given
         when(workerRepository.findByUserId(worker.getId())).thenReturn(Optional.empty());
+        when(userRepository.findById(worker.getId())).thenReturn(Optional.of(worker));
 
         // when
         userWithdrawService.withdraw(worker);
@@ -208,6 +214,7 @@ class UserWithdrawServiceTest {
     void withdraw_noProfile_noException() {
         // given
         when(employerRepository.findByUserId(employer.getId())).thenReturn(Optional.empty());
+        when(userRepository.findById(employer.getId())).thenReturn(Optional.of(employer));
 
         // when
         userWithdrawService.withdraw(employer);
@@ -236,6 +243,7 @@ class UserWithdrawServiceTest {
 
         when(workerRepository.findByUserId(worker.getId())).thenReturn(Optional.of(workerEntity));
         when(workerContractRepository.findByWorkerId(workerEntity.getId())).thenReturn(List.of(contract));
+        when(userRepository.findById(worker.getId())).thenReturn(Optional.of(worker));
 
         // when
         userWithdrawService.withdraw(worker);

@@ -38,6 +38,9 @@ public class User extends BaseEntity {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
+    @Version
+    private Long version;
+
     public void updateProfile(String name, String phone, String profileImageUrl) {
         if (name != null) this.name = name;
         if (phone != null) this.phone = phone;
