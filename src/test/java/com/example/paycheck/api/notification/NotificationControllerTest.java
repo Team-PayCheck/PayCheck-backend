@@ -6,11 +6,14 @@ import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.enums.UserType;
 import com.example.paycheck.global.security.JwtAuthenticationFilter;
 import com.example.paycheck.global.security.JwtTokenProvider;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -40,22 +43,30 @@ class NotificationControllerTest {
     @MockitoBean
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Test
-    @DisplayName("읽지 않은 알림 개수 조회 - 응답 포맷 검증")
-    void getUnreadCount_ResponseFormat() throws Exception {
-        // given
-        given(notificationService.getUnreadCount(any(User.class))).willReturn(5L);
+    private User testUser;
 
-        User testUser = User.builder()
+    @BeforeEach
+    void setUp() {
+        testUser = User.builder()
                 .id(1L)
                 .kakaoId("12345")
                 .name("테스트")
                 .userType(UserType.WORKER)
                 .build();
 
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(testUser, null, null);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    @Test
+    @DisplayName("읽지 않은 알림 개수 조회 - 응답 포맷 검증")
+    void 읽지_않은_알림_개수_조회() throws Exception {
+        // given
+        given(notificationService.getUnreadCount(any(User.class))).willReturn(5L);
+
         // when & then
-        mockMvc.perform(get("/api/notifications/unread-count")
-                        .requestAttr("user", testUser))
+        mockMvc.perform(get("/api/notifications/unread-count"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.count").value(5));
