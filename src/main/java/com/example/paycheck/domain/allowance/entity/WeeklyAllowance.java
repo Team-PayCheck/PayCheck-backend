@@ -36,8 +36,9 @@ public class WeeklyAllowance extends BaseEntity {
      */
     private static final BigDecimal PAID_LEAVE_HOURS = BigDecimal.valueOf(8);
 
-    // 연장근로 수당 가산율 (1.5배)
-    private static final BigDecimal OVERTIME_RATE = BigDecimal.valueOf(1.5);
+    // 연장근로 수당 가산율 (0.5배 가산)
+    // 주 40시간 초과 시, 이미 기본급(1.0)은 WorkRecord에서 지급되었으므로 0.5배만 추가 가산함
+    private static final BigDecimal OVERTIME_RATE = BigDecimal.valueOf(0.5);
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -87,7 +88,8 @@ public class WeeklyAllowance extends BaseEntity {
 
     /**
      * 연장수당 금액
-     * 초과 시간 × 기본시급 × 1.5배율로 계산됨
+     * 초과 시간 × 기본시급 × 0.5배율(연장 가산분)로 계산됨
+     * 기본급(1.0)은 WorkRecord에 포함되어 합산되므로, 주간 수당에서는 가산분만 관리
      * overtimeHours와 함께 관리되어 조회 성능 최적화
      */
     @Column(name = "overtime_amount", precision = 12, scale = 2)
