@@ -11,6 +11,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
@@ -94,14 +95,14 @@ public class TokenService {
     @Transactional
     public TokenPair refreshAccessToken(String refreshTokenString) {
         try {
-            // Refresh Token 검증
-            if (!jwtTokenProvider.validateToken(refreshTokenString)) {
+            // Refresh Token 검증 (만료된 경우 ExpiredJwtException throw)
+            if (!jwtTokenProvider.validateRefreshToken(refreshTokenString)) {
                 throw new UnauthorizedException(ErrorCode.INVALID_REFRESH_TOKEN, "유효하지 않은 Refresh Token입니다.");
             }
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
             // JWT 자체가 만료된 경우 DB에서도 삭제 시도 (best-effort)
-            refreshTokenRepository.findByToken(refreshTokenString)
-                    .ifPresent(refreshTokenRepository::delete);
+            // @Transactional이므로 롤백되지 않도록 별도 트랜잭션에서 실행
+            deleteExpiredToken(refreshTokenString);
             throw new UnauthorizedException(ErrorCode.EXPIRED_REFRESH_TOKEN, "만료된 Refresh Token입니다. 다시 로그인해주세요.");
         }
 
@@ -129,5 +130,17 @@ public class TokenService {
     @Transactional
     public void revokeRefreshToken(Long userId) {
         refreshTokenRepository.deleteByUserId(userId);
+    }
+
+    /**
+     * 만료된 토큰 삭제 (별도 트랜잭션에서 실행)
+     * 예외 발생 시에도 삭제가 커밋되어야 하므로 REQUIRES_NEW 사용
+     *
+     * @param tokenString 삭제할 토큰 문자열
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    protected void deleteExpiredToken(String tokenString) {
+        refreshTokenRepository.findByToken(tokenString)
+                .ifPresent(refreshTokenRepository::delete);
     }
 }

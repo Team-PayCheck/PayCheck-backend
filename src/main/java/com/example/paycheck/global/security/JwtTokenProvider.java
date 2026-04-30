@@ -63,9 +63,27 @@ public class JwtTokenProvider {
     /**
      * JWT 토큰 유효성 검증
      * @param token JWT 토큰
-     * @return 유효하면 true, 아니면 false
+     * @return 유효하면 true, 아니면 false (만료 포함)
      */
     public boolean validateToken(String token) {
+        try {
+            Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Refresh Token 유효성 검증 (만료된 토큰은 ExpiredJwtException throw)
+     * @param token JWT 토큰
+     * @return 유효하면 true
+     * @throws ExpiredJwtException 토큰이 만료된 경우
+     */
+    public boolean validateRefreshToken(String token) {
         try {
             Jwts.parser()
                     .verifyWith(secretKey)
