@@ -1,6 +1,7 @@
 package com.example.paycheck.domain.user.service;
 
 import com.example.paycheck.common.exception.BadRequestException;
+import com.example.paycheck.common.exception.NotFoundException;
 import com.example.paycheck.domain.auth.repository.RefreshTokenRepository;
 import com.example.paycheck.domain.contract.entity.WorkerContract;
 import com.example.paycheck.domain.contract.repository.WorkerContractRepository;
@@ -185,7 +186,14 @@ class UserWithdrawServiceTest {
     @DisplayName("이미 탈퇴한 사용자 재탈퇴 시 예외 발생")
     void withdraw_alreadyDeleted_throwsException() {
         // given
-        employer.withdraw();
+        User deletedEmployer = User.builder()
+                .id(1L)
+                .kakaoId("kakao_employer")
+                .name("고용주")
+                .userType(UserType.EMPLOYER)
+                .build();
+        deletedEmployer.withdraw();
+        when(userRepository.findById(employer.getId())).thenReturn(Optional.of(deletedEmployer));
 
         // when & then
         assertThatThrownBy(() -> userWithdrawService.withdraw(employer))
@@ -254,5 +262,17 @@ class UserWithdrawServiceTest {
         // COMPLETED 상태로의 업데이트는 호출되지 않음
         verify(workRecordRepository, never()).bulkUpdateStatusByContractIdAndStatus(
                 any(), eq(WorkRecordStatus.COMPLETED), any());
+    }
+
+    @Test
+    @DisplayName("findById 결과가 비어있을 때 NotFoundException 발생")
+    void withdraw_userNotFound_throwsNotFoundException() {
+        // given
+        when(userRepository.findById(employer.getId())).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userWithdrawService.withdraw(employer))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("사용자를 찾을 수 없습니다");
     }
 }

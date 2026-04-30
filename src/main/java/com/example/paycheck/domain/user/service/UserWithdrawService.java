@@ -55,24 +55,24 @@ public class UserWithdrawService {
      * 회원 탈퇴 처리
      */
     public void withdraw(User user) {
-        if (user.isDeleted()) {
+        // managed 엔티티를 먼저 로드하여 DB 기준으로 검증/처리 수행
+        User managedUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
+        if (managedUser.isDeleted()) {
             throw new BadRequestException(ErrorCode.USER_ALREADY_DELETED, "이미 탈퇴한 사용자입니다.");
         }
 
-        if (user.getUserType() == UserType.EMPLOYER) {
-            withdrawEmployer(user);
+        if (managedUser.getUserType() == UserType.EMPLOYER) {
+            withdrawEmployer(managedUser);
         } else {
-            withdrawWorker(user);
+            withdrawWorker(managedUser);
         }
 
-        cleanupCommonData(user);
-
-        // detached 엔티티를 managed 엔티티로 다시 로드하여 변경사항이 DB에 반영되도록 함
-        User managedUser = userRepository.findById(user.getId())
-                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+        cleanupCommonData(managedUser);
         managedUser.withdraw();
 
-        log.info("회원 탈퇴 완료: userId={}, userType={}", user.getId(), user.getUserType());
+        log.info("회원 탈퇴 완료: userId={}, userType={}", managedUser.getId(), managedUser.getUserType());
     }
 
     /**
