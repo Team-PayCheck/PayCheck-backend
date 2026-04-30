@@ -21,6 +21,7 @@ public class WorkerDto {
         private Long userId;
         private String name;
         private String phone;
+        private String profileImageUrl;
         private String workerCode;
         private String accountNumber;
         private String bankName;
@@ -31,6 +32,7 @@ public class WorkerDto {
                     .userId(worker.getUser().getId())
                     .name(worker.getUser().getName())
                     .phone(worker.getUser().getPhone())
+                    .profileImageUrl(worker.getUser().getProfileImageUrl())
                     .workerCode(worker.getWorkerCode())
                     .accountNumber(worker.getAccountNumber())
                     .bankName(worker.getBankName())

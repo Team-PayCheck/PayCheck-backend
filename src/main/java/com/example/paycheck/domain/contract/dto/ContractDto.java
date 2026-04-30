@@ -79,6 +79,7 @@ public class ContractDto {
         private String workplaceName;
         private Long workerId;
         private String workerName;
+        private String profileImageUrl;
         private String workerCode;
         private String workerPhone;
         private BigDecimal hourlyWage;
@@ -96,6 +97,7 @@ public class ContractDto {
                     .workplaceName(contract.getWorkplace().getName())
                     .workerId(contract.getWorker().getId())
                     .workerName(contract.getWorker().getUser().getName())
+                    .profileImageUrl(contract.getWorker().getUser().getProfileImageUrl())
                     .workerCode(contract.getWorker().getWorkerCode())
                     .workerPhone(contract.getWorker().getUser().getPhone())
                     .hourlyWage(contract.getHourlyWage())
@@ -119,6 +121,7 @@ public class ContractDto {
         private Long workplaceId;
         private String workplaceName;
         private String workerName;
+        private String profileImageUrl;
         private String workerCode;
         private String workerPhone;
         private BigDecimal hourlyWage;
@@ -134,6 +137,7 @@ public class ContractDto {
                     .workplaceId(contract.getWorkplace().getId())
                     .workplaceName(contract.getWorkplace().getName())
                     .workerName(contract.getWorker().getUser().getName())
+                    .profileImageUrl(contract.getWorker().getUser().getProfileImageUrl())
                     .workerCode(contract.getWorker().getWorkerCode())
                     .workerPhone(contract.getWorker().getUser().getPhone())
                     .hourlyWage(contract.getHourlyWage())
