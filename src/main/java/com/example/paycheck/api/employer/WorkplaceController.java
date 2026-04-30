@@ -36,8 +36,10 @@ public class WorkplaceController {
     @Operation(summary = "내 사업장 목록 조회", description = "로그인한 고용주의 사업장 목록을 조회합니다.")
     @GetMapping
     public ApiResponse<List<WorkplaceDto.ListResponse>> getWorkplaces(
-            @AuthenticationPrincipal User user) {
-        return ApiResponse.success(workplaceService.getWorkplacesByUserId(user.getId()));
+            @AuthenticationPrincipal User user,
+            @Parameter(description = "활성화 여부 필터 (true: 활성, false: 비활성, 미전송: 전체)")
+            @RequestParam(required = false) Boolean isActive) {
+        return ApiResponse.success(workplaceService.getWorkplacesByUserId(user.getId(), isActive));
     }
 
     @Operation(summary = "사업장 상세 조회", description = "특정 사업장의 상세 정보를 조회합니다.")

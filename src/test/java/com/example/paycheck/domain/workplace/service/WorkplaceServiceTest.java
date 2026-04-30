@@ -140,8 +140,8 @@ class WorkplaceServiceTest {
     }
 
     @Test
-    @DisplayName("사용자 ID로 사업장 목록 조회 성공")
-    void getWorkplacesByUserId_Success() {
+    @DisplayName("사용자 ID로 사업장 목록 조회 성공 - 활성 사업장만 조회")
+    void getWorkplacesByUserId_ActiveOnly_Success() {
         // given
         when(employerService.getEmployerByUserId(1L)).thenReturn(testEmployer);
         when(workplaceRepository.findByEmployerIdAndIsActive(1L, true))
@@ -149,12 +149,30 @@ class WorkplaceServiceTest {
         when(workerContractRepository.countByWorkplaceIdAndIsActive(1L, true)).thenReturn(5);
 
         // when
-        List<WorkplaceDto.ListResponse> result = workplaceService.getWorkplacesByUserId(1L);
+        List<WorkplaceDto.ListResponse> result = workplaceService.getWorkplacesByUserId(1L, true);
 
         // then
         assertThat(result).isNotEmpty();
         verify(employerService).getEmployerByUserId(1L);
         verify(workplaceRepository).findByEmployerIdAndIsActive(1L, true);
+    }
+
+    @Test
+    @DisplayName("사용자 ID로 사업장 목록 조회 성공 - 전체 조회")
+    void getWorkplacesByUserId_All_Success() {
+        // given
+        when(employerService.getEmployerByUserId(1L)).thenReturn(testEmployer);
+        when(workplaceRepository.findByEmployerId(1L))
+                .thenReturn(Collections.singletonList(testWorkplace));
+        when(workerContractRepository.countByWorkplaceIdAndIsActive(1L, true)).thenReturn(5);
+
+        // when
+        List<WorkplaceDto.ListResponse> result = workplaceService.getWorkplacesByUserId(1L, null);
+
+        // then
+        assertThat(result).isNotEmpty();
+        verify(employerService).getEmployerByUserId(1L);
+        verify(workplaceRepository).findByEmployerId(1L);
     }
 
     @Test

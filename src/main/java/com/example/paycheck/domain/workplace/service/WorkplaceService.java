@@ -44,10 +44,16 @@ public class WorkplaceService {
         return WorkplaceDto.Response.from(saved);
     }
 
-    public List<WorkplaceDto.ListResponse> getWorkplacesByUserId(Long userId) {
+    public List<WorkplaceDto.ListResponse> getWorkplacesByUserId(Long userId, Boolean isActive) {
         Employer employer = employerService.getEmployerByUserId(userId);
 
-        List<Workplace> workplaces = workplaceRepository.findByEmployerIdAndIsActive(employer.getId(), true);
+        List<Workplace> workplaces;
+        if (isActive != null) {
+            workplaces = workplaceRepository.findByEmployerIdAndIsActive(employer.getId(), isActive);
+        } else {
+            // 하위 호환성을 위해 기본적으로 활성 사업장만 조회
+            workplaces = workplaceRepository.findByEmployerIdAndIsActive(employer.getId(), true);
+        }
 
         return workplaces.stream()
                 .map(workplace -> {
