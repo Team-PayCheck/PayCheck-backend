@@ -93,16 +93,23 @@ public class TokenService {
      */
     @Transactional
     public TokenPair refreshAccessToken(String refreshTokenString) {
-        // Refresh Token 검증
-        if (!jwtTokenProvider.validateToken(refreshTokenString)) {
-            throw new UnauthorizedException(ErrorCode.INVALID_REFRESH_TOKEN, "유효하지 않은 Refresh Token입니다.");
+        try {
+            // Refresh Token 검증
+            if (!jwtTokenProvider.validateToken(refreshTokenString)) {
+                throw new UnauthorizedException(ErrorCode.INVALID_REFRESH_TOKEN, "유효하지 않은 Refresh Token입니다.");
+            }
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            // JWT 자체가 만료된 경우 DB에서도 삭제 시도 (best-effort)
+            refreshTokenRepository.findByToken(refreshTokenString)
+                    .ifPresent(refreshTokenRepository::delete);
+            throw new UnauthorizedException(ErrorCode.EXPIRED_REFRESH_TOKEN, "만료된 Refresh Token입니다. 다시 로그인해주세요.");
         }
 
         // DB에서 Refresh Token 조회
         RefreshToken refreshToken = refreshTokenRepository.findByToken(refreshTokenString)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.REFRESH_TOKEN_NOT_FOUND, "Refresh Token을 찾을 수 없습니다."));
 
-        // 만료 확인
+        // 만료 확인 (DB에 저장된 만료 시간 기준)
         if (refreshToken.isExpired()) {
             refreshTokenRepository.delete(refreshToken);
             throw new UnauthorizedException(ErrorCode.EXPIRED_REFRESH_TOKEN, "만료된 Refresh Token입니다. 다시 로그인해주세요.");

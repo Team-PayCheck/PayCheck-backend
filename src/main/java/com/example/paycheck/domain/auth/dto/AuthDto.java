@@ -114,6 +114,7 @@ public class AuthDto {
     @Schema(name = "AuthRefreshResponse")
     public static class RefreshResponse {
         private String accessToken;
+        private String refreshToken;
     }
 
     /**

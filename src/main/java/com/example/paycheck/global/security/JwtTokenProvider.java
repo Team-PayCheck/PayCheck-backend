@@ -72,6 +72,8 @@ public class JwtTokenProvider {
                     .build()
                     .parseSignedClaims(token);
             return true;
+        } catch (ExpiredJwtException e) {
+            throw e; // 만료된 토큰은 별도 처리를 위해 던짐
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }

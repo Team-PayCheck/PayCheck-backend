@@ -145,6 +145,7 @@ public class AuthService {
         // 응답 DTO 생성
         AuthDto.RefreshResponse refreshResponse = AuthDto.RefreshResponse.builder()
                 .accessToken(tokenPair.getAccessToken())
+                .refreshToken(tokenPair.getRefreshToken())
                 .build();
 
         return RefreshResult.builder()
