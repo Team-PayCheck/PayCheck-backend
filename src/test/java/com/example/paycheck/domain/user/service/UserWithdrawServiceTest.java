@@ -1,6 +1,7 @@
 package com.example.paycheck.domain.user.service;
 
 import com.example.paycheck.common.exception.BadRequestException;
+import com.example.paycheck.common.exception.NotFoundException;
 import com.example.paycheck.domain.auth.repository.RefreshTokenRepository;
 import com.example.paycheck.domain.contract.entity.WorkerContract;
 import com.example.paycheck.domain.contract.repository.WorkerContractRepository;
@@ -12,6 +13,7 @@ import com.example.paycheck.domain.allowance.repository.WeeklyAllowanceRepositor
 import com.example.paycheck.domain.allowance.service.WeeklyAllowanceService;
 import com.example.paycheck.domain.settings.repository.UserSettingsRepository;
 import com.example.paycheck.domain.user.entity.User;
+import com.example.paycheck.domain.user.repository.UserRepository;
 import com.example.paycheck.domain.user.enums.UserType;
 import com.example.paycheck.domain.worker.entity.Worker;
 import com.example.paycheck.domain.worker.repository.WorkerRepository;
@@ -65,6 +67,8 @@ class UserWithdrawServiceTest {
     private WeeklyAllowanceRepository weeklyAllowanceRepository;
     @Mock
     private WorkRecordCoordinatorService workRecordCoordinatorService;
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private UserWithdrawService userWithdrawService;
@@ -118,6 +122,7 @@ class UserWithdrawServiceTest {
         when(workRecordRepository.bulkUpdateStatusByContractIdAndStatus(
                 eq(contract.getId()), eq(WorkRecordStatus.SCHEDULED), eq(WorkRecordStatus.DELETED)))
                 .thenReturn(3);
+        when(userRepository.findById(employer.getId())).thenReturn(Optional.of(employer));
 
         // when
         userWithdrawService.withdraw(employer);
@@ -160,6 +165,7 @@ class UserWithdrawServiceTest {
         when(workerRepository.findByUserId(worker.getId())).thenReturn(Optional.of(workerEntity));
         when(workerContractRepository.findByWorkerId(workerEntity.getId()))
                 .thenReturn(List.of(activeContract, inactiveContract));
+        when(userRepository.findById(worker.getId())).thenReturn(Optional.of(worker));
 
         // when
         userWithdrawService.withdraw(worker);
@@ -180,7 +186,14 @@ class UserWithdrawServiceTest {
     @DisplayName("이미 탈퇴한 사용자 재탈퇴 시 예외 발생")
     void withdraw_alreadyDeleted_throwsException() {
         // given
-        employer.withdraw();
+        User deletedEmployer = User.builder()
+                .id(1L)
+                .kakaoId("kakao_employer")
+                .name("고용주")
+                .userType(UserType.EMPLOYER)
+                .build();
+        deletedEmployer.withdraw();
+        when(userRepository.findById(employer.getId())).thenReturn(Optional.of(deletedEmployer));
 
         // when & then
         assertThatThrownBy(() -> userWithdrawService.withdraw(employer))
@@ -192,6 +205,7 @@ class UserWithdrawServiceTest {
     void withdraw_cleanupsCommonData() {
         // given
         when(workerRepository.findByUserId(worker.getId())).thenReturn(Optional.empty());
+        when(userRepository.findById(worker.getId())).thenReturn(Optional.of(worker));
 
         // when
         userWithdrawService.withdraw(worker);
@@ -208,6 +222,7 @@ class UserWithdrawServiceTest {
     void withdraw_noProfile_noException() {
         // given
         when(employerRepository.findByUserId(employer.getId())).thenReturn(Optional.empty());
+        when(userRepository.findById(employer.getId())).thenReturn(Optional.of(employer));
 
         // when
         userWithdrawService.withdraw(employer);
@@ -236,6 +251,7 @@ class UserWithdrawServiceTest {
 
         when(workerRepository.findByUserId(worker.getId())).thenReturn(Optional.of(workerEntity));
         when(workerContractRepository.findByWorkerId(workerEntity.getId())).thenReturn(List.of(contract));
+        when(userRepository.findById(worker.getId())).thenReturn(Optional.of(worker));
 
         // when
         userWithdrawService.withdraw(worker);
@@ -246,5 +262,17 @@ class UserWithdrawServiceTest {
         // COMPLETED 상태로의 업데이트는 호출되지 않음
         verify(workRecordRepository, never()).bulkUpdateStatusByContractIdAndStatus(
                 any(), eq(WorkRecordStatus.COMPLETED), any());
+    }
+
+    @Test
+    @DisplayName("findById 결과가 비어있을 때 NotFoundException 발생")
+    void withdraw_userNotFound_throwsNotFoundException() {
+        // given
+        when(userRepository.findById(employer.getId())).thenReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userWithdrawService.withdraw(employer))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessageContaining("사용자를 찾을 수 없습니다");
     }
 }
