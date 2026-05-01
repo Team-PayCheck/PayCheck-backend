@@ -116,6 +116,7 @@ class UserServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getProfileImageUrl()).isEqualTo(uploadedUrl);
+        assertThat(testUser.getProfileImageUrl()).isEqualTo(uploadedUrl);
         verify(userRepository).findById(1L);
         verify(profileImageStorageService).uploadProfileImage(1L, file);
     }
