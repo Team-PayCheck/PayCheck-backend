@@ -21,7 +21,7 @@ class UserSettingsTest {
                 .id(1L)
                 .user(mockUser)
                 .notificationEnabled(true)
-                .pushEnabled(true)
+                .pushEnabled(false)
                 .emailEnabled(false)
                 .smsEnabled(false)
                 .scheduleChangeAlertEnabled(true)
@@ -76,7 +76,7 @@ class UserSettingsTest {
 
         // then
         assertThat(userSettings.getNotificationEnabled()).isFalse();
-        assertThat(userSettings.getPushEnabled()).isTrue(); // unchanged
+        assertThat(userSettings.getPushEnabled()).isFalse(); // unchanged
         assertThat(userSettings.getEmailEnabled()).isFalse(); // unchanged
     }
 
@@ -115,7 +115,7 @@ class UserSettingsTest {
 
         // then
         assertThat(defaultSettings.getNotificationEnabled()).isTrue();
-        assertThat(defaultSettings.getPushEnabled()).isTrue();
+        assertThat(defaultSettings.getPushEnabled()).isFalse();
         assertThat(defaultSettings.getEmailEnabled()).isFalse();
         assertThat(defaultSettings.getSmsEnabled()).isFalse();
         assertThat(defaultSettings.getScheduleChangeAlertEnabled()).isTrue();
