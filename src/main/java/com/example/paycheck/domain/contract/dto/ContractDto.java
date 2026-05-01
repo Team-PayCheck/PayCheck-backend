@@ -1,6 +1,8 @@
 package com.example.paycheck.domain.contract.dto;
 
 import com.example.paycheck.domain.contract.entity.WorkerContract;
+import com.example.paycheck.domain.user.entity.User;
+import com.example.paycheck.domain.worker.entity.Worker;
 import com.example.paycheck.domain.salary.util.DeductionCalculator;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
@@ -91,15 +93,17 @@ public class ContractDto {
         private DeductionCalculator.PayrollDeductionType payrollDeductionType;
 
         public static Response from(WorkerContract contract) {
+            Worker worker = contract.getWorker();
+            User user = worker != null ? worker.getUser() : null;
             return Response.builder()
                     .id(contract.getId())
                     .workplaceId(contract.getWorkplace().getId())
                     .workplaceName(contract.getWorkplace().getName())
-                    .workerId(contract.getWorker().getId())
-                    .workerName(contract.getWorker().getUser().getName())
-                    .profileImageUrl(contract.getWorker().getUser().getProfileImageUrl())
-                    .workerCode(contract.getWorker().getWorkerCode())
-                    .workerPhone(contract.getWorker().getUser().getPhone())
+                    .workerId(worker != null ? worker.getId() : null)
+                    .workerName(user != null ? user.getName() : null)
+                    .profileImageUrl(user != null ? user.getProfileImageUrl() : null)
+                    .workerCode(worker != null ? worker.getWorkerCode() : null)
+                    .workerPhone(user != null ? user.getPhone() : null)
                     .hourlyWage(contract.getHourlyWage())
                     .workSchedules(contract.getWorkSchedules())
                     .contractStartDate(contract.getContractStartDate())
@@ -132,14 +136,16 @@ public class ContractDto {
         private Boolean isActive;
 
         public static ListResponse from(WorkerContract contract) {
+            Worker worker = contract.getWorker();
+            User user = worker != null ? worker.getUser() : null;
             return ListResponse.builder()
                     .id(contract.getId())
                     .workplaceId(contract.getWorkplace().getId())
                     .workplaceName(contract.getWorkplace().getName())
-                    .workerName(contract.getWorker().getUser().getName())
-                    .profileImageUrl(contract.getWorker().getUser().getProfileImageUrl())
-                    .workerCode(contract.getWorker().getWorkerCode())
-                    .workerPhone(contract.getWorker().getUser().getPhone())
+                    .workerName(user != null ? user.getName() : null)
+                    .profileImageUrl(user != null ? user.getProfileImageUrl() : null)
+                    .workerCode(worker != null ? worker.getWorkerCode() : null)
+                    .workerPhone(user != null ? user.getPhone() : null)
                     .hourlyWage(contract.getHourlyWage())
                     .contractStartDate(contract.getContractStartDate())
                     .contractEndDate(contract.getContractEndDate())

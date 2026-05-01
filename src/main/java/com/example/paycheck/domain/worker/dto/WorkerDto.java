@@ -1,5 +1,6 @@
 package com.example.paycheck.domain.worker.dto;
 
+import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.worker.entity.Worker;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -27,12 +28,13 @@ public class WorkerDto {
         private String bankName;
 
         public static Response from(Worker worker) {
+            User user = worker.getUser();
             return Response.builder()
                     .id(worker.getId())
-                    .userId(worker.getUser().getId())
-                    .name(worker.getUser().getName())
-                    .phone(worker.getUser().getPhone())
-                    .profileImageUrl(worker.getUser().getProfileImageUrl())
+                    .userId(user != null ? user.getId() : null)
+                    .name(user != null ? user.getName() : null)
+                    .phone(user != null ? user.getPhone() : null)
+                    .profileImageUrl(user != null ? user.getProfileImageUrl() : null)
                     .workerCode(worker.getWorkerCode())
                     .accountNumber(worker.getAccountNumber())
                     .bankName(worker.getBankName())
