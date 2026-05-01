@@ -14,6 +14,7 @@ import com.example.paycheck.domain.worker.service.WorkerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +26,7 @@ public class UserService {
     private final WorkerService workerService;
     private final EmployerService employerService;
     private final UserSettingsService userSettingsService;
+    private final ProfileImageStorageService profileImageStorageService;
 
     public UserDto.Response getUserById(Long userId) {
         User user = userRepository.findById(userId)
@@ -46,6 +48,14 @@ public class UserService {
         user.updateProfile(request.getName(), request.getPhone(), request.getProfileImageUrl());
 
         return UserDto.Response.from(user);
+    }
+
+    public UserDto.ProfileImageUploadResponse uploadProfileImage(Long userId, MultipartFile file) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
+
+        String profileImageUrl = profileImageStorageService.uploadProfileImage(userId, file);
+        return UserDto.ProfileImageUploadResponse.from(profileImageUrl);
     }
 
     @Transactional
