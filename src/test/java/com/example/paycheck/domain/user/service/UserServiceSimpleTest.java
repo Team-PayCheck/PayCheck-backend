@@ -17,6 +17,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.util.Optional;
 
@@ -41,6 +42,12 @@ class UserServiceSimpleTest {
 
     @Mock
     private UserSettingsService userSettingsService;
+
+    @Mock
+    private ProfileImageStorageService profileImageStorageService;
+
+    @Mock
+    private ProfileImageUrlResolver profileImageUrlResolver;
 
     @InjectMocks
     private UserService userService;
@@ -72,6 +79,8 @@ class UserServiceSimpleTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testWorker));
         when(workerRepository.findByUserId(1L)).thenReturn(Optional.of(mockWorker));
+        when(profileImageUrlResolver.resolve("https://example.com/worker.jpg"))
+                .thenReturn("https://example.com/worker.jpg");
 
         // when
         UserDto.Response result = userService.getUserById(1L);
@@ -81,6 +90,7 @@ class UserServiceSimpleTest {
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getName()).isEqualTo("근로자 테스트");
         assertThat(result.getUserType()).isEqualTo(UserType.WORKER);
+        assertThat(result.getProfileImageUrl()).isEqualTo("https://example.com/worker.jpg");
         assertThat(result.getWorkerCode()).isEqualTo("ABC123");
         assertThat(result.getBankName()).isEqualTo("카카오뱅크");
         assertThat(result.getAccountNumber()).isEqualTo("123456789012");
@@ -114,13 +124,17 @@ class UserServiceSimpleTest {
                 .build();
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testWorker));
+        when(workerRepository.findByUserId(1L)).thenReturn(Optional.of(Worker.builder().user(testWorker).build()));
+        when(profileImageUrlResolver.resolve("https://example.com/new_profile.jpg"))
+                .thenReturn("https://example.com/new_profile.jpg");
 
         // when
         UserDto.Response result = userService.updateUser(1L, request);
 
         // then
         assertThat(result).isNotNull();
-        verify(userRepository).findById(1L);
+        assertThat(result.getProfileImageUrl()).isEqualTo("https://example.com/new_profile.jpg");
+        verify(userRepository, times(2)).findById(1L);
     }
 
     @Test
@@ -136,5 +150,31 @@ class UserServiceSimpleTest {
         // when & then
         assertThatThrownBy(() -> userService.updateUser(999L, request))
                 .isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("프로필 이미지 업로드 성공")
+    void updateProfileImage_Success() {
+        // given
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "profile.png",
+                "image/png",
+                "image".getBytes()
+        );
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testWorker));
+        when(workerRepository.findByUserId(1L)).thenReturn(Optional.of(Worker.builder().user(testWorker).build()));
+        when(profileImageStorageService.store(file)).thenReturn("/uploads/profile-images/new-profile.png");
+        when(profileImageUrlResolver.resolve("/uploads/profile-images/new-profile.png"))
+                .thenReturn("http://localhost:8080/uploads/profile-images/new-profile.png");
+
+        // when
+        UserDto.Response result = userService.updateProfileImage(1L, file);
+
+        // then
+        assertThat(result.getProfileImageUrl()).isEqualTo("http://localhost:8080/uploads/profile-images/new-profile.png");
+        verify(profileImageStorageService).store(file);
+        verify(profileImageStorageService).deleteIfStoredLocally("https://example.com/worker.jpg");
     }
 }

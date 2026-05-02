@@ -45,6 +45,12 @@ class UserServiceTest {
     @Mock
     private UserSettingsService userSettingsService;
 
+    @Mock
+    private ProfileImageStorageService profileImageStorageService;
+
+    @Mock
+    private ProfileImageUrlResolver profileImageUrlResolver;
+
     @InjectMocks
     private UserService userService;
 

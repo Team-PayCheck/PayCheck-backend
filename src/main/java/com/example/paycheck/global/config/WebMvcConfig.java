@@ -1,6 +1,7 @@
 package com.example.paycheck.global.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.ByteArrayHttpMessageConverter;
@@ -13,8 +14,10 @@ import org.springframework.web.servlet.config.annotation.ContentNegotiationConfi
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.List;
 
 /**
@@ -33,9 +36,16 @@ import java.util.List;
 public class WebMvcConfig implements WebMvcConfigurer {
 
     private final ObjectMapper objectMapper;
+    private final String profileImageDirectory;
+    private final String profileImageUriPrefix;
 
-    public WebMvcConfig(ObjectMapper objectMapper) {
+    public WebMvcConfig(
+            ObjectMapper objectMapper,
+            @Value("${app.upload.profile-image-dir:uploads/profile-images}") String profileImageDirectory,
+            @Value("${app.upload.profile-image-uri-prefix:/uploads/profile-images/}") String profileImageUriPrefix) {
         this.objectMapper = objectMapper;
+        this.profileImageDirectory = profileImageDirectory;
+        this.profileImageUriPrefix = normalizeUriPrefix(profileImageUriPrefix);
     }
 
     @Override
@@ -68,5 +78,27 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
         // XML 컨버터는 의도적으로 추가하지 않음
         // jackson-dataformat-xml은 RestTemplate에서 공공 API XML 응답 파싱에만 사용
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        String resourceLocation = Paths.get(profileImageDirectory).toAbsolutePath().normalize().toUri().toString();
+        if (!resourceLocation.endsWith("/")) {
+            resourceLocation = resourceLocation + "/";
+        }
+
+        registry.addResourceHandler(profileImageUriPrefix + "**")
+                .addResourceLocations(resourceLocation);
+    }
+
+    private String normalizeUriPrefix(String uriPrefix) {
+        String normalized = uriPrefix;
+        if (!normalized.startsWith("/")) {
+            normalized = "/" + normalized;
+        }
+        if (!normalized.endsWith("/")) {
+            normalized = normalized + "/";
+        }
+        return normalized;
     }
 }

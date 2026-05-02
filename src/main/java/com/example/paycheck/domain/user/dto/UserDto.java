@@ -32,24 +32,32 @@ public class UserDto {
         private String accountNumber;
 
         public static Response from(User user) {
+            return from(user, user.getProfileImageUrl());
+        }
+
+        public static Response from(User user, String profileImageUrl) {
             return Response.builder()
                     .id(user.getId())
                     .kakaoId(user.getKakaoId())
                     .name(user.getName())
                     .phone(user.getPhone())
                     .userType(user.getUserType())
-                    .profileImageUrl(user.getProfileImageUrl())
+                    .profileImageUrl(profileImageUrl)
                     .build();
         }
 
         public static Response from(User user, Worker worker) {
+            return from(user, worker, user.getProfileImageUrl());
+        }
+
+        public static Response from(User user, Worker worker, String profileImageUrl) {
             return Response.builder()
                     .id(user.getId())
                     .kakaoId(user.getKakaoId())
                     .name(user.getName())
                     .phone(user.getPhone())
                     .userType(user.getUserType())
-                    .profileImageUrl(user.getProfileImageUrl())
+                    .profileImageUrl(profileImageUrl)
                     .workerCode(worker.getWorkerCode())
                     .bankName(worker.getBankName())
                     .accountNumber(worker.getAccountNumber())
@@ -69,7 +77,7 @@ public class UserDto {
         @Pattern(regexp = "^01[0-9]-\\d{4}-\\d{4}$", message = "전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)")
         private String phone;
 
-        @Pattern(regexp = "^(https?://.+)?$", message = "프로필 이미지는 HTTP/HTTPS URL 형식이어야 합니다.")
+        @Pattern(regexp = "^(https?://.+|/.+)?$", message = "프로필 이미지는 HTTP/HTTPS URL 또는 서버 이미지 경로 형식이어야 합니다.")
         private String profileImageUrl;
     }
 
