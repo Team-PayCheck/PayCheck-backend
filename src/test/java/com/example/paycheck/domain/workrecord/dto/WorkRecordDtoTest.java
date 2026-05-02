@@ -4,6 +4,7 @@ import com.example.paycheck.domain.contract.entity.WorkerContract;
 import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.worker.entity.Worker;
 import com.example.paycheck.domain.workrecord.entity.WorkRecord;
+import com.example.paycheck.domain.workrecord.enums.WorkRecordCurrentStatus;
 import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.example.paycheck.domain.workplace.entity.Workplace;
 import org.junit.jupiter.api.BeforeEach;
@@ -81,6 +82,7 @@ class WorkRecordDtoTest {
         assertThat(response.getBreakMinutes()).isEqualTo(60);
         assertThat(response.getTotalWorkMinutes()).isEqualTo(480);
         assertThat(response.getStatus()).isEqualTo(WorkRecordStatus.COMPLETED);
+        assertThat(response.getCurrentStatus()).isEqualTo(WorkRecordCurrentStatus.COMPLETED);
         assertThat(response.getIsModified()).isFalse();
         assertThat(response.getMemo()).isEqualTo("테스트 메모");
 
@@ -111,6 +113,7 @@ class WorkRecordDtoTest {
 
         // then
         assertThat(response.getHourlyWage()).isEqualByComparingTo(BigDecimal.valueOf(10000));
+        assertThat(response.getCurrentStatus()).isEqualTo(WorkRecordCurrentStatus.UPCOMING);
         assertThat(response.getBaseSalary()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(response.getNightSalary()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(response.getHolidaySalary()).isEqualByComparingTo(BigDecimal.ZERO);
