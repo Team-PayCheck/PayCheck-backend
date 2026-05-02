@@ -120,20 +120,28 @@ class WorkRecordQueryServiceTest {
     }
 
     @Test
-    @DisplayName("근로자 주간 근무 목록 조회 시 현재 상태 기준으로 정렬한다")
+    @DisplayName("근로자 주간 근무 목록 조회 시 진행중, 예정, 완료 순으로 정렬한다")
     void getWorkRecordsByWorkerAndDateRange_SortsByCurrentStatus() {
         // given
         Worker worker = mock(Worker.class);
         when(worker.getId()).thenReturn(1L);
         when(workerRepository.findByUserId(10L)).thenReturn(Optional.of(worker));
 
-        WorkRecord upcomingRecord = createWorkRecord(3L, LocalDate.of(2026, 2, 21), LocalTime.of(3, 0), LocalTime.of(7, 0), WorkRecordStatus.SCHEDULED);
-        WorkRecord completedRecord = createWorkRecord(2L, LocalDate.of(2026, 2, 20), LocalTime.of(20, 0), LocalTime.of(23, 0), WorkRecordStatus.SCHEDULED);
         WorkRecord inProgressRecord = createWorkRecord(1L, LocalDate.of(2026, 2, 20), LocalTime.of(22, 0), LocalTime.of(2, 0), WorkRecordStatus.SCHEDULED);
+        WorkRecord upcomingSoonRecord = createWorkRecord(3L, LocalDate.of(2026, 2, 21), LocalTime.of(3, 0), LocalTime.of(7, 0), WorkRecordStatus.SCHEDULED);
+        WorkRecord upcomingLaterRecord = createWorkRecord(4L, LocalDate.of(2026, 2, 21), LocalTime.of(6, 0), LocalTime.of(10, 0), WorkRecordStatus.SCHEDULED);
+        WorkRecord completedRecentRecord = createWorkRecord(2L, LocalDate.of(2026, 2, 20), LocalTime.of(20, 0), LocalTime.of(23, 0), WorkRecordStatus.SCHEDULED);
+        WorkRecord completedOldRecord = createWorkRecord(5L, LocalDate.of(2026, 2, 20), LocalTime.of(18, 0), LocalTime.of(20, 0), WorkRecordStatus.SCHEDULED);
 
         when(workRecordRepository.findByWorkerAndDateRange(
                 1L, LocalDate.of(2026, 2, 17), LocalDate.of(2026, 2, 23), WorkRecordStatus.DELETED))
-                .thenReturn(Arrays.asList(upcomingRecord, completedRecord, inProgressRecord));
+                .thenReturn(Arrays.asList(
+                        completedOldRecord,
+                        upcomingLaterRecord,
+                        completedRecentRecord,
+                        inProgressRecord,
+                        upcomingSoonRecord
+                ));
 
         // when
         List<WorkRecordDto.DetailedResponse> result = workRecordQueryService.getWorkRecordsByWorkerAndDateRange(
@@ -141,15 +149,19 @@ class WorkRecordQueryServiceTest {
 
         // then
         assertThat(result).extracting(WorkRecordDto.DetailedResponse::getId)
-                .containsExactly(1L, 3L, 2L);
+                .containsExactly(1L, 3L, 4L, 2L, 5L);
         assertThat(result).extracting(WorkRecordDto.DetailedResponse::getCurrentStatus)
                 .containsExactly(
                         WorkRecordCurrentStatus.IN_PROGRESS,
                         WorkRecordCurrentStatus.UPCOMING,
+                        WorkRecordCurrentStatus.UPCOMING,
+                        WorkRecordCurrentStatus.COMPLETED,
                         WorkRecordCurrentStatus.COMPLETED
                 );
         assertThat(result).extracting(WorkRecordDto.DetailedResponse::getStatus)
                 .containsExactly(
+                        WorkRecordStatus.SCHEDULED,
+                        WorkRecordStatus.SCHEDULED,
                         WorkRecordStatus.SCHEDULED,
                         WorkRecordStatus.SCHEDULED,
                         WorkRecordStatus.SCHEDULED

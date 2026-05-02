@@ -98,8 +98,22 @@ public class WorkRecordQueryService {
     private Comparator<WorkRecord> buildWorkerRecordComparator(LocalDateTime now) {
         return Comparator
                 .comparing((WorkRecord record) -> calculateCurrentStatus(record, now).getSortOrder())
-                .thenComparing(this::getStartDateTime)
+                .thenComparing((left, right) -> compareWithinSameCurrentStatus(left, right, now))
                 .thenComparing(WorkRecord::getId);
+    }
+
+    private int compareWithinSameCurrentStatus(WorkRecord left, WorkRecord right, LocalDateTime now) {
+        WorkRecordCurrentStatus leftStatus = calculateCurrentStatus(left, now);
+        WorkRecordCurrentStatus rightStatus = calculateCurrentStatus(right, now);
+
+        if (leftStatus != rightStatus) {
+            return 0;
+        }
+
+        return switch (leftStatus) {
+            case IN_PROGRESS, UPCOMING -> getStartDateTime(left).compareTo(getStartDateTime(right));
+            case COMPLETED -> getEndDateTime(right).compareTo(getEndDateTime(left));
+        };
     }
 
     private WorkRecordCurrentStatus calculateCurrentStatus(WorkRecord workRecord, LocalDateTime now) {
