@@ -153,6 +153,30 @@ class WorkRecordCoordinatorServiceTest {
             // then
             verify(salaryService).recalculateSalaryAfterWorkRecordUpdate(eq(1L), eq(2024), eq(1));
         }
+
+        @Test
+        @DisplayName("근무일이 바뀐 COMPLETED 수정 - 이전/신규 급여 귀속월과 이전 주차를 모두 재계산한다")
+        void changedWorkDate_Completed_RecalculatesOldAndNewSalaryPeriods() {
+            // given
+            WeeklyAllowance oldAllowance = createMockAllowance(10L);
+            WeeklyAllowance newAllowance = createMockAllowance(20L);
+            WorkRecord workRecord = createMockWorkRecord(WorkRecordStatus.COMPLETED, LocalDate.of(2024, 2, 26), newAllowance);
+
+            // when
+            coordinatorService.handleWorkRecordUpdate(
+                    workRecord,
+                    oldAllowance,
+                    newAllowance,
+                    LocalDate.of(2024, 1, 24));
+
+            // then
+            verify(weeklyAllowanceService).recalculateAllowances(10L);
+            verify(weeklyAllowanceService).recalculateAllowances(20L);
+            verify(weeklyAllowanceRepository).findByContractAndWeek(1L, LocalDate.of(2024, 1, 15));
+            verify(weeklyAllowanceRepository).findByContractAndWeek(1L, LocalDate.of(2024, 2, 19));
+            verify(salaryService).recalculateSalaryAfterWorkRecordUpdate(1L, 2024, 1);
+            verify(salaryService).recalculateSalaryAfterWorkRecordUpdate(1L, 2024, 3);
+        }
     }
 
     @Nested
