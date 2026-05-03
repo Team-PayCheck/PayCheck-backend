@@ -81,6 +81,21 @@ public class UserDto {
         private String profileImageUrl;
     }
 
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(name = "ProfileImageUploadResponse")
+    public static class ProfileImageUploadResponse {
+        private String profileImageUrl;
+
+        public static ProfileImageUploadResponse from(String profileImageUrl) {
+            return ProfileImageUploadResponse.builder()
+                    .profileImageUrl(profileImageUrl)
+                    .build();
+        }
+    }
+
     /**
      * 내부 전용 DTO - 서비스 레이어에서만 사용
      * AuthService에서 OAuth 정보와 클라이언트 입력을 조합하여 생성

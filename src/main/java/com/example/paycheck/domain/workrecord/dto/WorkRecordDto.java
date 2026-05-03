@@ -1,6 +1,7 @@
 package com.example.paycheck.domain.workrecord.dto;
 
 import com.example.paycheck.domain.workrecord.entity.WorkRecord;
+import com.example.paycheck.domain.workrecord.enums.WorkRecordCurrentStatus;
 import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -78,6 +79,8 @@ public class WorkRecordDto {
         private Integer breakMinutes;
         private Integer totalWorkMinutes;
         private WorkRecordStatus status;
+        @Schema(description = "현재 시점 기준 근무 상태 (IN_PROGRESS/UPCOMING/COMPLETED)")
+        private WorkRecordCurrentStatus currentStatus;
         private Boolean isModified;
         private String memo;
         @Schema(description = "시급")
@@ -92,6 +95,13 @@ public class WorkRecordDto {
         private BigDecimal totalSalary;
 
         public static DetailedResponse from(WorkRecord workRecord) {
+            WorkRecordCurrentStatus currentStatus = workRecord.getStatus() == WorkRecordStatus.COMPLETED
+                    ? WorkRecordCurrentStatus.COMPLETED
+                    : WorkRecordCurrentStatus.UPCOMING;
+            return from(workRecord, currentStatus);
+        }
+
+        public static DetailedResponse from(WorkRecord workRecord, WorkRecordCurrentStatus currentStatus) {
             return DetailedResponse.builder()
                     .id(workRecord.getId())
                     .contractId(workRecord.getContract().getId())
@@ -104,6 +114,7 @@ public class WorkRecordDto {
                     .breakMinutes(workRecord.getBreakMinutes())
                     .totalWorkMinutes(workRecord.getTotalWorkMinutes())
                     .status(workRecord.getStatus())
+                    .currentStatus(currentStatus)
                     .isModified(workRecord.getIsModified())
                     .memo(workRecord.getMemo())
                     .hourlyWage(workRecord.getContract().getHourlyWage())
@@ -137,12 +148,16 @@ public class WorkRecordDto {
         private WorkRecordStatus status;
 
         public static CalendarResponse from(WorkRecord workRecord) {
+            return from(workRecord, workRecord.getWorkDate());
+        }
+
+        public static CalendarResponse from(WorkRecord workRecord, LocalDate displayDate) {
             return CalendarResponse.builder()
                     .id(workRecord.getId())
                     .contractId(workRecord.getContract().getId())
                     .workerName(workRecord.getContract().getWorker().getUser().getName())
                     .workplaceName(workRecord.getContract().getWorkplace().getName())
-                    .workDate(workRecord.getWorkDate())
+                    .workDate(displayDate)
                     .startTime(workRecord.getStartTime())
                     .endTime(workRecord.getEndTime())
                     .breakMinutes(workRecord.getBreakMinutes())

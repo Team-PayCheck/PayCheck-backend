@@ -18,12 +18,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -96,6 +96,32 @@ class UserServiceTest {
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("사용자를 찾을 수 없습니다");
         verify(userRepository).findById(999L);
+    }
+
+    @Test
+    @DisplayName("프로필 이미지 업로드 성공")
+    void uploadProfileImage_Success() {
+        // given
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "profile.png",
+                "image/png",
+                "image-content".getBytes()
+        );
+        String uploadedUrl = "https://test-bucket.s3.ap-northeast-2.amazonaws.com/profiles/1/profile.png";
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(profileImageStorageService.uploadProfileImage(1L, file)).thenReturn(uploadedUrl);
+
+        // when
+        UserDto.ProfileImageUploadResponse result = userService.uploadProfileImage(1L, file);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getProfileImageUrl()).isEqualTo(uploadedUrl);
+        assertThat(testUser.getProfileImageUrl()).isEqualTo(uploadedUrl);
+        verify(userRepository).findById(1L);
+        verify(profileImageStorageService).uploadProfileImage(1L, file);
     }
 
     @Test
