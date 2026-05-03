@@ -105,13 +105,13 @@ public class SalaryService {
         LocalDate startDate = adjustDayOfMonth(LocalDate.of(year, month, 1).minusMonths(1), paymentDay);
         LocalDate endDate = adjustDayOfMonth(LocalDate.of(year, month, 1), paymentDay).minusDays(1);
 
-        // COMPLETED 상태인 근무 기록만 조회 (DB 레벨 필터링)
-        List<WorkRecord> completedRecords = workRecordRepository.findByContractAndDateRangeAndStatus(
-                contractId, startDate, endDate, List.of(WorkRecordStatus.COMPLETED));
+        // COMPLETED 및 SCHEDULED 상태인 근무 기록 조회 (예상 근무비 포함)
+        List<WorkRecord> workRecords = workRecordRepository.findByContractAndDateRangeAndStatus(
+                contractId, startDate, endDate, List.of(WorkRecordStatus.COMPLETED, WorkRecordStatus.SCHEDULED));
 
         // 정산 대상 근무 기록이 없으면 Salary 생성하지 않음
-        if (completedRecords.isEmpty()) {
-            throw new NotFoundException(ErrorCode.WORK_RECORD_NOT_FOUND, "해당 기간 내 완료된 근무 기록이 없습니다.");
+        if (workRecords.isEmpty()) {
+            throw new NotFoundException(ErrorCode.WORK_RECORD_NOT_FOUND, "해당 기간 내 근무 기록이 없습니다.");
         }
 
         // WorkRecord의 이미 계산된 급여 칼럼값 합산
@@ -120,7 +120,7 @@ public class SalaryService {
         BigDecimal totalNightPay = BigDecimal.ZERO;
         BigDecimal totalHolidayPay = BigDecimal.ZERO;
 
-        for (WorkRecord record : completedRecords) {
+        for (WorkRecord record : workRecords) {
             totalWorkHours = totalWorkHours.add(record.getTotalHours());
             totalBasePay = totalBasePay.add(record.getBaseSalary());
             totalNightPay = totalNightPay.add(record.getNightSalary());
