@@ -137,12 +137,21 @@ public class WeeklyAllowance extends BaseEntity {
 
         // 5인 이상 사업장: 주 40시간 초과 시 연장수당 지급
         if (this.totalWorkHours.compareTo(STANDARD_WORK_HOURS_PER_WEEK) > 0) {
-            BigDecimal overtimeHoursCalculated = this.totalWorkHours.subtract(STANDARD_WORK_HOURS_PER_WEEK);
-            this.overtimeHours = overtimeHoursCalculated;
+            BigDecimal weeklyOvertimeHours = this.totalWorkHours.subtract(STANDARD_WORK_HOURS_PER_WEEK);
+            this.overtimeHours = weeklyOvertimeHours;
 
-            // 연장수당 = 초과 시간 × (기본시급 × 1.5)
+            // 주간 연장 시간 중 일일 연장 시간을 제외한 "순수 주간 연장 가산 대상" 계산
+            // (일일 연장분은 WorkRecord.overtimeSalary에서 이미 0.5배 가산됨)
+            BigDecimal totalDailyOvertimeHours = this.workRecords.stream()
+                    .filter(wr -> wr.getStatus() == WorkRecordStatus.COMPLETED)
+                    .map(WorkRecord::getOvertimeHours)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal pureWeeklyOvertimeHours = weeklyOvertimeHours.subtract(totalDailyOvertimeHours).max(BigDecimal.ZERO);
+
+            // 연장수당 = 순수 주간 연장 시간 × 기본시급 × 0.5배율
             BigDecimal hourlyWage = this.contract.getHourlyWage();
-            this.overtimeAmount = overtimeHoursCalculated.multiply(hourlyWage).multiply(OVERTIME_RATE);
+            this.overtimeAmount = pureWeeklyOvertimeHours.multiply(hourlyWage).multiply(BigDecimal.valueOf(0.5));
         } else {
             this.overtimeHours = BigDecimal.ZERO;
             this.overtimeAmount = BigDecimal.ZERO;
