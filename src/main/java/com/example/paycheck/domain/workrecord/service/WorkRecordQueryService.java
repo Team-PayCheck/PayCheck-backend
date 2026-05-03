@@ -152,6 +152,7 @@ public class WorkRecordQueryService {
                 ? workRecord.getWorkDate()
                 : workRecord.getWorkDate().plusDays(1);
         return endDate.atTime(workRecord.getEndTime());
+    }
     private List<LocalDate> getCalendarDisplayDates(WorkRecord workRecord, LocalDate startDate, LocalDate endDate) {
         List<LocalDate> displayDates = new ArrayList<>();
         LocalDate workDate = workRecord.getWorkDate();
