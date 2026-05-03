@@ -85,6 +85,9 @@ public class ErrorCode {
     public static final String DUPLICATE_BUSINESS_NUMBER = "DUPLICATE_BUSINESS_NUMBER";
     public static final String INVALID_BUSINESS_NUMBER = "INVALID_BUSINESS_NUMBER";
     public static final String BUSINESS_NUMBER_VERIFICATION_FAILED = "BUSINESS_NUMBER_VERIFICATION_FAILED";
+    public static final String INVALID_PROFILE_IMAGE_FILE = "INVALID_PROFILE_IMAGE_FILE";
+    public static final String PROFILE_IMAGE_UPLOAD_FAILED = "PROFILE_IMAGE_UPLOAD_FAILED";
+    public static final String PROFILE_IMAGE_UPLOAD_NOT_CONFIGURED = "PROFILE_IMAGE_UPLOAD_NOT_CONFIGURED";
 
     // Concurrency
     public static final String SALARY_LOCK_TIMEOUT = "SALARY_LOCK_TIMEOUT";

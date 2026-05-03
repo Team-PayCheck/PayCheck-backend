@@ -44,6 +44,13 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(e.getErrorCode(), e.getErrorMessage());
     }
 
+    @ExceptionHandler(FileUploadException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public ApiResponse<Void> handleFileUploadException(FileUploadException e) {
+        log.error("FileUploadException: {}", e.getErrorMessage(), e);
+        return ApiResponse.error(e.getErrorCode(), e.getErrorMessage());
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleIllegalArgumentException(IllegalArgumentException e) {

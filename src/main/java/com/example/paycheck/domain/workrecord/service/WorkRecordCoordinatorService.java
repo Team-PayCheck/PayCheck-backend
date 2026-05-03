@@ -17,6 +17,7 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
 /**
@@ -70,6 +71,17 @@ public class WorkRecordCoordinatorService {
      * COMPLETED 상태일 때만 급여 재계산
      */
     public void handleWorkRecordUpdate(WorkRecord workRecord, WeeklyAllowance oldWeeklyAllowance, WeeklyAllowance newWeeklyAllowance) {
+        handleWorkRecordUpdate(workRecord, oldWeeklyAllowance, newWeeklyAllowance, workRecord.getWorkDate());
+    }
+
+    /**
+     * 근무 기록 수정 시 원래 근무일을 기준으로 WeeklyAllowance/급여 재계산 처리
+     */
+    public void handleWorkRecordUpdate(
+            WorkRecord workRecord,
+            WeeklyAllowance oldWeeklyAllowance,
+            WeeklyAllowance newWeeklyAllowance,
+            LocalDate originalWorkDate) {
         // 기존 WeeklyAllowance 수당 재계산 (다른 WeeklyAllowance였다면)
         if (oldWeeklyAllowance != null && newWeeklyAllowance != null && !oldWeeklyAllowance.getId().equals(newWeeklyAllowance.getId())) {
             weeklyAllowanceService.recalculateAllowances(oldWeeklyAllowance.getId());
@@ -80,9 +92,13 @@ public class WorkRecordCoordinatorService {
             weeklyAllowanceService.recalculateAllowances(newWeeklyAllowance.getId());
         }
 
+        if (!originalWorkDate.equals(workRecord.getWorkDate())) {
+            recalculatePreviousWeekAllowances(workRecord.getContract().getId(), originalWorkDate, workRecord.getWorkDate());
+        }
+
         // COMPLETED 상태일 때만 급여 재계산
         if (workRecord.getStatus() == WorkRecordStatus.COMPLETED) {
-            recalculateSalaryForWorkRecord(workRecord);
+            recalculateSalaryForWorkRecordUpdate(workRecord, originalWorkDate);
         }
     }
 
@@ -132,6 +148,18 @@ public class WorkRecordCoordinatorService {
                 workRecord.getWorkDate());
     }
 
+    private void recalculateSalaryForWorkRecordUpdate(WorkRecord workRecord, LocalDate originalWorkDate) {
+        Long contractId = workRecord.getContract().getId();
+        Integer paymentDay = workRecord.getContract().getPaymentDay();
+        LocalDate updatedWorkDate = workRecord.getWorkDate();
+
+        if (!getSalaryPeriodKey(paymentDay, originalWorkDate).equals(getSalaryPeriodKey(paymentDay, updatedWorkDate))) {
+            recalculateSalaryForDate(contractId, paymentDay, originalWorkDate);
+        }
+
+        recalculateSalaryForDate(contractId, paymentDay, updatedWorkDate);
+    }
+
     /**
      * 특정 날짜 기준으로 해당 월의 급여 재계산
      * 계약 종료 등 WorkRecord 없이 날짜 기준으로 재계산이 필요한 경우 사용
@@ -165,6 +193,33 @@ public class WorkRecordCoordinatorService {
                 workRecord.getContract().getId(), previousWeekStart)
             .ifPresent(prevAllowance ->
                 weeklyAllowanceService.recalculateAllowances(prevAllowance.getId()));
+    }
+
+    private void recalculatePreviousWeekAllowances(Long contractId, LocalDate... workDates) {
+        Stream.of(workDates)
+                .map(this::getPreviousWeekStart)
+                .distinct()
+                .forEach(previousWeekStart ->
+                        weeklyAllowanceRepository.findByContractAndWeek(contractId, previousWeekStart)
+                                .ifPresent(previousAllowance ->
+                                        weeklyAllowanceService.recalculateAllowances(previousAllowance.getId())));
+    }
+
+    private LocalDate getPreviousWeekStart(LocalDate workDate) {
+        return workDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).minusWeeks(1);
+    }
+
+    private String getSalaryPeriodKey(Integer paymentDay, LocalDate date) {
+        int year = date.getYear();
+        int month = date.getMonthValue();
+
+        if (date.getDayOfMonth() >= paymentDay) {
+            LocalDate nextMonth = date.plusMonths(1);
+            year = nextMonth.getYear();
+            month = nextMonth.getMonthValue();
+        }
+
+        return year + "_" + month;
     }
 
     /**

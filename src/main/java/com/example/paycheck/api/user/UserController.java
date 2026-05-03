@@ -16,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "사용자", description = "사용자 정보 조회 및 관리 API")
@@ -48,6 +50,14 @@ public class UserController {
             @AuthenticationPrincipal User user,
             @Valid @RequestBody UserDto.UpdateRequest request) {
         return ApiResponse.success(userService.updateUser(user.getId(), request));
+    }
+
+    @Operation(summary = "내 프로필 이미지 업로드", description = "로그인한 사용자의 프로필 이미지를 S3에 업로드하고 URL을 반환합니다.")
+    @PostMapping(value = "/me/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<UserDto.ProfileImageUploadResponse> uploadMyProfileImage(
+            @AuthenticationPrincipal User user,
+            @Parameter(description = "프로필 이미지 파일", required = true) @RequestPart("file") MultipartFile file) {
+        return ApiResponse.success(userService.uploadProfileImage(user.getId(), file));
     }
 
     @Operation(summary = "계좌 정보 수정 (근로자 전용)", description = "로그인한 근로자의 계좌 정보를 수정합니다.")

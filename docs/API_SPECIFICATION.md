@@ -4,68 +4,69 @@
 
 | 인덱스 | 기능 | Method | API Path | 설명 | FE 개발 현황 | BE 개발 현황 | 수정일 | JSON Example |
 |--------|------|--------|----------|------|--------------|--------------|--------|--------------|
-| **1. 인증 API** ||||||||
+| **1. 인증 API** |  |  |  |  |  |  |  |  |
 | 1.1 | 카카오 로그인 | POST | `/api/auth/kakao/login` | 카카오 소셜 로그인 (신규 사용자 자동 등록) | 대기 | 대기 | - | [링크](#11-카카오-로그인) |
 | 1.2 | 로그아웃 | POST | `/api/auth/logout` | 로그아웃 및 토큰 무효화 | 대기 | 대기 | - | [링크](#12-로그아웃) |
 | 1.3 | 토큰 갱신 | POST | `/api/auth/refresh` | Access Token 갱신 | 대기 | 대기 | - | [링크](#13-토큰-갱신) |
 | 1.4 | 회원 탈퇴 | DELETE | `/api/auth/withdraw` | 회원 탈퇴 및 카카오 연결 해제 | 대기 | 완료 | 2026-03-11 | [링크](#14-회원-탈퇴) |
-| **2. 사용자 API** ||||||||
+| **2. 사용자 API** |  |  |  |  |  |  |  |  |
 | 2.1 | 내 정보 조회 | GET | `/api/users/me` | 로그인한 사용자 정보 | 대기 | 대기 | - | [링크](#21-내-정보-조회) |
 | 2.2 | 내 정보 수정 | PUT | `/api/users/me` | 사용자 정보 수정 | 대기 | 대기 | - | [링크](#22-내-정보-수정) |
-| 2.3 | 계좌 정보 수정 | PUT | `/api/users/me/account` | 근로자 계좌 정보 수정 | 대기 | 대기 | - | [링크](#23-계좌-정보-수정) |
-| **3. 고용주 - 사업장** ||||||||
+| 2.3 | 프로필 이미지 업로드 | POST | `/api/users/me/profile-image` | 프로필 이미지 업로드 후 URL 반환 | 대기 | 완료 | - | [링크](#23-프로필-이미지-업로드) |
+| 2.4 | 계좌 정보 수정 | PUT | `/api/users/me/account` | 근로자 계좌 정보 수정 | 대기 | 대기 | - | [링크](#24-계좌-정보-수정) |
+| **3. 고용주 - 사업장** |  |  |  |  |  |  |  |  |
 | 3.1 | 사업장 등록 | POST | `/api/employer/workplaces` | 새 사업장 등록 | 대기 | 대기 | - | [링크](#31-사업장-등록) |
 | 3.2 | 사업장 목록 | GET | `/api/employer/workplaces` | 내 사업장 목록 조회 | 대기 | 대기 | - | [링크](#32-사업장-목록) |
 | 3.3 | 사업장 상세 | GET | `/api/employer/workplaces/{id}` | 사업장 상세 정보 | 대기 | 대기 | - | [링크](#33-사업장-상세) |
 | 3.4 | 사업장 수정 | PUT | `/api/employer/workplaces/{id}` | 사업장 정보 수정 | 대기 | 대기 | - | [링크](#34-사업장-수정) |
 | 3.5 | 사업장 비활성화 | DELETE | `/api/employer/workplaces/{id}` | 사업장 비활성화 | 대기 | 대기 | - | [링크](#35-사업장-비활성화) |
-| **4. 고용주 - 근로자** ||||||||
+| **4. 고용주 - 근로자** |  |  |  |  |  |  |  |  |
 | 4.1 | 근로자 추가 | POST | `/api/employer/workplaces/{workplace_id}/workers` | 코드로 근로자 추가 | 대기 | 대기 | - | [링크](#41-근로자-추가) |
 | 4.2 | 근로자 목록 | GET | `/api/employer/workplaces/{workplace_id}/workers` | 사업장 근로자 목록 | 대기 | 대기 | - | [링크](#42-근로자-목록) |
 | 4.3 | 계약 상세 | GET | `/api/employer/contracts/{id}` | 계약 상세 정보 | 대기 | 대기 | - | [링크](#43-계약-상세) |
 | 4.4 | 계약 수정 | PUT | `/api/employer/contracts/{id}` | 계약 정보 수정 | 대기 | 대기 | - | [링크](#44-계약-수정) |
 | 4.5 | 계약 종료 | DELETE | `/api/employer/contracts/{id}` | 계약 종료 | 대기 | 대기 | - | [링크](#45-계약-종료) |
-| **5. 고용주 - 근무일정** ||||||||
+| **5. 고용주 - 근무일정** |  |  |  |  |  |  |  |  |
 | 5.1 | 일정 등록 | POST | `/api/employer/work-records` | 근무 일정 등록 | 대기 | 대기 | - | [링크](#51-일정-등록) |
 | 5.2 | 일정 일괄등록 | POST | `/api/employer/work-records/batch` | 여러 일정 일괄 등록 | 대기 | 대기 | - | [링크](#52-일정-일괄등록) |
 | 5.3 | 근무기록 조회 | GET | `/api/employer/work-records` | 캘린더 근무 기록 조회 | 대기 | 대기 | - | [링크](#53-근무기록-조회) |
 | 5.4 | 일정 수정 | PUT | `/api/employer/work-records/{id}` | 근무 시간 수정 | 대기 | 대기 | - | [링크](#54-일정-수정) |
 | 5.5 | 근무 완료 | PUT | `/api/employer/work-records/{id}/complete` | 근무 완료 처리 | 대기 | 대기 | - | [링크](#55-근무-완료) |
 | 5.6 | 일정 삭제 | DELETE | `/api/employer/work-records/{id}` | 근무 일정 삭제 | 대기 | 대기 | - | [링크](#56-일정-삭제) |
-| **6. 고용주 - 정정요청** ||||||||
+| **6. 고용주 - 정정요청** |  |  |  |  |  |  |  |  |
 | 6.1 | 요청 목록 | GET | `/api/employer/correction-requests` | 정정 요청 목록 | 대기 | 대기 | - | [링크](#61-요청-목록) |
 | 6.2 | 요청 상세 | GET | `/api/employer/correction-requests/{id}` | 정정 요청 상세 | 대기 | 대기 | - | [링크](#62-요청-상세) |
 | 6.3 | 요청 승인 | PUT | `/api/employer/correction-requests/{id}/approve` | 정정 요청 승인 | 대기 | 대기 | - | [링크](#63-요청-승인) |
 | 6.4 | 요청 반려 | PUT | `/api/employer/correction-requests/{id}/reject` | 정정 요청 반려 | 대기 | 대기 | - | [링크](#64-요청-반려) |
-| **7. 고용주 - 급여** ||||||||
+| **7. 고용주 - 급여** |  |  |  |  |  |  |  |  |
 | 7.1 | 급여 목록 | GET | `/api/employer/salaries` | 월별 급여 목록 | 대기 | 대기 | - | [링크](#71-급여-목록) |
 | 7.2 | 급여 상세 | GET | `/api/employer/salaries/{id}` | 급여 상세 정보 | 대기 | 대기 | - | [링크](#72-급여-상세) |
 | 7.3 | 급여 계산 | POST | `/api/employer/salaries/calculate` | 급여 계산 | 대기 | 대기 | - | [링크](#73-급여-계산) |
 | 7.4 | 급여 송금 | POST | `/api/employer/payments` | 급여 송금 처리 | 대기 | 대기 | - | [링크](#74-급여-송금) |
-| **8. 근로자 - 근무일정** ||||||||
+| **8. 근로자 - 근무일정** |  |  |  |  |  |  |  |  |
 | 8.1 | 일정 조회 | GET | `/api/worker/work-records` | 월별 근무 일정 조회 | 대기 | 대기 | - | [링크](#81-일정-조회) |
 | 8.2 | 기록 상세 | GET | `/api/worker/work-records/{id}` | 근무 기록 상세 | 대기 | 대기 | - | [링크](#82-기록-상세) |
 | 8.3 | 근무 완료 | PUT | `/api/worker/work-records/{id}/complete` | 근무 완료 처리 | 대기 | 대기 | - | [링크](#83-근무-완료) |
-| **9. 근로자 - 정정요청** ||||||||
+| **9. 근로자 - 정정요청** |  |  |  |  |  |  |  |  |
 | 9.1 | 요청 생성 | POST | `/api/worker/correction-requests` | 정정 요청 생성 | 대기 | 대기 | - | [링크](#91-요청-생성) |
 | 9.2 | 내 요청 목록 | GET | `/api/worker/correction-requests` | 내 정정 요청 목록 | 대기 | 대기 | - | [링크](#92-내-요청-목록) |
 | 9.3 | 요청 상세 | GET | `/api/worker/correction-requests/{id}` | 내 정정 요청 상세 조회 | 대기 | 대기 | - | [링크](#93-요청-상세) |
 | 9.4 | 요청 취소 | DELETE | `/api/worker/correction-requests/{id}` | 정정 요청 취소 | 대기 | 대기 | - | [링크](#94-요청-취소) |
-| **10. 근로자 - 급여** ||||||||
+| **10. 근로자 - 급여** |  |  |  |  |  |  |  |  |
 | 10.1 | 급여 목록 | GET | `/api/worker/salaries` | 연도별 급여 목록 | 대기 | 대기 | - | [링크](#101-급여-목록) |
 | 10.2 | 급여 상세 | GET | `/api/worker/salaries/{id}` | 급여 상세 정보 | 대기 | 대기 | - | [링크](#102-급여-상세) |
 | 10.3 | 송금 내역 | GET | `/api/worker/payments` | 송금 내역 조회 | 대기 | 대기 | - | [링크](#103-송금-내역) |
-| **11. 공통 - 알림** ||||||||
+| **11. 공통 - 알림** |  |  |  |  |  |  |  |  |
 | 11.1 | 알림 목록 | GET | `/api/notifications` | 알림 목록 조회 | 대기 | 대기 | - | [링크](#111-알림-목록) |
 | 11.2 | SSE 알림 구독 | GET | `/api/notifications/stream` | 실시간 알림 구독 (SSE) | 대기 | 대기 | - | [링크](#112-sse-알림-구독) |
 | 11.3 | 읽지 않은 알림 개수 | GET | `/api/notifications/unread-count` | 읽지 않은 알림 개수 조회 | 대기 | 대기 | - | [링크](#113-읽지-않은-알림-개수) |
 | 11.4 | 알림 읽음 | PUT | `/api/notifications/{id}/read` | 알림 읽음 처리 | 대기 | 대기 | - | [링크](#114-알림-읽음) |
 | 11.5 | 전체 읽음 | PUT | `/api/notifications/read-all` | 모든 알림 읽음 | 대기 | 대기 | - | [링크](#115-전체-읽음) |
 | 11.6 | 알림 삭제 | DELETE | `/api/notifications/{id}` | 알림 삭제 | 대기 | 대기 | - | [링크](#116-알림-삭제) |
-| **12. 공통 - 설정** ||||||||
+| **12. 공통 - 설정** |  |  |  |  |  |  |  |  |
 | 12.1 | 내 설정 조회 | GET | `/api/settings/me` | 로그인한 사용자의 알림 설정 조회 | 대기 | 완료 | 2025-12-10 | [링크](#121-내-설정-조회) |
 | 12.2 | 내 설정 수정 | PUT | `/api/settings/me` | 로그인한 사용자의 알림 설정 수정 | 대기 | 완료 | 2025-12-10 | [링크](#122-내-설정-수정) |
-| **13. 공통 - 공지사항** |||||||||
+| **13. 공통 - 공지사항** |  |  |  |  |  |  |  |  |
 | 13.1 | 공지사항 작성 | POST | `/api/workplaces/{workplaceId}/notices` | 사업장 공지사항 작성 (사업장 소속 인원) | 대기 | 완료 | 2026-02-21 | [링크](#131-공지사항-작성) |
 | 13.2 | 공지사항 목록 조회 | GET | `/api/workplaces/{workplaceId}/notices` | 사업장 공지사항 목록 조회 (만료 제외) | 대기 | 완료 | 2026-02-21 | [링크](#132-공지사항-목록-조회) |
 | 13.3 | 공지사항 단건 조회 | GET | `/api/notices/{noticeId}` | 공지사항 상세 조회 | 대기 | 완료 | 2026-02-21 | [링크](#133-공지사항-단건-조회) |
@@ -242,7 +243,40 @@
 
 ---
 
-### 2.3 계좌 정보 수정
+### 2.3 프로필 이미지 업로드
+
+**Request:**
+- Method: `POST`
+- URL: `/api/users/me/profile-image`
+- Header: `Authorization: Bearer {accessToken}`
+- Content-Type: `multipart/form-data`
+- Body:
+  - `file`: JPG, PNG, GIF, WEBP, HEIC 이미지 파일
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "profileImageUrl": "https://paycheck-bucket.s3.ap-northeast-2.amazonaws.com/profiles/1001/550e8400-e29b-41d4-a716-446655440000.png"
+  }
+}
+```
+
+**Error (잘못된 파일 형식):**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_PROFILE_IMAGE_FILE",
+    "message": "프로필 이미지는 JPG, PNG, GIF, WEBP, HEIC 형식만 업로드할 수 있습니다."
+  }
+}
+```
+
+---
+
+### 2.4 계좌 정보 수정
 
 **Request:**
 ```json
