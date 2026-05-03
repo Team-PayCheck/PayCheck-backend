@@ -43,12 +43,12 @@ public class NoticeService {
     private final ObjectMapper objectMapper;
 
     @Transactional
-    public NoticeDto.Response createNotice(Long workplaceId, User author, NoticeDto.CreateRequest request) {
+    public NoticeDto.Response createNotice(User author, NoticeDto.CreateRequest request) {
         if (!request.getExpiresAt().isAfter(LocalDateTime.now())) {
             throw new BadRequestException(ErrorCode.INVALID_INPUT_VALUE, "만료 일시는 현재 시간 이후여야 합니다.");
         }
 
-        Workplace workplace = workplaceRepository.findById(workplaceId)
+        Workplace workplace = workplaceRepository.findById(request.getWorkplaceId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.WORKPLACE_NOT_FOUND, "사업장을 찾을 수 없습니다."));
 
         Notice notice = Notice.builder()
@@ -65,7 +65,7 @@ public class NoticeService {
             publishNoticeCreatedNotification(saved);
         } catch (Exception e) {
             log.error("공지사항 생성은 성공했지만 알림 발행에 실패했습니다. noticeId={}, workplaceId={}",
-                    saved.getId(), workplaceId, e);
+                    saved.getId(), workplace.getId(), e);
         }
         return NoticeDto.Response.from(saved);
     }
