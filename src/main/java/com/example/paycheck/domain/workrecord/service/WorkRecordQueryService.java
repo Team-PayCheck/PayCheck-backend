@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,9 +48,16 @@ public class WorkRecordQueryService {
     // 고용주용: 사업장의 근무 기록 조회 (캘린더)
     public List<WorkRecordDto.CalendarResponse> getWorkRecordsByWorkplaceAndDateRange(
             Long workplaceId, LocalDate startDate, LocalDate endDate) {
-        List<WorkRecord> records = workRecordRepository.findByWorkplaceAndDateRange(workplaceId, startDate, endDate, WorkRecordStatus.DELETED);
+        LocalDate queryStartDate = startDate.minusDays(1);
+        List<WorkRecord> records = workRecordRepository.findByWorkplaceAndDateRange(
+                workplaceId, queryStartDate, endDate, WorkRecordStatus.DELETED);
+
         return records.stream()
-                .map(WorkRecordDto.CalendarResponse::from)
+                .flatMap(record -> getCalendarDisplayDates(record, startDate, endDate).stream()
+                        .map(displayDate -> WorkRecordDto.CalendarResponse.from(record, displayDate)))
+                .sorted(Comparator.comparing(WorkRecordDto.CalendarResponse::getWorkDate)
+                        .thenComparing(WorkRecordDto.CalendarResponse::getStartTime)
+                        .thenComparing(WorkRecordDto.CalendarResponse::getId))
                 .collect(Collectors.toList());
     }
 
@@ -86,5 +94,31 @@ public class WorkRecordQueryService {
                 .map(CorrectionRequestDto.ListResponse::from)
                 .sorted(Comparator.comparing(CorrectionRequestDto.ListResponse::getCreatedAt).reversed())
                 .collect(Collectors.toList());
+    }
+
+    private List<LocalDate> getCalendarDisplayDates(WorkRecord workRecord, LocalDate startDate, LocalDate endDate) {
+        List<LocalDate> displayDates = new ArrayList<>();
+        LocalDate workDate = workRecord.getWorkDate();
+
+        if (isWithinDateRange(workDate, startDate, endDate)) {
+            displayDates.add(workDate);
+        }
+
+        if (isOvernight(workRecord)) {
+            LocalDate nextDate = workDate.plusDays(1);
+            if (isWithinDateRange(nextDate, startDate, endDate)) {
+                displayDates.add(nextDate);
+            }
+        }
+
+        return displayDates;
+    }
+
+    private boolean isWithinDateRange(LocalDate date, LocalDate startDate, LocalDate endDate) {
+        return !date.isBefore(startDate) && !date.isAfter(endDate);
+    }
+
+    private boolean isOvernight(WorkRecord workRecord) {
+        return !workRecord.getEndTime().isAfter(workRecord.getStartTime());
     }
 }
