@@ -10,6 +10,7 @@ import com.example.paycheck.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -53,18 +54,21 @@ class UserSettingsServiceTest {
         // given
         Long userId = 1L;
         User user = mock(User.class);
-        UserSettings settings = mock(UserSettings.class);
-
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(userSettingsRepository.save(any(UserSettings.class))).thenReturn(settings);
+        when(userSettingsRepository.save(any(UserSettings.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
         UserSettings result = userSettingsService.createDefaultSettings(userId);
 
         // then
         assertThat(result).isNotNull();
+        assertThat(result.getPushEnabled()).isFalse();
         verify(userRepository).findById(userId);
-        verify(userSettingsRepository).save(any(UserSettings.class));
+        ArgumentCaptor<UserSettings> captor = ArgumentCaptor.forClass(UserSettings.class);
+        verify(userSettingsRepository).save(captor.capture());
+        assertThat(captor.getValue().getUser()).isEqualTo(user);
+        assertThat(captor.getValue().getPushEnabled()).isFalse();
     }
 
     @Test

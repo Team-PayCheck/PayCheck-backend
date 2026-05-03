@@ -20,6 +20,7 @@ import com.example.paycheck.domain.workrecord.dto.WorkRecordDto;
 import com.example.paycheck.domain.workrecord.entity.WorkRecord;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import com.example.paycheck.domain.workrecord.service.WorkRecordCommandService;
+import com.example.paycheck.domain.workrecord.service.WorkRecordCalculationService;
 import com.example.paycheck.domain.workrecord.service.WorkRecordCoordinatorService;
 import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,7 +33,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +51,7 @@ public class CorrectionRequestService {
     private final WorkRecordRepository workRecordRepository;
     private final WorkerContractRepository workerContractRepository;
     private final WorkRecordCommandService workRecordCommandService;
+    private final WorkRecordCalculationService calculationService;
     private final WorkRecordCoordinatorService coordinatorService;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -342,15 +346,57 @@ public class CorrectionRequestService {
 
         // 기존 WeeklyAllowance 저장 (재계산용)
         WeeklyAllowance oldWeeklyAllowance = workRecord.getWeeklyAllowance();
+        LocalDate originalWorkDate = workRecord.getWorkDate();
+        LocalDate requestedWorkDate = correctionRequest.getRequestedWorkDate() != null
+                ? correctionRequest.getRequestedWorkDate()
+                : originalWorkDate;
+        java.time.LocalTime requestedStartTime = correctionRequest.getRequestedStartTime() != null
+                ? correctionRequest.getRequestedStartTime()
+                : workRecord.getStartTime();
+        java.time.LocalTime requestedEndTime = correctionRequest.getRequestedEndTime() != null
+                ? correctionRequest.getRequestedEndTime()
+                : workRecord.getEndTime();
+
+        Integer requestedBreakMinutes = correctionRequest.getRequestedBreakMinutes() != null
+                ? correctionRequest.getRequestedBreakMinutes()
+                : workRecord.getBreakMinutes();
+        int totalWorkMinutes = calculateWorkMinutes(
+                requestedWorkDate,
+                requestedStartTime,
+                requestedEndTime,
+                requestedBreakMinutes
+        );
+
+        if (oldWeeklyAllowance != null) {
+            workRecord.removeFromWeeklyAllowance();
+        }
+
+        WeeklyAllowance newWeeklyAllowance = coordinatorService.getOrCreateWeeklyAllowance(
+                workRecord.getContract().getId(),
+                requestedWorkDate);
+
+        workRecord.assignToWeeklyAllowance(newWeeklyAllowance);
+        workRecord.addToWeeklyAllowance();
 
         // WorkRecord 업데이트
-        workRecord.updateWorkTime(
-                correctionRequest.getRequestedStartTime(),
-                correctionRequest.getRequestedEndTime(),
+        workRecord.updateWorkRecord(
+                requestedWorkDate,
+                requestedStartTime,
+                requestedEndTime,
+                requestedBreakMinutes,
+                totalWorkMinutes,
                 correctionRequest.getRequestedMemo());
 
+        workRecordRepository.save(workRecord);
+
+        if (workRecord.getStatus() == WorkRecordStatus.COMPLETED) {
+            calculationService.calculateWorkRecordDetails(workRecord);
+            calculationService.validateWorkRecordConsistency(workRecord);
+            workRecordRepository.save(workRecord);
+        }
+
         // WeeklyAllowance 및 Salary 재계산
-        coordinatorService.handleWorkRecordUpdate(workRecord, oldWeeklyAllowance, workRecord.getWeeklyAllowance());
+        coordinatorService.handleWorkRecordUpdate(workRecord, oldWeeklyAllowance, newWeeklyAllowance, originalWorkDate);
     }
 
     private void approveDeleteRequest(CorrectionRequest correctionRequest) {
@@ -443,5 +489,17 @@ public class CorrectionRequestService {
             log.error("알림 액션 데이터 생성 실패: correctionRequestId={}", correctionRequestId, e);
             return null;
         }
+    }
+
+    private int calculateWorkMinutes(LocalDate workDate, java.time.LocalTime startTime, java.time.LocalTime endTime, int breakMinutes) {
+        LocalDateTime startDateTime = LocalDateTime.of(workDate, startTime);
+        LocalDateTime endDateTime = LocalDateTime.of(workDate, endTime);
+
+        if (!endTime.isAfter(startTime)) {
+            endDateTime = endDateTime.plusDays(1);
+        }
+
+        long totalMinutes = Duration.between(startDateTime, endDateTime).toMinutes();
+        return (int) (totalMinutes - breakMinutes);
     }
 }

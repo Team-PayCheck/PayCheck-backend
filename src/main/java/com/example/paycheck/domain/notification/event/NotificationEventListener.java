@@ -38,7 +38,7 @@ public class NotificationEventListener {
                 userId, event.getType(), event.getActionType());
 
         // 과거 데이터/직접 시드 데이터 등으로 설정이 없는 사용자를 방어
-        // 기본 설정을 생성해 알림이 불필요하게 드롭되는 상황을 방지한다.
+        // 기본 설정 row를 생성해 이후 설정 조회/수정 흐름이 항상 일관되게 동작하도록 한다.
         userSettingsService.getOrCreateSettings(userId);
 
         // 설정 확인 - 비활성화된 경우 조기 반환

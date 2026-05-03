@@ -148,12 +148,16 @@ public class WorkRecordDto {
         private WorkRecordStatus status;
 
         public static CalendarResponse from(WorkRecord workRecord) {
+            return from(workRecord, workRecord.getWorkDate());
+        }
+
+        public static CalendarResponse from(WorkRecord workRecord, LocalDate displayDate) {
             return CalendarResponse.builder()
                     .id(workRecord.getId())
                     .contractId(workRecord.getContract().getId())
                     .workerName(workRecord.getContract().getWorker().getUser().getName())
                     .workplaceName(workRecord.getContract().getWorkplace().getName())
-                    .workDate(workRecord.getWorkDate())
+                    .workDate(displayDate)
                     .startTime(workRecord.getStartTime())
                     .endTime(workRecord.getEndTime())
                     .breakMinutes(workRecord.getBreakMinutes())

@@ -95,7 +95,7 @@ class WorkRecordQueryServiceTest {
         Long workplaceId = 1L;
         LocalDate startDate = LocalDate.of(2024, 1, 1);
         LocalDate endDate = LocalDate.of(2024, 1, 31);
-        when(workRecordRepository.findByWorkplaceAndDateRange(workplaceId, startDate, endDate, WorkRecordStatus.DELETED))
+        when(workRecordRepository.findByWorkplaceAndDateRange(workplaceId, startDate.minusDays(1), endDate, WorkRecordStatus.DELETED))
                 .thenReturn(Arrays.asList());
 
         // when
@@ -104,7 +104,69 @@ class WorkRecordQueryServiceTest {
 
         // then
         assertThat(result).isNotNull();
-        verify(workRecordRepository).findByWorkplaceAndDateRange(workplaceId, startDate, endDate, WorkRecordStatus.DELETED);
+        verify(workRecordRepository).findByWorkplaceAndDateRange(workplaceId, startDate.minusDays(1), endDate, WorkRecordStatus.DELETED);
+    }
+
+    @Test
+    @DisplayName("익일 근무는 종료일만 조회해도 타임라인에 표시된다")
+    void getWorkRecordsByWorkplaceAndDateRange_IncludesOvernightRecordOnEndDate() {
+        // given
+        Long workplaceId = 1L;
+        LocalDate startDate = LocalDate.of(2026, 3, 6);
+        LocalDate endDate = LocalDate.of(2026, 3, 6);
+        WorkRecord overnightRecord = createWorkRecord(
+                1L,
+                LocalDate.of(2026, 3, 5),
+                LocalTime.of(23, 0),
+                LocalTime.of(2, 0),
+                WorkRecordStatus.SCHEDULED
+        );
+
+        when(workRecordRepository.findByWorkplaceAndDateRange(
+                workplaceId, startDate.minusDays(1), endDate, WorkRecordStatus.DELETED))
+                .thenReturn(List.of(overnightRecord));
+
+        // when
+        List<WorkRecordDto.CalendarResponse> result = workRecordQueryService
+                .getWorkRecordsByWorkplaceAndDateRange(workplaceId, startDate, endDate);
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(1L);
+        assertThat(result.get(0).getWorkDate()).isEqualTo(LocalDate.of(2026, 3, 6));
+        verify(workRecordRepository).findByWorkplaceAndDateRange(
+                workplaceId, startDate.minusDays(1), endDate, WorkRecordStatus.DELETED);
+    }
+
+    @Test
+    @DisplayName("익일 근무는 시작일과 종료일 모두 타임라인에 매핑된다")
+    void getWorkRecordsByWorkplaceAndDateRange_MapsOvernightRecordToBothDays() {
+        // given
+        Long workplaceId = 1L;
+        LocalDate startDate = LocalDate.of(2026, 3, 5);
+        LocalDate endDate = LocalDate.of(2026, 3, 6);
+        WorkRecord overnightRecord = createWorkRecord(
+                1L,
+                LocalDate.of(2026, 3, 5),
+                LocalTime.of(23, 0),
+                LocalTime.of(2, 0),
+                WorkRecordStatus.SCHEDULED
+        );
+
+        when(workRecordRepository.findByWorkplaceAndDateRange(
+                workplaceId, startDate.minusDays(1), endDate, WorkRecordStatus.DELETED))
+                .thenReturn(List.of(overnightRecord));
+
+        // when
+        List<WorkRecordDto.CalendarResponse> result = workRecordQueryService
+                .getWorkRecordsByWorkplaceAndDateRange(workplaceId, startDate, endDate);
+
+        // then
+        assertThat(result).hasSize(2);
+        assertThat(result).extracting(WorkRecordDto.CalendarResponse::getWorkDate)
+                .containsExactly(LocalDate.of(2026, 3, 5), LocalDate.of(2026, 3, 6));
+        assertThat(result).extracting(WorkRecordDto.CalendarResponse::getId)
+                .containsExactly(1L, 1L);
     }
 
     @Test

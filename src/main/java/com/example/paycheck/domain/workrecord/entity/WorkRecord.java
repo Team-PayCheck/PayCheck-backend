@@ -135,6 +135,11 @@ public class WorkRecord extends BaseEntity {
     // 근무 기록 수정
     // 계산은 WorkRecordCalculationService에서 수행
     public void updateWorkRecord(LocalTime startTime, LocalTime endTime, Integer breakMinutes, Integer totalWorkMinutes, String memo) {
+        updateWorkRecord(null, startTime, endTime, breakMinutes, totalWorkMinutes, memo);
+    }
+
+    public void updateWorkRecord(LocalDate workDate, LocalTime startTime, LocalTime endTime, Integer breakMinutes, Integer totalWorkMinutes, String memo) {
+        if (workDate != null) this.workDate = workDate;
         if (startTime != null) this.startTime = startTime;
         if (endTime != null) this.endTime = endTime;
         if (breakMinutes != null) this.breakMinutes = breakMinutes;

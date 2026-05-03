@@ -27,7 +27,7 @@ public class UserSettings extends BaseEntity {
 
     @Column(name = "push_enabled", nullable = false)
     @Builder.Default
-    private Boolean pushEnabled = true;
+    private Boolean pushEnabled = false;
 
     @Column(name = "email_enabled", nullable = false)
     @Builder.Default
