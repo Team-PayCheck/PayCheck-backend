@@ -143,7 +143,7 @@ class WorkplaceServiceTest {
     }
 
     @Test
-    @DisplayName("사용자 ID로 사업장 목록 조회 성공")
+    @DisplayName("사용자 ID로 사업장 목록 조회 성공 - 활성 사업장만 조회")
     void getWorkplacesByUserId_Success() {
         // given
         when(employerService.getEmployerByUserId(1L)).thenReturn(testEmployer);
