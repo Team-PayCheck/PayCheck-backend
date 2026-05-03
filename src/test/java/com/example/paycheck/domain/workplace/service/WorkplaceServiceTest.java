@@ -158,11 +158,11 @@ class WorkplaceServiceTest {
     }
 
     @Test
-    @DisplayName("사용자 ID로 사업장 목록 조회 성공 - 전체 조회")
-    void getWorkplacesByUserId_All_Success() {
+    @DisplayName("사용자 ID로 사업장 목록 조회 성공 - isActive=null이면 활성 사업장만 조회")
+    void getWorkplacesByUserId_ActiveOnly_Success() {
         // given
         when(employerService.getEmployerByUserId(1L)).thenReturn(testEmployer);
-        when(workplaceRepository.findByEmployerId(1L))
+        when(workplaceRepository.findByEmployerIdAndIsActive(1L, true))
                 .thenReturn(Collections.singletonList(testWorkplace));
         when(workerContractRepository.countByWorkplaceIdAndIsActive(1L, true)).thenReturn(5);
 
@@ -172,7 +172,7 @@ class WorkplaceServiceTest {
         // then
         assertThat(result).isNotEmpty();
         verify(employerService).getEmployerByUserId(1L);
-        verify(workplaceRepository).findByEmployerId(1L);
+        verify(workplaceRepository).findByEmployerIdAndIsActive(1L, true);
     }
 
     @Test
