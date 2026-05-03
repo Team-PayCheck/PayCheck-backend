@@ -131,7 +131,6 @@ class NoticeServiceTest {
     void createNotice_Success() {
         // given
         NoticeDto.CreateRequest request = NoticeDto.CreateRequest.builder()
-                .workplaceId(1L)
                 .category(NoticeCategory.URGENT)
                 .title("긴급 공지")
                 .content("위생사항 엄수")
@@ -144,7 +143,7 @@ class NoticeServiceTest {
                 .thenReturn(List.of(activeContract));
 
         // when
-        NoticeDto.Response result = noticeService.createNotice(authorUser, request);
+        NoticeDto.Response result = noticeService.createNotice(1L, authorUser, request);
 
         // then
         assertThat(result).isNotNull();
@@ -171,7 +170,6 @@ class NoticeServiceTest {
     void createNotice_Fail_WorkplaceNotFound() {
         // given
         NoticeDto.CreateRequest request = NoticeDto.CreateRequest.builder()
-                .workplaceId(999L)
                 .category(NoticeCategory.ETC)
                 .title("공지")
                 .content("내용")
@@ -181,7 +179,7 @@ class NoticeServiceTest {
         when(workplaceRepository.findById(999L)).thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> noticeService.createNotice(authorUser, request))
+        assertThatThrownBy(() -> noticeService.createNotice(999L, authorUser, request))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("사업장을 찾을 수 없습니다");
 
@@ -193,7 +191,6 @@ class NoticeServiceTest {
     void createNotice_Success_WhenNotificationPublishFails() {
         // given
         NoticeDto.CreateRequest request = NoticeDto.CreateRequest.builder()
-                .workplaceId(1L)
                 .category(NoticeCategory.URGENT)
                 .title("긴급 공지")
                 .content("위생사항 엄수")
@@ -208,7 +205,7 @@ class NoticeServiceTest {
                 .when(eventPublisher).publishEvent(any(NotificationEvent.class));
 
         // when
-        NoticeDto.Response result = noticeService.createNotice(authorUser, request);
+        NoticeDto.Response result = noticeService.createNotice(1L, authorUser, request);
 
         // then
         assertThat(result).isNotNull();
@@ -248,7 +245,6 @@ class NoticeServiceTest {
                 .build();
 
         NoticeDto.CreateRequest request = NoticeDto.CreateRequest.builder()
-                .workplaceId(1L)
                 .category(NoticeCategory.URGENT)
                 .title("긴급 공지")
                 .content("위생사항 엄수")
@@ -261,7 +257,7 @@ class NoticeServiceTest {
                 .thenReturn(List.of(contractInWorkplaceWithoutEmployer));
 
         // when
-        NoticeDto.Response result = noticeService.createNotice(authorUser, request);
+        NoticeDto.Response result = noticeService.createNotice(1L, authorUser, request);
 
         // then
         assertThat(result).isNotNull();
@@ -294,7 +290,6 @@ class NoticeServiceTest {
                 .build();
 
         NoticeDto.CreateRequest request = NoticeDto.CreateRequest.builder()
-                .workplaceId(1L)
                 .category(NoticeCategory.URGENT)
                 .title("긴급 공지")
                 .content("위생사항 엄수")
@@ -315,7 +310,7 @@ class NoticeServiceTest {
         }).when(eventPublisher).publishEvent(any(NotificationEvent.class));
 
         // when
-        NoticeDto.Response result = noticeService.createNotice(authorUser, request);
+        NoticeDto.Response result = noticeService.createNotice(1L, authorUser, request);
 
         // then
         assertThat(result).isNotNull();

@@ -25,13 +25,14 @@ public class NoticeController {
 
     private final NoticeService noticeService;
 
-    @Operation(summary = "공지사항 작성", description = "지정한 사업장에 공지사항을 작성합니다.")
-    @PreAuthorize("@permissionEvaluator.canAccessWorkplaceAsMember(#request.workplaceId)")
-    @PostMapping("/notices")
+    @Operation(summary = "공지사항 작성", description = "사업장에 새로운 공지사항을 작성합니다.")
+    @PreAuthorize("@permissionEvaluator.canAccessWorkplaceAsMember(#workplaceId)")
+    @PostMapping("/workplaces/{workplaceId}/notices")
     public ResponseEntity<ApiResponse<NoticeDto.Response>> createNotice(
+            @Parameter(description = "사업장 ID", required = true) @PathVariable Long workplaceId,
             @AuthenticationPrincipal User user,
             @Valid @RequestBody NoticeDto.CreateRequest request) {
-        NoticeDto.Response response = noticeService.createNotice(user, request);
+        NoticeDto.Response response = noticeService.createNotice(workplaceId, user, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
