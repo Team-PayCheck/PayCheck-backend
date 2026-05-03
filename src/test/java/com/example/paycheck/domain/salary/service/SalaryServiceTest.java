@@ -12,6 +12,7 @@ import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.worker.entity.Worker;
 import com.example.paycheck.domain.workplace.entity.Workplace;
 import com.example.paycheck.domain.workrecord.entity.WorkRecord;
+import com.example.paycheck.domain.workrecord.enums.WorkRecordStatus;
 import com.example.paycheck.domain.workrecord.repository.WorkRecordRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -145,14 +146,14 @@ class SalaryServiceTest {
         WorkerContract contract = mock(WorkerContract.class);
         when(contract.getPaymentDay()).thenReturn(25);
         when(workerContractRepository.findById(contractId)).thenReturn(Optional.of(contract));
-        when(workRecordRepository.findByContractAndDateRangeAndStatus(anyLong(), any(), any(), anyList()))
+        when(workRecordRepository.findByContractAndDateRangeAndStatus(anyLong(), any(), any(), eq(List.of(WorkRecordStatus.COMPLETED))))
                 .thenReturn(Arrays.asList());
 
         // when & then
         assertThatThrownBy(() -> salaryService.calculateSalaryByWorkRecords(contractId, 2024, 1))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessageContaining("해당 기간 내 완료된 근무 기록이 없습니다");
-        verify(workRecordRepository).findByContractAndDateRangeAndStatus(anyLong(), any(), any(), anyList());
+        verify(workRecordRepository).findByContractAndDateRangeAndStatus(anyLong(), any(), any(), eq(List.of(WorkRecordStatus.COMPLETED)));
     }
 
     @Test
@@ -163,7 +164,7 @@ class SalaryServiceTest {
         WorkerContract contract = mock(WorkerContract.class);
         when(contract.getPaymentDay()).thenReturn(25);
         when(workerContractRepository.findById(contractId)).thenReturn(Optional.of(contract));
-        when(workRecordRepository.findByContractAndDateRangeAndStatus(anyLong(), any(), any(), anyList()))
+        when(workRecordRepository.findByContractAndDateRangeAndStatus(anyLong(), any(), any(), eq(List.of(WorkRecordStatus.COMPLETED))))
                 .thenReturn(Arrays.asList());
 
         // when & then
@@ -192,7 +193,7 @@ class SalaryServiceTest {
                 eq(contractId),
                 eq(LocalDate.of(2024, 1, 31)),
                 eq(LocalDate.of(2024, 2, 28)),
-                anyList()))
+                eq(List.of(WorkRecordStatus.COMPLETED))))
                 .thenReturn(Arrays.asList());
 
         // when & then
@@ -216,7 +217,7 @@ class SalaryServiceTest {
                 eq(contractId),
                 eq(LocalDate.of(2023, 1, 31)),
                 eq(LocalDate.of(2023, 2, 27)),
-                anyList()))
+                eq(List.of(WorkRecordStatus.COMPLETED))))
                 .thenReturn(Arrays.asList());
 
         // when & then
@@ -240,7 +241,7 @@ class SalaryServiceTest {
                 eq(contractId),
                 eq(LocalDate.of(2024, 1, 30)),
                 eq(LocalDate.of(2024, 2, 28)),
-                anyList()))
+                eq(List.of(WorkRecordStatus.COMPLETED))))
                 .thenReturn(Arrays.asList());
 
         // when & then
@@ -282,7 +283,7 @@ class SalaryServiceTest {
         when(zeroRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
 
         when(workRecordRepository.findByContractAndDateRangeAndStatus(
-                eq(contractId), any(LocalDate.class), any(LocalDate.class), anyList()))
+                eq(contractId), any(LocalDate.class), any(LocalDate.class), eq(List.of(WorkRecordStatus.COMPLETED))))
                 .thenReturn(Arrays.asList(zeroRecord));
 
         // WeeklyAllowance 빈 리스트 반환
