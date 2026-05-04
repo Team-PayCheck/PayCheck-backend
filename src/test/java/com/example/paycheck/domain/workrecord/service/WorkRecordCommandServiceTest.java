@@ -116,7 +116,7 @@ class WorkRecordCommandServiceTest {
 
         // then
         assertThat(result).isNotNull();
-        verify(workRecordRepository).save(any(WorkRecord.class));
+        verify(workRecordRepository, times(2)).save(any(WorkRecord.class));
     }
 
     @Test
