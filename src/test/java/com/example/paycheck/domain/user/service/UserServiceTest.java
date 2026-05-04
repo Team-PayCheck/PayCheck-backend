@@ -100,7 +100,7 @@ class UserServiceTest {
 
     @Test
     @DisplayName("프로필 이미지 업로드 성공")
-    void uploadProfileImage_Success() {
+    void updateProfileImage_Success() {
         // given
         MockMultipartFile file = new MockMultipartFile(
                 "file",
@@ -108,20 +108,31 @@ class UserServiceTest {
                 "image/png",
                 "image-content".getBytes()
         );
-        String uploadedUrl = "https://test-bucket.s3.ap-northeast-2.amazonaws.com/profiles/1/profile.png";
+        String storedUrl = "/uploads/profile-images/uuid-profile.png";
+        String resolvedUrl = "http://localhost/uploads/profile-images/uuid-profile.png";
+
+        Worker worker = Worker.builder()
+                .workerCode("WRK001")
+                .bankName("카카오뱅크")
+                .accountNumber("123456789012")
+                .user(testUser)
+                .build();
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(profileImageStorageService.uploadProfileImage(1L, file)).thenReturn(uploadedUrl);
+        when(workerRepository.findByUserId(1L)).thenReturn(Optional.of(worker));
+        when(profileImageStorageService.store(file)).thenReturn(storedUrl);
+        when(profileImageUrlResolver.resolve(storedUrl)).thenReturn(resolvedUrl);
 
         // when
-        UserDto.ProfileImageUploadResponse result = userService.uploadProfileImage(1L, file);
+        UserDto.Response result = userService.updateProfileImage(1L, file);
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.getProfileImageUrl()).isEqualTo(uploadedUrl);
-        assertThat(testUser.getProfileImageUrl()).isEqualTo(uploadedUrl);
-        verify(userRepository).findById(1L);
-        verify(profileImageStorageService).uploadProfileImage(1L, file);
+        assertThat(result.getProfileImageUrl()).isEqualTo(resolvedUrl);
+        assertThat(testUser.getProfileImageUrl()).isEqualTo(storedUrl);
+        verify(userRepository, times(2)).findById(1L);
+        verify(profileImageStorageService).store(file);
+        verify(profileImageStorageService, never()).deleteIfStoredLocally(any());
     }
 
     @Test

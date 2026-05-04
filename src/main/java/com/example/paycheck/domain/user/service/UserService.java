@@ -68,16 +68,6 @@ public class UserService {
     }
 
     @Transactional
-    public UserDto.ProfileImageUploadResponse uploadProfileImage(Long userId, MultipartFile file) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
-
-        String profileImageUrl = profileImageStorageService.uploadProfileImage(userId, file);
-        user.updateProfileImage(profileImageUrl);
-        return UserDto.ProfileImageUploadResponse.from(profileImageUrl);
-    }
-
-    @Transactional
     public UserDto.RegisterResponse register(UserDto.RegisterRequest request) {
         // User 생성
         User user = User.builder()
