@@ -25,6 +25,7 @@ public class WorkRecordGenerationService {
 
     private final WorkRecordRepository workRecordRepository;
     private final ObjectMapper objectMapper;
+    private final WorkRecordCalculationService calculationService;
 
     /**
      * 계약 생성 시 2개월치 WorkRecord 생성
@@ -93,6 +94,7 @@ public class WorkRecordGenerationService {
         }
 
         if (!workRecords.isEmpty()) {
+            calculationService.calculateWorkRecordDetailsBatch(workRecords);
             workRecordRepository.saveAll(workRecords);
             log.info("WorkRecord 생성 완료: {} 개 생성됨 (Contract ID={})", workRecords.size(), contract.getId());
         }

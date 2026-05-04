@@ -95,12 +95,12 @@ public class WorkRecordCommandService {
 
         WorkRecord savedRecord = workRecordRepository.save(workRecord);
 
-        // COMPLETED 상태면 정확한 휴일 정보와 사업장 규모를 반영하여 재계산
+        // 예상 급여 계산 (SCHEDULED, COMPLETED 모두 적용)
+        calculationService.calculateWorkRecordDetails(savedRecord);
         if (status == WorkRecordStatus.COMPLETED) {
-            calculationService.calculateWorkRecordDetails(savedRecord);
             calculationService.validateWorkRecordConsistency(savedRecord);
-            workRecordRepository.save(savedRecord);
         }
+        workRecordRepository.save(savedRecord);
 
         // 도메인 간 협력 처리
         if (status == WorkRecordStatus.COMPLETED) {
@@ -174,12 +174,12 @@ public class WorkRecordCommandService {
 
             workRecordRepository.save(workRecord);
 
-            // COMPLETED 상태면 정확한 휴일 정보와 사업장 규모를 반영하여 재계산
+            // 예상 급여 계산 (SCHEDULED, COMPLETED 모두 적용)
+            calculationService.calculateWorkRecordDetails(workRecord);
             if (workRecord.getStatus() == WorkRecordStatus.COMPLETED) {
-                calculationService.calculateWorkRecordDetails(workRecord);
                 calculationService.validateWorkRecordConsistency(workRecord);
-                workRecordRepository.save(workRecord);
             }
+            workRecordRepository.save(workRecord);
 
             // 도메인 간 협력 처리
             coordinatorService.handleWorkRecordUpdate(workRecord, oldWeeklyAllowance, newWeeklyAllowance);
@@ -349,20 +349,16 @@ public class WorkRecordCommandService {
         // 5. WorkRecord 일괄 저장 (saveAll 사용)
         List<WorkRecord> savedRecords = workRecordRepository.saveAll(workRecordsToSave);
 
-        // 6. COMPLETED 상태 WorkRecord 상세 일괄 계산
+        // 6. 전체 WorkRecord 예상 급여 일괄 계산 (SCHEDULED, COMPLETED 모두)
+        calculationService.calculateWorkRecordDetailsBatch(savedRecords);
+
         List<WorkRecord> completedRecords = savedRecords.stream()
                 .filter(wr -> wr.getStatus() == WorkRecordStatus.COMPLETED)
                 .collect(Collectors.toList());
-
-        calculationService.calculateWorkRecordDetailsBatch(completedRecords);
-        for (WorkRecord completedRecord : completedRecords) {
-            calculationService.validateWorkRecordConsistency(completedRecord);
-        }
+        completedRecords.forEach(calculationService::validateWorkRecordConsistency);
 
         // 7. 계산된 WorkRecord 일괄 업데이트
-        if (!completedRecords.isEmpty()) {
-            workRecordRepository.saveAll(completedRecords);
-        }
+        workRecordRepository.saveAll(savedRecords);
 
         // 8. 도메인 협력 처리 일괄 수행 (기존 handleBatchWorkRecordCreation 활용)
         coordinatorService.handleBatchWorkRecordCreation(savedRecords);

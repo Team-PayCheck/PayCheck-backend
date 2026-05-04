@@ -32,6 +32,9 @@ class WorkRecordGenerationServiceTest {
     @Mock
     private WorkRecordRepository workRecordRepository;
 
+    @Mock
+    private WorkRecordCalculationService calculationService;
+
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
 
