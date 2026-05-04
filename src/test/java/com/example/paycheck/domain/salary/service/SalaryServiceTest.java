@@ -299,6 +299,7 @@ class SalaryServiceTest {
         when(zeroRecord.getBaseSalary()).thenReturn(BigDecimal.ZERO);
         when(zeroRecord.getNightSalary()).thenReturn(BigDecimal.ZERO);
         when(zeroRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+        when(zeroRecord.getOvertimeSalary()).thenReturn(BigDecimal.ZERO);
 
         when(workRecordRepository.findByContractAndDateRange(
                 eq(contractId), any(LocalDate.class), any(LocalDate.class), eq(WorkRecordStatus.DELETED)))
