@@ -78,16 +78,14 @@ class UserControllerTest {
                 "image-content".getBytes()
         );
 
-        given(userService.uploadProfileImage(eq(1L), any()))
-                .willReturn(UserDto.ProfileImageUploadResponse.from(
-                        "https://test-bucket.s3.ap-northeast-2.amazonaws.com/profiles/1/profile.png"
-                ));
+        String resolvedUrl = "http://localhost/uploads/profile-images/uuid-profile.png";
+
+        given(userService.updateProfileImage(eq(1L), any()))
+                .willReturn(UserDto.Response.from(testUser, resolvedUrl));
 
         mockMvc.perform(multipart("/api/users/me/profile-image").file(file))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.profileImageUrl").value(
-                        "https://test-bucket.s3.ap-northeast-2.amazonaws.com/profiles/1/profile.png"
-                ));
+                .andExpect(jsonPath("$.data.profileImageUrl").value(resolvedUrl));
     }
 }

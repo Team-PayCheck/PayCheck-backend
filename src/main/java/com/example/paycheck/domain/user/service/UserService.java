@@ -27,6 +27,7 @@ public class UserService {
     private final EmployerService employerService;
     private final UserSettingsService userSettingsService;
     private final ProfileImageStorageService profileImageStorageService;
+    private final ProfileImageUrlResolver profileImageUrlResolver;
 
     public UserDto.Response getUserById(Long userId) {
         User user = userRepository.findById(userId)
@@ -34,10 +35,10 @@ public class UserService {
 
         if (user.getUserType() == UserType.WORKER) {
             return workerRepository.findByUserId(userId)
-                    .map(worker -> UserDto.Response.from(user, worker))
-                    .orElse(UserDto.Response.from(user));
+                    .map(worker -> buildUserResponse(user, worker))
+                    .orElse(buildUserResponse(user));
         }
-        return UserDto.Response.from(user);
+        return buildUserResponse(user);
     }
 
     @Transactional
@@ -47,17 +48,23 @@ public class UserService {
 
         user.updateProfile(request.getName(), request.getPhone(), request.getProfileImageUrl());
 
-        return UserDto.Response.from(user);
+        return getUserById(userId);
     }
 
     @Transactional
-    public UserDto.ProfileImageUploadResponse uploadProfileImage(Long userId, MultipartFile file) {
+    public UserDto.Response updateProfileImage(Long userId, MultipartFile profileImage) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND, "사용자를 찾을 수 없습니다."));
 
-        String profileImageUrl = profileImageStorageService.uploadProfileImage(userId, file);
-        user.updateProfileImage(profileImageUrl);
-        return UserDto.ProfileImageUploadResponse.from(profileImageUrl);
+        String previousProfileImageUrl = user.getProfileImageUrl();
+        String storedProfileImageUrl = profileImageStorageService.store(profileImage);
+        user.updateProfile(null, null, storedProfileImageUrl);
+
+        if (previousProfileImageUrl != null && !previousProfileImageUrl.equals(storedProfileImageUrl)) {
+            profileImageStorageService.deleteIfStoredLocally(previousProfileImageUrl);
+        }
+
+        return getUserById(userId);
     }
 
     @Transactional
@@ -87,5 +94,13 @@ public class UserService {
         }
 
         return UserDto.RegisterResponse.from(savedUser, workerCode);
+    }
+
+    private UserDto.Response buildUserResponse(User user) {
+        return UserDto.Response.from(user, profileImageUrlResolver.resolve(user.getProfileImageUrl()));
+    }
+
+    private UserDto.Response buildUserResponse(User user, Worker worker) {
+        return UserDto.Response.from(user, worker, profileImageUrlResolver.resolve(user.getProfileImageUrl()));
     }
 }
