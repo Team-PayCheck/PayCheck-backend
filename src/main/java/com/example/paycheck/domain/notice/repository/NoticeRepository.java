@@ -2,6 +2,7 @@ package com.example.paycheck.domain.notice.repository;
 
 import com.example.paycheck.domain.notice.entity.Notice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -30,4 +31,18 @@ public interface NoticeRepository extends JpaRepository<Notice, Long> {
            "WHERE n.id = :noticeId " +
            "AND n.isDeleted = false")
     Optional<Notice> findByIdAndIsDeletedFalse(@Param("noticeId") Long noticeId);
+
+    /**
+     * 영구 삭제용: 특정 작성자가 작성한 모든 공지 일괄 삭제
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM Notice n WHERE n.author.id = :userId")
+    void deleteAllByAuthorId(@Param("userId") Long userId);
+
+    /**
+     * 영구 삭제용: 여러 사업장에 속한 모든 공지 일괄 삭제
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM Notice n WHERE n.workplace.id IN :workplaceIds")
+    void deleteAllByWorkplaceIdIn(@Param("workplaceIds") List<Long> workplaceIds);
 }

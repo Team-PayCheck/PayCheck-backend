@@ -149,4 +149,16 @@ public interface CorrectionRequestRepository extends JpaRepository<CorrectionReq
                         @Param("contractId") Long contractId,
                         @Param("date") LocalDate date,
                         @Param("status") WorkRecordStatus status);
+
+        // 영구 삭제용: 특정 사용자가 요청한 모든 정정요청 일괄 삭제
+        @Modifying(clearAutomatically = true)
+        @Query("DELETE FROM CorrectionRequest cr WHERE cr.requester.id = :userId")
+        void deleteAllByRequesterId(@Param("userId") Long userId);
+
+        // 영구 삭제용: 여러 계약(직접 참조 + WorkRecord 경유)에 연결된 정정요청 일괄 삭제
+        @Modifying(clearAutomatically = true)
+        @Query("DELETE FROM CorrectionRequest cr " +
+                        "WHERE cr.contract.id IN :contractIds " +
+                        "OR cr.workRecord.id IN (SELECT wr.id FROM WorkRecord wr WHERE wr.contract.id IN :contractIds)")
+        void deleteAllByContractIdIn(@Param("contractIds") List<Long> contractIds);
 }

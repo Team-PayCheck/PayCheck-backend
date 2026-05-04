@@ -2,6 +2,7 @@ package com.example.paycheck.domain.allowance.repository;
 
 import com.example.paycheck.domain.allowance.entity.WeeklyAllowance;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -64,4 +65,11 @@ public interface WeeklyAllowanceRepository extends JpaRepository<WeeklyAllowance
             @Param("contractId") Long contractId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
+
+    /**
+     * 영구 삭제용: 여러 계약의 모든 WeeklyAllowance 일괄 삭제
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM WeeklyAllowance wa WHERE wa.contract.id IN :contractIds")
+    void deleteAllByContractIdIn(@Param("contractIds") List<Long> contractIds);
 }

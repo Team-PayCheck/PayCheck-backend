@@ -3,6 +3,7 @@ package com.example.paycheck.domain.payment.repository;
 import com.example.paycheck.domain.payment.entity.Payment;
 import com.example.paycheck.domain.payment.enums.PaymentStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -98,4 +99,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             @Param("userId") Long userId,
             @Param("year") Integer year,
             @Param("month") Integer month);
+
+    /**
+     * 영구 삭제용: 여러 Salary에 속한 Payment 일괄 삭제
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM Payment p WHERE p.salary.id IN :salaryIds")
+    void deleteAllBySalaryIdIn(@Param("salaryIds") List<Long> salaryIds);
 }
