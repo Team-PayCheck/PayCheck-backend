@@ -62,4 +62,30 @@ public interface WorkerContractRepository extends JpaRepository<WorkerContract, 
             "JOIN FETCH c.workplace wp " +
             "WHERE c.isActive = true AND c.paymentDay >= :tomorrowDay")
     List<WorkerContract> findActiveContractsByPaymentDayOnLastDay(@Param("tomorrowDay") int tomorrowDay);
+
+    /**
+     * 영구 삭제용: 여러 사업장에 속한 모든 WorkerContract ID 조회
+     */
+    @Query("SELECT c.id FROM WorkerContract c WHERE c.workplace.id IN :workplaceIds")
+    List<Long> findIdsByWorkplaceIdIn(@Param("workplaceIds") List<Long> workplaceIds);
+
+    /**
+     * 영구 삭제용: 여러 사업장에 속한 모든 WorkerContract 일괄 삭제
+     */
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
+    @Query("DELETE FROM WorkerContract c WHERE c.workplace.id IN :workplaceIds")
+    void deleteAllByWorkplaceIdIn(@Param("workplaceIds") List<Long> workplaceIds);
+
+    /**
+     * 영구 삭제용: 특정 근로자의 모든 WorkerContract ID 조회
+     */
+    @Query("SELECT c.id FROM WorkerContract c WHERE c.worker.id = :workerId")
+    List<Long> findIdsByWorkerId(@Param("workerId") Long workerId);
+
+    /**
+     * 영구 삭제용: 특정 근로자의 모든 WorkerContract 일괄 삭제
+     */
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true)
+    @Query("DELETE FROM WorkerContract c WHERE c.worker.id = :workerId")
+    void deleteAllByWorkerId(@Param("workerId") Long workerId);
 }

@@ -5,6 +5,7 @@ import jakarta.persistence.LockModeType;
 import jakarta.persistence.QueryHint;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
@@ -81,4 +82,17 @@ public interface SalaryRepository extends JpaRepository<Salary, Long> {
             @Param("year") Integer year,
             @Param("month") Integer month
     );
+
+    /**
+     * 영구 삭제용: 여러 계약의 모든 Salary ID 조회 (Payment 선삭제용)
+     */
+    @Query("SELECT s.id FROM Salary s WHERE s.contract.id IN :contractIds")
+    List<Long> findIdsByContractIdIn(@Param("contractIds") List<Long> contractIds);
+
+    /**
+     * 영구 삭제용: 여러 계약의 모든 Salary 일괄 삭제
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM Salary s WHERE s.contract.id IN :contractIds")
+    void deleteAllByContractIdIn(@Param("contractIds") List<Long> contractIds);
 }

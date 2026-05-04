@@ -159,6 +159,11 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
                         @Param("currentStatus") WorkRecordStatus currentStatus,
                         @Param("newStatus") WorkRecordStatus newStatus);
 
+        // 영구 삭제용: 여러 계약의 모든 WorkRecord 일괄 삭제
+        @Modifying(clearAutomatically = true)
+        @Query("DELETE FROM WorkRecord wr WHERE wr.contract.id IN :contractIds")
+        void deleteAllByContractIdIn(@Param("contractIds") List<Long> contractIds);
+
         // 현재 시점 기준으로 종료된 SCHEDULED 근무 기록 ID 조회 (자동 완료 배치용)
         // ID만 조회하여 메모리 효율 확보, 각 레코드는 completeWorkRecord(Long)에서 개별 트랜잭션으로 처리
         @Query("SELECT wr.id FROM WorkRecord wr " +
