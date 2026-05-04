@@ -118,12 +118,14 @@ public class SalaryService {
         BigDecimal totalBasePay = BigDecimal.ZERO;
         BigDecimal totalNightPay = BigDecimal.ZERO;
         BigDecimal totalHolidayPay = BigDecimal.ZERO;
+        BigDecimal totalDailyOvertimePay = BigDecimal.ZERO;
 
         for (WorkRecord record : workRecords) {
             totalWorkHours = totalWorkHours.add(record.getTotalHours());
             totalBasePay = totalBasePay.add(record.getBaseSalary());
             totalNightPay = totalNightPay.add(record.getNightSalary());
             totalHolidayPay = totalHolidayPay.add(record.getHolidaySalary());
+            totalDailyOvertimePay = totalDailyOvertimePay.add(record.getOvertimeSalary());
         }
 
         // ========================================
@@ -133,7 +135,7 @@ public class SalaryService {
         // 당월 WeeklyAllowance 조회
         List<WeeklyAllowance> weeklyAllowances = weeklyAllowanceRepository.findByContractIdAndYearMonth(contractId, year, month);
         BigDecimal totalWeeklyPaidLeaveAmount = BigDecimal.ZERO;
-        BigDecimal totalOvertimePay = BigDecimal.ZERO;
+        BigDecimal totalWeeklyOvertimePay = BigDecimal.ZERO;
 
         // 월급날 계산 (당월 paymentDay)
         LocalDate paymentDayDate = adjustDayOfMonth(LocalDate.of(year, month, 1), paymentDay);
@@ -147,7 +149,7 @@ public class SalaryService {
             if (!isLastWeek) {
                 // 마지막 주차가 아니면 현재 월 급여에 포함
                 totalWeeklyPaidLeaveAmount = totalWeeklyPaidLeaveAmount.add(allowance.getWeeklyPaidLeaveAmount());
-                totalOvertimePay = totalOvertimePay.add(allowance.getOvertimeAmount());
+                totalWeeklyOvertimePay = totalWeeklyOvertimePay.add(allowance.getOvertimeAmount());
             }
             // 마지막 주차면 제외 (다음 달 급여로 이월)
         }
@@ -167,9 +169,12 @@ public class SalaryService {
             if (isPreviousLastWeek) {
                 // 전월 마지막 주차의 수당을 현재 월 급여에 추가 (이월분)
                 totalWeeklyPaidLeaveAmount = totalWeeklyPaidLeaveAmount.add(allowance.getWeeklyPaidLeaveAmount());
-                totalOvertimePay = totalOvertimePay.add(allowance.getOvertimeAmount());
+                totalWeeklyOvertimePay = totalWeeklyOvertimePay.add(allowance.getOvertimeAmount());
             }
         }
+
+        // 연장 수당 합계 = 일일 연장 가산분 + 주간 연장 가산분
+        BigDecimal totalOvertimePay = totalDailyOvertimePay.add(totalWeeklyOvertimePay);
 
         BigDecimal totalGrossPay = totalBasePay.add(totalNightPay).add(totalHolidayPay)
                 .add(totalWeeklyPaidLeaveAmount).add(totalOvertimePay);

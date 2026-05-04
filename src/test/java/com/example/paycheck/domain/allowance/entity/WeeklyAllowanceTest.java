@@ -407,10 +407,12 @@ class WeeklyAllowanceTest {
         WorkRecord record1 = mock(WorkRecord.class);
         when(record1.getStatus()).thenReturn(WorkRecordStatus.COMPLETED);
         when(record1.getTotalHours()).thenReturn(BigDecimal.valueOf(25));
+        when(record1.getOvertimeHours()).thenReturn(BigDecimal.ZERO);
 
         WorkRecord record2 = mock(WorkRecord.class);
         when(record2.getStatus()).thenReturn(WorkRecordStatus.COMPLETED);
         when(record2.getTotalHours()).thenReturn(BigDecimal.valueOf(20));
+        when(record2.getOvertimeHours()).thenReturn(BigDecimal.ZERO);
 
         weeklyAllowance.getWorkRecords().addAll(Arrays.asList(record1, record2));
 

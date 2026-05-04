@@ -83,6 +83,7 @@ class SalaryServiceConcurrencyTest {
         when(mockWorkRecord.getBaseSalary()).thenReturn(new BigDecimal("100000"));
         when(mockWorkRecord.getNightSalary()).thenReturn(BigDecimal.ZERO);
         when(mockWorkRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+        when(mockWorkRecord.getOvertimeSalary()).thenReturn(BigDecimal.ZERO);
     }
 
     @Test

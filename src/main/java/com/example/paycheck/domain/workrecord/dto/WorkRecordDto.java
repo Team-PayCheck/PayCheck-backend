@@ -91,6 +91,8 @@ public class WorkRecordDto {
         private BigDecimal nightSalary;
         @Schema(description = "휴일 수당")
         private BigDecimal holidaySalary;
+        @Schema(description = "연장 가산 수당")
+        private BigDecimal overtimeSalary;
         @Schema(description = "총 급여")
         private BigDecimal totalSalary;
 
@@ -121,6 +123,7 @@ public class WorkRecordDto {
                     .baseSalary(workRecord.getBaseSalary())
                     .nightSalary(workRecord.getNightSalary())
                     .holidaySalary(workRecord.getHolidaySalary())
+                    .overtimeSalary(workRecord.getOvertimeSalary())
                     .totalSalary(workRecord.getTotalSalary())
                     .build();
         }

@@ -94,6 +94,10 @@ public class WorkRecord extends BaseEntity {
     @Builder.Default
     private BigDecimal holidayHours = BigDecimal.ZERO;
 
+    @Column(name = "overtime_hours", precision = 5, scale = 2)
+    @Builder.Default
+    private BigDecimal overtimeHours = BigDecimal.ZERO;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     @Builder.Default
@@ -118,6 +122,10 @@ public class WorkRecord extends BaseEntity {
     @Column(name = "holiday_salary", precision = 12, scale = 2)
     @Builder.Default
     private BigDecimal holidaySalary = BigDecimal.ZERO;
+
+    @Column(name = "overtime_salary", precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal overtimeSalary = BigDecimal.ZERO;
 
     @Column(name = "total_salary", precision = 12, scale = 2)
     @Builder.Default
@@ -170,14 +178,21 @@ public class WorkRecord extends BaseEntity {
         if (endTime.isBefore(startTime)) {
             minutes += 24 * 60; // 자정을 넘는 경우 24시간 추가
         }
-        this.totalHours = BigDecimal.valueOf(minutes).divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP);
+        this.totalHours = BigDecimal.valueOf(minutes).subtract(BigDecimal.valueOf(this.breakMinutes))
+                .divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP);
 
         // 실제 근무 시간 계산 (전체 시간 - 휴식 시간)
         this.totalWorkMinutes = (int) (minutes - this.breakMinutes);
 
+        // 연장 시간 계산 (8시간 초과분)
+        if (this.totalHours.compareTo(DAILY_THRESHOLD) > 0) {
+            this.overtimeHours = this.totalHours.subtract(DAILY_THRESHOLD);
+        } else {
+            this.overtimeHours = BigDecimal.ZERO;
+        }
+
         // 야간 시간과 주간 시간 분류 (자정을 넘는 경우 처리)
         BigDecimal nightHours = BigDecimal.ZERO;
-        BigDecimal dayHours = BigDecimal.ZERO;
 
         LocalTime nightStart = NIGHT_SHIFT_START; // 22:00
         LocalTime nightEnd = NIGHT_SHIFT_END;     // 06:00
@@ -186,60 +201,49 @@ public class WorkRecord extends BaseEntity {
 
         if (crossesMidnight) {
             // 자정을 넘는 경우 (예: 22:00-06:00)
-            // 시작 시간이 22:00 이후이면 야간에 해당
             if (!startTime.isBefore(nightStart)) {
-                // 22:00-24:00 구간의 야간 시간
-                long nightMinutes1 = java.time.Duration.between(startTime, LocalTime.MAX).toMinutes() + 1; // +1 for 24:00
+                long nightMinutes1 = java.time.Duration.between(startTime, LocalTime.MAX).toMinutes() + 1;
                 nightHours = nightHours.add(BigDecimal.valueOf(nightMinutes1).divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP));
-            } else if (startTime.isBefore(nightEnd)) {
-                // 시작이 00:00-06:00 사이인 경우는 없음 (crossesMidnight이므로)
             } else {
-                // 시작이 06:00-22:00 사이: 22:00-24:00 전체가 야간
                 long nightMinutes1 = java.time.Duration.between(nightStart, LocalTime.MAX).toMinutes() + 1;
                 nightHours = nightHours.add(BigDecimal.valueOf(nightMinutes1).divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP));
             }
 
-            // 종료 시간이 06:00 이전이면 야간에 해당
             if (endTime.isBefore(nightEnd) || endTime.equals(LocalTime.MIN)) {
-                // 00:00-종료 시간 구간의 야간 시간
                 long nightMinutes2 = java.time.Duration.between(LocalTime.MIN, endTime).toMinutes();
                 nightHours = nightHours.add(BigDecimal.valueOf(nightMinutes2).divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP));
             } else {
-                // 종료가 06:00 이후: 00:00-06:00 전체가 야간
                 long nightMinutes2 = java.time.Duration.between(LocalTime.MIN, nightEnd).toMinutes();
                 nightHours = nightHours.add(BigDecimal.valueOf(nightMinutes2).divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP));
             }
         } else {
-            // 자정을 넘지 않는 경우 (예: 09:00-18:00, 23:00-05:00은 불가능)
             if (startTime.isBefore(nightEnd)) {
-                // 06시 이전에 시작: 야간 근무
                 LocalTime actualEnd = endTime.isBefore(nightEnd) ? endTime : nightEnd;
                 long nightMinutes = java.time.Duration.between(startTime, actualEnd).toMinutes();
                 nightHours = BigDecimal.valueOf(nightMinutes).divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP);
             }
 
             if (endTime.isAfter(nightStart)) {
-                // 22시 이후에 종료: 야간 근무
                 LocalTime actualStart = startTime.isAfter(nightStart) ? startTime : nightStart;
                 long nightMinutes = java.time.Duration.between(actualStart, endTime).toMinutes();
                 nightHours = nightHours.add(BigDecimal.valueOf(nightMinutes).divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP));
             }
         }
 
-        // 주간 시간 = 전체 시간 - 야간 시간
-        dayHours = this.totalHours.subtract(nightHours);
+        // 휴게시간 비율에 따른 야간 시간 차감 (간소화된 정책: 전체 시간 대비 야간 시간 비율로 차감)
+        if (this.breakMinutes > 0 && this.totalHours.compareTo(BigDecimal.ZERO) > 0) {
+             BigDecimal breakHours = BigDecimal.valueOf(this.breakMinutes).divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP);
+             BigDecimal nightRatio = nightHours.divide(this.totalHours.add(breakHours), 4, java.math.RoundingMode.HALF_UP);
+             nightHours = nightHours.subtract(breakHours.multiply(nightRatio)).setScale(2, java.math.RoundingMode.HALF_UP);
+        }
+        this.nightHours = nightHours.max(BigDecimal.ZERO);
 
         // 휴일 여부에 따라 분류
         if (isHoliday) {
-            // 휴일 근무 시 사업장 규모와 관계없이 holidayHours에 기록
-            // 급여 가산은 calculateSalaryWithAllowanceRules()에서 사업장 규모에 따라 처리
             this.holidayHours = this.totalHours;
-            this.nightHours = nightHours; // 야간 시간대는 별도 표시
             this.regularHours = BigDecimal.ZERO;
         } else {
-            // 평일
-            this.nightHours = nightHours;
-            this.regularHours = dayHours;
+            this.regularHours = this.totalHours.subtract(this.nightHours).max(BigDecimal.ZERO);
             this.holidayHours = BigDecimal.ZERO;
         }
     }
@@ -248,119 +252,32 @@ public class WorkRecord extends BaseEntity {
     // WorkRecordCalculationService에서 호출됨
     public void calculateSalaryWithAllowanceRules(boolean isSmallWorkplace) {
         BigDecimal hourlyWage = this.contract.getHourlyWage();
+        BigDecimal premiumRate = BigDecimal.valueOf(0.5);
 
-        // 사업장 규모에 따라 급여 계산 분기
+        // 1. 기본급 계산 (모든 사업장 공통: 1.0배)
+        this.baseSalary = this.totalHours.multiply(hourlyWage);
+
         if (isSmallWorkplace) {
-            // ===== 5인 미만 사업장 =====
-            // 휴일/평일, 야간/주간 구분 없이 모든 시간을 기본 시급으로만 계산
-            this.baseSalary = this.totalHours.multiply(hourlyWage);
+            // 5인 미만 사업장: 가산 수당 없음
+            this.overtimeSalary = BigDecimal.ZERO;
             this.nightSalary = BigDecimal.ZERO;
             this.holidaySalary = BigDecimal.ZERO;
         } else {
-            // ===== 5인 이상 사업장 =====
-            // 휴일 근무 여부에 따라 급여 계산 분기
-            if (this.holidayHours.compareTo(BigDecimal.ZERO) > 0) {
-                // ----- 휴일 근무인 경우 -----
-                // 휴일 가산 적용
-                // holidayHours는 전체 시간, nightHours는 야간 시간대
-                // 주간 시간 = 전체 휴일 시간 - 야간 시간
-                BigDecimal dayHolidayHours = this.holidayHours.subtract(this.nightHours);
+            // 5인 이상 사업장: 가산 수당 (0.5배씩) 적용
+            
+            // 연장 가산 (8시간 초과분 0.5배)
+            this.overtimeSalary = this.overtimeHours.multiply(hourlyWage).multiply(premiumRate);
 
-                if (this.holidayHours.compareTo(HOLIDAY_DAILY_THRESHOLD) <= 0) {
-                    // Case 1: 휴일 전체 8시간 이하
-                    // 주간: 휴일 50% 가산 (1.5배)
-                    this.holidaySalary = dayHolidayHours.multiply(hourlyWage).multiply(OVERTIME_RATE);
-                    // 야간: 휴일 50% + 야간 50% = 100% 가산 (2.0배)
-                    this.nightSalary = this.nightHours.multiply(hourlyWage).multiply(BigDecimal.valueOf(2.0));
-                } else {
-                    // Case 2: 휴일 전체 8시간 초과
-                    // 8시간 이내 부분과 초과 부분을 야간/주간으로 분배
-                    if (this.nightHours.compareTo(BigDecimal.ZERO) == 0) {
-                        // 야간 없음: 모두 주간
-                        BigDecimal overtime = this.holidayHours.subtract(HOLIDAY_DAILY_THRESHOLD);
+            // 야간 가산 (22-06시 근무분 0.5배)
+            this.nightSalary = this.nightHours.multiply(hourlyWage).multiply(premiumRate);
 
-                        // 처음 8시간: 휴일 50% (1.5배)
-                        // 초과 시간: 휴일 50% + 연장 50% = 100% 가산 (2.0배)
-                        this.holidaySalary = HOLIDAY_DAILY_THRESHOLD.multiply(hourlyWage).multiply(OVERTIME_RATE)
-                            .add(overtime.multiply(hourlyWage).multiply(BigDecimal.valueOf(2.0)));
-                        this.nightSalary = BigDecimal.ZERO;
-                    } else if (dayHolidayHours.compareTo(HOLIDAY_DAILY_THRESHOLD) >= 0) {
-                        // 주간이 8시간 이상: 주간 8시간까지는 1.5배, 나머지는 모두 초과
-                        BigDecimal dayOvertime = dayHolidayHours.subtract(HOLIDAY_DAILY_THRESHOLD);
-
-                        // 주간 처음 8시간: 휴일 50% (1.5배)
-                        // 주간 초과: 휴일 50% + 연장 50% (2.0배)
-                        this.holidaySalary = HOLIDAY_DAILY_THRESHOLD.multiply(hourlyWage).multiply(OVERTIME_RATE)
-                            .add(dayOvertime.multiply(hourlyWage).multiply(BigDecimal.valueOf(2.0)));
-                        // 야간은 모두 초과: 휴일 50% + 연장 50% + 야간 50% = 150% 가산 (2.5배)
-                        this.nightSalary = this.nightHours.multiply(hourlyWage).multiply(BigDecimal.valueOf(2.5));
-                    } else {
-                        // 주간 < 8시간: 주간은 모두 8시간 이내, 야간 일부가 8시간 초과
-                        BigDecimal nightWithin8 = HOLIDAY_DAILY_THRESHOLD.subtract(dayHolidayHours);
-                        BigDecimal nightOvertime = this.nightHours.subtract(nightWithin8);
-
-                        // 주간: 모두 8시간 이내 (휴일 50%, 1.5배)
-                        this.holidaySalary = dayHolidayHours.multiply(hourlyWage).multiply(OVERTIME_RATE);
-                        // 야간 8시간 이내: 휴일 50% + 야간 50% (2.0배)
-                        // 야간 초과: 휴일 50% + 연장 50% + 야간 50% (2.5배)
-                        this.nightSalary = nightWithin8.multiply(hourlyWage).multiply(BigDecimal.valueOf(2.0))
-                            .add(nightOvertime.multiply(hourlyWage).multiply(BigDecimal.valueOf(2.5)));
-                    }
-                }
-                this.baseSalary = BigDecimal.ZERO; // 휴일이므로 기본급 없음
-            } else {
-                // ----- 평일 근무인 경우 -----
-                this.holidaySalary = BigDecimal.ZERO;
-
-                // 평일 총 근무 시간 = 주간 + 야간
-                BigDecimal totalWeekdayHours = this.regularHours.add(this.nightHours);
-
-                if (totalWeekdayHours.compareTo(DAILY_THRESHOLD) <= 0) {
-                    // Case 1: 8시간 이하 - 연장 없음
-                    // 주간: 1.0배
-                    this.baseSalary = this.regularHours.multiply(hourlyWage);
-                    // 야간: 1.5배 (야간 가산만)
-                    this.nightSalary = this.nightHours.multiply(hourlyWage).multiply(OVERTIME_RATE);
-                } else {
-                    // Case 2-4: 8시간 초과 - 연장수당 발생
-                    if (this.nightHours.compareTo(BigDecimal.ZERO) == 0) {
-                        // Case 2: 야간 없음 - 모두 주간
-                        BigDecimal first8 = DAILY_THRESHOLD;
-                        BigDecimal overtime = this.regularHours.subtract(first8);
-
-                        // 처음 8시간: 1.0배
-                        // 초과 시간: 1.5배 (연장 가산)
-                        this.baseSalary = first8.multiply(hourlyWage)
-                            .add(overtime.multiply(hourlyWage).multiply(OVERTIME_RATE));
-                        this.nightSalary = BigDecimal.ZERO;
-                    } else if (this.regularHours.compareTo(DAILY_THRESHOLD) >= 0) {
-                        // Case 3: 주간이 8시간 이상
-                        BigDecimal regularOvertime = this.regularHours.subtract(DAILY_THRESHOLD);
-
-                        // 주간 처음 8시간: 1.0배
-                        // 주간 초과: 1.5배 (연장 가산)
-                        this.baseSalary = DAILY_THRESHOLD.multiply(hourlyWage)
-                            .add(regularOvertime.multiply(hourlyWage).multiply(OVERTIME_RATE));
-                        // 야간은 모두 초과: 1.5배(연장) + 0.5배(야간) = 2.0배
-                        this.nightSalary = this.nightHours.multiply(hourlyWage).multiply(BigDecimal.valueOf(2.0));
-                    } else {
-                        // Case 4: 주간 < 8시간 - 야간 일부가 8시간 초과
-                        BigDecimal nightWithin8 = DAILY_THRESHOLD.subtract(this.regularHours);
-                        BigDecimal nightOvertime = this.nightHours.subtract(nightWithin8);
-
-                        // 주간: 모두 8시간 이내 (1.0배)
-                        this.baseSalary = this.regularHours.multiply(hourlyWage);
-                        // 야간 8시간 이내: 1.5배 (야간 가산)
-                        // 야간 초과: 2.0배 (연장 + 야간 가산)
-                        this.nightSalary = nightWithin8.multiply(hourlyWage).multiply(OVERTIME_RATE)
-                            .add(nightOvertime.multiply(hourlyWage).multiply(BigDecimal.valueOf(2.0)));
-                    }
-                }
-            }
+            // 휴일 가산 (휴일 근무분 0.5배)
+            this.holidaySalary = this.holidayHours.multiply(hourlyWage).multiply(premiumRate);
         }
 
-        // 총 급여 = 기본급 + 야간급 + 휴일급
+        // 총 급여 = 기본급(1.0) + 연장가산(0.5) + 야간가산(0.5) + 휴일가산(0.5)
         this.totalSalary = this.baseSalary
+                .add(this.overtimeSalary)
                 .add(this.nightSalary)
                 .add(this.holidaySalary);
     }

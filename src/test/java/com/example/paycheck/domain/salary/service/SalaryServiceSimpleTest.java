@@ -168,6 +168,7 @@ class SalaryServiceSimpleTest {
         when(workRecord.getBaseSalary()).thenReturn(BigDecimal.ONE);
         when(workRecord.getNightSalary()).thenReturn(BigDecimal.ZERO);
         when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+        when(workRecord.getOvertimeSalary()).thenReturn(BigDecimal.ZERO);
 
         when(workRecordRepository.findByContractAndDateRange(eq(contractId), eq(febStart), eq(febEnd), any(WorkRecordStatus.class)))
                 .thenReturn(Collections.singletonList(workRecord));
@@ -222,6 +223,7 @@ class SalaryServiceSimpleTest {
         when(workRecord.getBaseSalary()).thenReturn(new BigDecimal("100"));
         when(workRecord.getNightSalary()).thenReturn(new BigDecimal("20"));
         when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+        when(workRecord.getOvertimeSalary()).thenReturn(BigDecimal.ZERO);
 
         when(workRecordRepository.findByContractAndDateRange(eq(contractId), any(LocalDate.class), any(LocalDate.class), any(WorkRecordStatus.class)))
                 .thenReturn(Collections.singletonList(workRecord));
@@ -304,6 +306,7 @@ class SalaryServiceSimpleTest {
         when(workRecord.getBaseSalary()).thenReturn(new BigDecimal("100000.00"));
         when(workRecord.getNightSalary()).thenReturn(BigDecimal.ZERO);
         when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+        when(workRecord.getOvertimeSalary()).thenReturn(BigDecimal.ZERO);
 
         when(workRecordRepository.findByContractAndDateRange(eq(contractId), eq(startDate), eq(endDate), any(WorkRecordStatus.class)))
                 .thenReturn(List.of(workRecord));
@@ -401,6 +404,7 @@ class SalaryServiceSimpleTest {
         when(workRecord.getBaseSalary()).thenReturn(new BigDecimal("100000"));
         when(workRecord.getNightSalary()).thenReturn(BigDecimal.ZERO);
         when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+        when(workRecord.getOvertimeSalary()).thenReturn(BigDecimal.ZERO);
 
         setupCommonMocks(contractId, contract, List.of(workRecord), Collections.emptyList(), Collections.emptyList(), 2024, 5);
 
@@ -426,6 +430,7 @@ class SalaryServiceSimpleTest {
         when(workRecord.getBaseSalary()).thenReturn(new BigDecimal("2000000"));
         when(workRecord.getNightSalary()).thenReturn(BigDecimal.ZERO);
         when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+        when(workRecord.getOvertimeSalary()).thenReturn(BigDecimal.ZERO);
 
         setupCommonMocks(contractId, contract, List.of(workRecord), Collections.emptyList(), Collections.emptyList(), 2024, 5);
 
@@ -452,6 +457,7 @@ class SalaryServiceSimpleTest {
         when(workRecord.getBaseSalary()).thenReturn(new BigDecimal("400000"));
         when(workRecord.getNightSalary()).thenReturn(BigDecimal.ZERO);
         when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+        when(workRecord.getOvertimeSalary()).thenReturn(BigDecimal.ZERO);
 
         // 마지막 주차가 아닌 WeeklyAllowance (paymentDay=25, weekStartDate=5/5~5/11)
         WeeklyAllowance allowance = mock(WeeklyAllowance.class);
@@ -483,6 +489,7 @@ class SalaryServiceSimpleTest {
         when(workRecord.getBaseSalary()).thenReturn(new BigDecimal("80000"));
         when(workRecord.getNightSalary()).thenReturn(new BigDecimal("40000"));
         when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+        when(workRecord.getOvertimeSalary()).thenReturn(BigDecimal.ZERO);
 
         WeeklyAllowance allowance = mock(WeeklyAllowance.class);
         when(allowance.getWeekStartDate()).thenReturn(LocalDate.of(2024, 5, 6));
@@ -515,6 +522,7 @@ class SalaryServiceSimpleTest {
         when(workRecord.getBaseSalary()).thenReturn(BigDecimal.ZERO);
         when(workRecord.getNightSalary()).thenReturn(BigDecimal.ZERO);
         when(workRecord.getHolidaySalary()).thenReturn(BigDecimal.ZERO);
+        when(workRecord.getOvertimeSalary()).thenReturn(BigDecimal.ZERO);
 
         setupCommonMocks(contractId, contract, List.of(workRecord), Collections.emptyList(), Collections.emptyList(), 2024, 5);
 

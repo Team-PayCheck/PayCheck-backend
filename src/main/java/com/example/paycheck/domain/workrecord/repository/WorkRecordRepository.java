@@ -77,6 +77,7 @@ public interface WorkRecordRepository extends JpaRepository<WorkRecord, Long> {
 
         @Query("SELECT DISTINCT c FROM WorkerContract c " +
                         "JOIN FETCH c.worker w " +
+                        "JOIN FETCH w.user " +
                         "JOIN FETCH c.workplace " +
                         "WHERE c.workplace.id = :workplaceId " +
                         "AND c.isActive = true")

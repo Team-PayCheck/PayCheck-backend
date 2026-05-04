@@ -13,24 +13,28 @@ import java.util.Optional;
 public interface WorkerContractRepository extends JpaRepository<WorkerContract, Long> {
     @Query("SELECT c FROM WorkerContract c " +
             "JOIN FETCH c.worker w " +
+            "JOIN FETCH w.user u " +
             "JOIN FETCH c.workplace wp " +
             "WHERE w.id = :workerId")
     List<WorkerContract> findByWorkerId(@Param("workerId") Long workerId);
 
     @Query("SELECT c FROM WorkerContract c " +
             "JOIN FETCH c.worker w " +
+            "JOIN FETCH w.user u " +
             "JOIN FETCH c.workplace wp " +
             "WHERE wp.id = :workplaceId")
     List<WorkerContract> findByWorkplaceId(@Param("workplaceId") Long workplaceId);
 
     @Query("SELECT c FROM WorkerContract c " +
             "JOIN FETCH c.worker w " +
+            "JOIN FETCH w.user u " +
             "JOIN FETCH c.workplace wp " +
             "WHERE wp.id = :workplaceId AND c.isActive = :isActive")
     List<WorkerContract> findByWorkplaceIdAndIsActive(@Param("workplaceId") Long workplaceId, @Param("isActive") Boolean isActive);
 
     @Query("SELECT c FROM WorkerContract c " +
             "JOIN FETCH c.worker w " +
+            "JOIN FETCH w.user u " +
             "JOIN FETCH c.workplace wp " +
             "WHERE w.id = :workerId AND wp.id = :workplaceId")
     Optional<WorkerContract> findByWorkerIdAndWorkplaceId(@Param("workerId") Long workerId, @Param("workplaceId") Long workplaceId);
