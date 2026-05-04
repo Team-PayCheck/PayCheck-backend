@@ -47,6 +47,10 @@ public class User extends BaseEntity {
         if (profileImageUrl != null) this.profileImageUrl = profileImageUrl;
     }
 
+    public void updateProfileImage(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
     public void withdraw() {
         this.deletedAt = LocalDateTime.now();
     }

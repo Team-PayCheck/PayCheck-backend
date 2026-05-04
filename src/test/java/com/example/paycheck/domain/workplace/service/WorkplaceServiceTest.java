@@ -58,7 +58,8 @@ class WorkplaceServiceTest {
                 .id(1L)
                 .employer(testEmployer)
                 .businessNumber("123-45-67890")
-                .name("테스트 사업장")
+                .businessName("실제 근무지명")
+                .name("앱 내부 별칭")
                 .address("서울시 강남구")
                 .isActive(true)
                 .build();
@@ -70,6 +71,7 @@ class WorkplaceServiceTest {
         // given
         WorkplaceDto.CreateRequest request = WorkplaceDto.CreateRequest.builder()
                 .businessNumber("123-45-67890")
+                .businessName("실제 근무지명")
                 .name("테스트 사업장")
                 .address("서울시 강남구")
                 .colorCode("#FF0000")
@@ -94,6 +96,7 @@ class WorkplaceServiceTest {
         // given
         WorkplaceDto.CreateRequest request = WorkplaceDto.CreateRequest.builder()
                 .businessNumber("123-45-67890")
+                .businessName("실제 근무지명")
                 .name("테스트 사업장")
                 .address("서울시 강남구")
                 .colorCode("#FF0000")
@@ -140,7 +143,7 @@ class WorkplaceServiceTest {
     }
 
     @Test
-    @DisplayName("사용자 ID로 사업장 목록 조회 성공")
+    @DisplayName("사용자 ID로 사업장 목록 조회 성공 - 활성 사업장만 조회")
     void getWorkplacesByUserId_Success() {
         // given
         when(employerService.getEmployerByUserId(1L)).thenReturn(testEmployer);
@@ -153,6 +156,8 @@ class WorkplaceServiceTest {
 
         // then
         assertThat(result).isNotEmpty();
+        assertThat(result.get(0).getBusinessName()).isEqualTo("실제 근무지명");
+        assertThat(result.get(0).getName()).isEqualTo("실제 근무지명");
         verify(employerService).getEmployerByUserId(1L);
         verify(workplaceRepository).findByEmployerIdAndIsActive(1L, true);
     }
@@ -162,6 +167,7 @@ class WorkplaceServiceTest {
     void updateWorkplace_Success() {
         // given
         WorkplaceDto.UpdateRequest request = WorkplaceDto.UpdateRequest.builder()
+                .businessName("수정된 실제 근무지명")
                 .name("수정된 사업장")
                 .address("서울시 서초구")
                 .colorCode("#00FF00")
@@ -176,5 +182,32 @@ class WorkplaceServiceTest {
         // then
         assertThat(result).isNotNull();
         verify(workplaceRepository).findById(1L);
+    }
+
+    @Test
+    @DisplayName("사업장 목록 조회 시 실제 근무지명이 없으면 기존 근무지명으로 표시")
+    void getWorkplacesByUserId_FallbackToNameWhenBusinessNameMissing() {
+        // given
+        Workplace workplaceWithoutBusinessName = Workplace.builder()
+                .id(2L)
+                .employer(testEmployer)
+                .businessNumber("234-56-78901")
+                .name("기존 근무지명")
+                .address("서울시 마포구")
+                .isActive(true)
+                .build();
+
+        when(employerService.getEmployerByUserId(1L)).thenReturn(testEmployer);
+        when(workplaceRepository.findByEmployerIdAndIsActive(1L, true))
+                .thenReturn(Collections.singletonList(workplaceWithoutBusinessName));
+        when(workerContractRepository.countByWorkplaceIdAndIsActive(2L, true)).thenReturn(2);
+
+        // when
+        List<WorkplaceDto.ListResponse> result = workplaceService.getWorkplacesByUserId(1L);
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getBusinessName()).isNull();
+        assertThat(result.get(0).getName()).isEqualTo("기존 근무지명");
     }
 }

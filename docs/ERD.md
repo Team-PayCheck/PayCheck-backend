@@ -29,7 +29,7 @@ erDiagram
 
     User {
         bigint id PK
-        string kakao_id UK "카카오 소셜 ID"
+        string kakao_id "카카오 소셜 ID (UNIQUE)"
         string name "이름"
         string phone "전화번호"
         enum user_type "USER_TYPE(EMPLOYER, WORKER)"
@@ -50,7 +50,7 @@ erDiagram
     Worker {
         bigint id PK
         bigint user_id FK "User ID"
-        string worker_code UK "근로자 고유 6자리 코드"
+        string worker_code "근로자 고유 6자리 코드 (UNIQUE)"
         string bank_name "은행명"
         string account_number "계좌번호 (암호화)"
         datetime created_at
@@ -60,7 +60,7 @@ erDiagram
     Workplace {
         bigint id PK
         bigint employer_id FK "Employer ID"
-        string business_number UK "사업자등록번호"
+        string business_number "사업자등록번호 (UNIQUE)"
         string business_name "사업장명"
         string name "지점명/별칭"
         string address "주소"
@@ -166,7 +166,7 @@ erDiagram
 
     Payment {
         bigint id PK
-        bigint salary_id FK UK "Salary ID (1:1 관계)"
+        bigint salary_id FK "Salary ID (1:1 관계, UNIQUE)"
         enum payment_method "METHOD(TOSS_DEEP_LINK, BANK_TRANSFER, CASH)"
         enum status "STATUS(PENDING, COMPLETED, FAILED)"
         datetime payment_date "송금 일시"
@@ -206,8 +206,8 @@ erDiagram
 
     RefreshToken {
         bigint id PK
-        bigint user_id FK UK "User ID (사용자당 1개)"
-        string token UK "Refresh Token 값 (length 500)"
+        bigint user_id FK "User ID (사용자당 1개, UNIQUE)"
+        string token "Refresh Token 값 (length 500, UNIQUE)"
         datetime expires_at "만료 일시"
         datetime created_at
         datetime updated_at

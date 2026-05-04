@@ -21,6 +21,7 @@ class WorkplaceTest {
                 .id(1L)
                 .employer(mockEmployer)
                 .businessNumber("123-45-67890")
+                .businessName("실제 근무지명")
                 .name("본점")
                 .address("서울시 강남구")
                 .colorCode("#FF5733")
@@ -34,6 +35,7 @@ class WorkplaceTest {
     void update_AllFields() {
         // when
         workplace.update(
+                "수정된 실제 근무지명",
                 "지점",
                 "서울시 서초구",
                 "#33FF57",
@@ -41,6 +43,7 @@ class WorkplaceTest {
         );
 
         // then
+        assertThat(workplace.getBusinessName()).isEqualTo("수정된 실제 근무지명");
         assertThat(workplace.getName()).isEqualTo("지점");
         assertThat(workplace.getAddress()).isEqualTo("서울시 서초구");
         assertThat(workplace.getColorCode()).isEqualTo("#33FF57");
@@ -74,6 +77,24 @@ class WorkplaceTest {
 
         // then
         assertThat(workplace.getName()).isEqualTo(originalName);
+    }
+
+    @Test
+    @DisplayName("표시용 근무지명은 실제 근무지명을 우선 사용")
+    void getDisplayName_UsesBusinessNameFirst() {
+        assertThat(workplace.getDisplayName()).isEqualTo("실제 근무지명");
+    }
+
+    @Test
+    @DisplayName("실제 근무지명이 없으면 기존 근무지명으로 표시")
+    void getDisplayName_FallbackToName() {
+        Workplace workplaceWithoutBusinessName = Workplace.builder()
+                .employer(mockEmployer)
+                .businessNumber("999-99-99999")
+                .name("기존 근무지명")
+                .build();
+
+        assertThat(workplaceWithoutBusinessName.getDisplayName()).isEqualTo("기존 근무지명");
     }
 
     @Test

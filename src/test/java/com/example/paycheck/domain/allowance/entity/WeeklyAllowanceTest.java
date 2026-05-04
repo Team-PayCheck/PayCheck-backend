@@ -200,7 +200,7 @@ class WeeklyAllowanceTest {
         // then
         // 초과 시간: 5시간
         assertThat(weeklyAllowance.getOvertimeHours()).isEqualTo(BigDecimal.valueOf(5));
-        // 연장수당: 5 × 10000 × 0.5 = 25000
+        // 연장수당: 5 × 10000 × 0.5(가산분만) = 25000
         assertThat(weeklyAllowance.getOvertimeAmount()).isEqualByComparingTo(new BigDecimal("25000"));
     }
 
@@ -239,6 +239,7 @@ class WeeklyAllowanceTest {
 
         // then
         assertThat(weeklyAllowance.getOvertimeHours()).isEqualByComparingTo(new BigDecimal("0.01"));
+        // 0.01 × 10000 × 0.5(가산분만) = 50
         assertThat(weeklyAllowance.getOvertimeAmount()).isEqualByComparingTo(new BigDecimal("50.0"));
     }
 
@@ -424,6 +425,7 @@ class WeeklyAllowanceTest {
         assertThat(weeklyAllowance.getTotalWorkHours()).isEqualTo(BigDecimal.valueOf(45));
         assertThat(weeklyAllowance.getWeeklyPaidLeaveAmount()).isGreaterThan(BigDecimal.ZERO);
         assertThat(weeklyAllowance.getOvertimeHours()).isEqualTo(BigDecimal.valueOf(5));
+        // 5 × 10000 × 0.5(가산분만) = 25000
         assertThat(weeklyAllowance.getOvertimeAmount()).isEqualByComparingTo(new BigDecimal("25000"));
     }
 }

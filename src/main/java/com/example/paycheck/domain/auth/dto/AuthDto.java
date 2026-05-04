@@ -84,6 +84,7 @@ public class AuthDto {
     @Schema(name = "AuthLoginResponse")
     public static class LoginResponse {
         private String accessToken;
+        private String refreshToken;
         private Long userId;
         private String name;
         private String userType;
@@ -105,6 +106,19 @@ public class AuthDto {
 
 
     /**
+     * 토큰 갱신 요청 DTO
+     */
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @Schema(name = "AuthRefreshRequest")
+    public static class RefreshRequest {
+        @NotBlank(message = "Refresh Token은 필수입니다.")
+        private String refreshToken;
+    }
+
+    /**
      * 토큰 갱신 응답 DTO
      */
     @Getter
@@ -114,6 +128,7 @@ public class AuthDto {
     @Schema(name = "AuthRefreshResponse")
     public static class RefreshResponse {
         private String accessToken;
+        private String refreshToken;
     }
 
     /**

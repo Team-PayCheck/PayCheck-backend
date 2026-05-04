@@ -65,7 +65,7 @@ public class NoticeService {
             publishNoticeCreatedNotification(saved);
         } catch (Exception e) {
             log.error("공지사항 생성은 성공했지만 알림 발행에 실패했습니다. noticeId={}, workplaceId={}",
-                    saved.getId(), workplaceId, e);
+                    saved.getId(), workplace.getId(), e);
         }
         return NoticeDto.Response.from(saved);
     }

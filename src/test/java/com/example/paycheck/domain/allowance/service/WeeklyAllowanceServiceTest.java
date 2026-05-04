@@ -318,7 +318,7 @@ class WeeklyAllowanceServiceTest {
 
             // then
             // overtimeHours = 40.01 - 40 = 0.01
-            // overtimeAmount = 0.01 * 10000 * 0.5 = 50.0
+            // overtimeAmount = 0.01 * 10000 * 0.5(가산분만) = 50.0
             assertThat(allowance.getOvertimeHours())
                     .isEqualByComparingTo(new BigDecimal("0.01"));
             assertThat(allowance.getOvertimeAmount())

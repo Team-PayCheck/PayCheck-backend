@@ -114,6 +114,30 @@ class WorkRecordTest {
     }
 
     @Test
+    @DisplayName("근무 기록 수정 시 근무일도 함께 변경할 수 있다")
+    void updateWorkRecord_WithWorkDate() {
+        // given
+        LocalDate newWorkDate = LocalDate.of(2024, 1, 16);
+        LocalTime newStart = LocalTime.of(8, 0);
+        LocalTime newEnd = LocalTime.of(17, 0);
+        Integer newBreakMinutes = 30;
+        Integer newTotalWorkMinutes = 510;
+        String memo = "근무일 변경";
+
+        // when
+        workRecord.updateWorkRecord(newWorkDate, newStart, newEnd, newBreakMinutes, newTotalWorkMinutes, memo);
+
+        // then
+        assertThat(workRecord.getWorkDate()).isEqualTo(newWorkDate);
+        assertThat(workRecord.getStartTime()).isEqualTo(newStart);
+        assertThat(workRecord.getEndTime()).isEqualTo(newEnd);
+        assertThat(workRecord.getBreakMinutes()).isEqualTo(newBreakMinutes);
+        assertThat(workRecord.getTotalWorkMinutes()).isEqualTo(newTotalWorkMinutes);
+        assertThat(workRecord.getMemo()).isEqualTo(memo);
+        assertThat(workRecord.getIsModified()).isTrue();
+    }
+
+    @Test
     @DisplayName("근무 완료 처리")
     void complete() {
         // when
