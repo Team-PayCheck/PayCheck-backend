@@ -238,7 +238,7 @@ public class WorkRecord extends BaseEntity {
             this.holidayHours = this.totalHours;
             this.regularHours = BigDecimal.ZERO;
         } else {
-            this.regularHours = this.totalHours;
+            this.regularHours = this.totalHours.subtract(this.nightHours).max(BigDecimal.ZERO);
             this.holidayHours = BigDecimal.ZERO;
         }
     }

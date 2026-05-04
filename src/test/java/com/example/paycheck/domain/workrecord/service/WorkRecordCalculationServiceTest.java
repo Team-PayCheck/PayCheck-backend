@@ -100,7 +100,7 @@ class WorkRecordCalculationServiceTest {
 
             // then
             assertThat(workRecord.getHolidaySalary()).isGreaterThan(BigDecimal.ZERO);
-            assertThat(workRecord.getBaseSalary()).isEqualByComparingTo(BigDecimal.ZERO); // 휴일은 baseSalary 없음
+            assertThat(workRecord.getBaseSalary()).isGreaterThan(BigDecimal.ZERO); // 기본급(1.0배) 포함
         }
 
         @Test
@@ -257,7 +257,7 @@ class WorkRecordCalculationServiceTest {
 
             // then - 공휴일이므로 휴일수당 발생
             assertThat(holidayRecord.getHolidaySalary()).isGreaterThan(BigDecimal.ZERO);
-            assertThat(holidayRecord.getBaseSalary()).isEqualByComparingTo(BigDecimal.ZERO);
+            assertThat(holidayRecord.getBaseSalary()).isGreaterThan(BigDecimal.ZERO); // 기본급(1.0배) 포함
         }
     }
 
@@ -365,8 +365,10 @@ class WorkRecordCalculationServiceTest {
             assertThat(workRecord.getTotalHours()).isEqualByComparingTo(new BigDecimal("8.00"));
             assertThat(workRecord.getNightHours()).isEqualByComparingTo(new BigDecimal("7.00"));
             assertThat(workRecord.getRegularHours()).isEqualByComparingTo(new BigDecimal("1.00"));
-            assertThat(workRecord.getBaseSalary()).isEqualByComparingTo(new BigDecimal("10000"));      // 1h × 10000
-            assertThat(workRecord.getNightSalary()).isEqualByComparingTo(new BigDecimal("105000"));    // 7h × 10000 × 1.5
+            // baseSalary = 8 × 10000 × 1.0 = 80000
+            assertThat(workRecord.getBaseSalary()).isEqualByComparingTo(new BigDecimal("80000"));
+            // nightSalary = 7 × 10000 × 0.5 = 35000 (야간 가산분)
+            assertThat(workRecord.getNightSalary()).isEqualByComparingTo(new BigDecimal("35000"));
             assertThat(workRecord.getHolidaySalary()).isEqualByComparingTo(BigDecimal.ZERO);
             assertThat(workRecord.getTotalSalary()).isEqualByComparingTo(new BigDecimal("115000"));
         }
@@ -415,10 +417,12 @@ class WorkRecordCalculationServiceTest {
             assertThat(workRecord.getTotalHours()).isEqualByComparingTo(new BigDecimal("8.02"));       // 481분/60 = 8.02
             assertThat(workRecord.getNightHours()).isEqualByComparingTo(BigDecimal.ZERO);
             assertThat(workRecord.getRegularHours()).isEqualByComparingTo(new BigDecimal("8.02"));
-            // Case 2: 야간 없음, 8시간 초과 → baseSalary = 8 × 10000 + 0.02 × 10000 × 1.5 = 80300
-            assertThat(workRecord.getBaseSalary()).isEqualByComparingTo(new BigDecimal("80300"));
+            // baseSalary = 8.02 × 10000 × 1.0 = 80200
+            assertThat(workRecord.getBaseSalary()).isEqualByComparingTo(new BigDecimal("80200"));
             assertThat(workRecord.getNightSalary()).isEqualByComparingTo(BigDecimal.ZERO);
             assertThat(workRecord.getHolidaySalary()).isEqualByComparingTo(BigDecimal.ZERO);
+            // overtimeSalary = 0.02 × 10000 × 0.5 = 100 (연장 가산분)
+            assertThat(workRecord.getOvertimeSalary()).isEqualByComparingTo(new BigDecimal("100"));
             assertThat(workRecord.getTotalSalary()).isEqualByComparingTo(new BigDecimal("80300"));
         }
 
@@ -441,8 +445,10 @@ class WorkRecordCalculationServiceTest {
             assertThat(workRecord.getTotalHours()).isEqualByComparingTo(new BigDecimal("8.00"));
             assertThat(workRecord.getNightHours()).isEqualByComparingTo(new BigDecimal("8.00"));
             assertThat(workRecord.getRegularHours()).isEqualByComparingTo(BigDecimal.ZERO);
-            assertThat(workRecord.getBaseSalary()).isEqualByComparingTo(BigDecimal.ZERO);
-            assertThat(workRecord.getNightSalary()).isEqualByComparingTo(new BigDecimal("120000"));    // 8h × 10000 × 1.5
+            // baseSalary = 8 × 10000 × 1.0 = 80000
+            assertThat(workRecord.getBaseSalary()).isEqualByComparingTo(new BigDecimal("80000"));
+            // nightSalary = 8 × 10000 × 0.5 = 40000 (야간 가산분)
+            assertThat(workRecord.getNightSalary()).isEqualByComparingTo(new BigDecimal("40000"));
             assertThat(workRecord.getHolidaySalary()).isEqualByComparingTo(BigDecimal.ZERO);
             assertThat(workRecord.getTotalSalary()).isEqualByComparingTo(new BigDecimal("120000"));
         }

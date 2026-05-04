@@ -238,7 +238,8 @@ class WorkRecordTest {
 
         // then
         assertThat(nightWorkRecord.getNightHours()).isEqualByComparingTo(BigDecimal.valueOf(8.0));
-        assertThat(nightWorkRecord.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(120000)); // 8 × 10000 × 1.5
+        assertThat(nightWorkRecord.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(80000));  // 8 × 10000 × 1.0
+        assertThat(nightWorkRecord.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(40000)); // 8 × 10000 × 0.5 (가산분)
         assertThat(nightWorkRecord.getHolidaySalary()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(nightWorkRecord.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(120000));
     }
@@ -262,9 +263,9 @@ class WorkRecordTest {
         // then
         assertThat(nightWorkRecord.getHolidayHours()).isEqualByComparingTo(BigDecimal.valueOf(8.0));
         assertThat(nightWorkRecord.getNightHours()).isEqualByComparingTo(BigDecimal.valueOf(8.0));
-        assertThat(nightWorkRecord.getBaseSalary()).isEqualByComparingTo(BigDecimal.ZERO); // 휴일이므로 0
-        assertThat(nightWorkRecord.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(160000)); // 8 × 10000 × 2.0
-        assertThat(nightWorkRecord.getHolidaySalary()).isEqualByComparingTo(BigDecimal.ZERO); // all night hours
+        assertThat(nightWorkRecord.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(80000));  // 8 × 10000 × 1.0
+        assertThat(nightWorkRecord.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(40000)); // 8 × 10000 × 0.5 (야간 가산분)
+        assertThat(nightWorkRecord.getHolidaySalary()).isEqualByComparingTo(BigDecimal.valueOf(40000)); // 8 × 10000 × 0.5 (휴일 가산분)
         assertThat(nightWorkRecord.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(160000));
     }
 
@@ -358,9 +359,11 @@ class WorkRecordTest {
         // then
         assertThat(weekdayWork.getRegularHours()).isEqualByComparingTo(BigDecimal.valueOf(10.0));
         assertThat(weekdayWork.getNightHours()).isEqualByComparingTo(BigDecimal.ZERO);
-        // baseSalary = 8 × 10000 × 1.0 + 2 × 10000 × 1.5 = 80000 + 30000 = 110000
-        assertThat(weekdayWork.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(110000));
+        // baseSalary = 10 × 10000 × 1.0 = 100000
+        assertThat(weekdayWork.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(100000));
         assertThat(weekdayWork.getNightSalary()).isEqualByComparingTo(BigDecimal.ZERO);
+        // overtimeSalary = 2 × 10000 × 0.5 = 10000 (연장 가산분)
+        assertThat(weekdayWork.getOvertimeSalary()).isEqualByComparingTo(BigDecimal.valueOf(10000));
         assertThat(weekdayWork.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(110000));
     }
 
@@ -384,10 +387,12 @@ class WorkRecordTest {
         // 14:00-22:00 = 8시간 (주간), 22:00-24:00 = 2시간 (야간)
         assertThat(weekdayWork.getRegularHours()).isEqualByComparingTo(BigDecimal.valueOf(8.0));
         assertThat(weekdayWork.getNightHours()).isEqualByComparingTo(BigDecimal.valueOf(2.0));
-        // baseSalary = 8 × 10000 × 1.0 = 80000 (주간 8시간까지는 기본)
-        assertThat(weekdayWork.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(80000));
-        // nightSalary = 2 × 10000 × 2.0 = 40000 (연장 + 야간)
-        assertThat(weekdayWork.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(40000));
+        // baseSalary = 10 × 10000 × 1.0 = 100000
+        assertThat(weekdayWork.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(100000));
+        // nightSalary = 2 × 10000 × 0.5 = 10000 (야간 가산분)
+        assertThat(weekdayWork.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(10000));
+        // overtimeSalary = 2 × 10000 × 0.5 = 10000 (연장 가산분)
+        assertThat(weekdayWork.getOvertimeSalary()).isEqualByComparingTo(BigDecimal.valueOf(10000));
         assertThat(weekdayWork.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(120000));
     }
 
@@ -411,11 +416,12 @@ class WorkRecordTest {
         // 20:00-22:00 = 2시간 (주간), 22:00-06:00 = 8시간 (야간)
         assertThat(weekdayWork.getRegularHours()).isEqualByComparingTo(BigDecimal.valueOf(2.0));
         assertThat(weekdayWork.getNightHours()).isEqualByComparingTo(BigDecimal.valueOf(8.0));
-        // baseSalary = 2 × 10000 × 1.0 = 20000 (주간 전체가 8시간 이내)
-        assertThat(weekdayWork.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(20000));
-        // nightSalary = 6 × 10000 × 1.5 + 2 × 10000 × 2.0 = 90000 + 40000 = 130000
-        // (8시간까지 6시간: 야간만, 초과 2시간: 연장+야간)
-        assertThat(weekdayWork.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(130000));
+        // baseSalary = 10 × 10000 × 1.0 = 100000
+        assertThat(weekdayWork.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(100000));
+        // nightSalary = 8 × 10000 × 0.5 = 40000 (야간 가산분)
+        assertThat(weekdayWork.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(40000));
+        // overtimeSalary = 2 × 10000 × 0.5 = 10000 (연장 가산분)
+        assertThat(weekdayWork.getOvertimeSalary()).isEqualByComparingTo(BigDecimal.valueOf(10000));
         assertThat(weekdayWork.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(150000));
     }
 
@@ -439,11 +445,12 @@ class WorkRecordTest {
         // 23:00-06:00 = 7시간 (야간), 06:00-12:00 = 6시간 (주간)
         assertThat(weekdayWork.getRegularHours()).isEqualByComparingTo(BigDecimal.valueOf(6.0));
         assertThat(weekdayWork.getNightHours()).isEqualByComparingTo(BigDecimal.valueOf(7.0));
-        // baseSalary = 6 × 10000 × 1.0 = 60000 (주간 전체가 8시간 이내)
-        assertThat(weekdayWork.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(60000));
-        // nightSalary = 2 × 10000 × 1.5 + 5 × 10000 × 2.0 = 30000 + 100000 = 130000
-        // (8시간까지 2시간: 야간만, 초과 5시간: 연장+야간)
-        assertThat(weekdayWork.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(130000));
+        // baseSalary = 13 × 10000 × 1.0 = 130000
+        assertThat(weekdayWork.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(130000));
+        // nightSalary = 7 × 10000 × 0.5 = 35000 (야간 가산분)
+        assertThat(weekdayWork.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(35000));
+        // overtimeSalary = 5 × 10000 × 0.5 = 25000 (연장 가산분)
+        assertThat(weekdayWork.getOvertimeSalary()).isEqualByComparingTo(BigDecimal.valueOf(25000));
         assertThat(weekdayWork.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(190000));
     }
 
@@ -521,10 +528,10 @@ class WorkRecordTest {
         // 02:00-06:00 = 4시간 (야간), 06:00-10:00 = 4시간 (주간)
         assertThat(work.getRegularHours()).isEqualByComparingTo(BigDecimal.valueOf(4.0));
         assertThat(work.getNightHours()).isEqualByComparingTo(BigDecimal.valueOf(4.0));
-        // 주간 4시간: 1.0배 = 40000
-        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(40000));
-        // 야간 4시간: 1.5배 = 60000
-        assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(60000));
+        // baseSalary = 8 × 10000 × 1.0 = 80000
+        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(80000));
+        // nightSalary = 4 × 10000 × 0.5 = 20000 (야간 가산분)
+        assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(20000));
         assertThat(work.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(100000));
     }
 
@@ -547,9 +554,11 @@ class WorkRecordTest {
         // then
         assertThat(work.getRegularHours()).isEqualByComparingTo(BigDecimal.valueOf(10.0));
         assertThat(work.getNightHours()).isEqualByComparingTo(BigDecimal.ZERO);
-        // 주간 8시간: 1.0배 = 80000, 주간 초과 2시간: 1.5배 = 30000
-        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(110000));
+        // baseSalary = 10 × 10000 × 1.0 = 100000
+        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(100000));
         assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.ZERO);
+        // overtimeSalary = 2 × 10000 × 0.5 = 10000 (연장 가산분)
+        assertThat(work.getOvertimeSalary()).isEqualByComparingTo(BigDecimal.valueOf(10000));
         assertThat(work.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(110000));
     }
 
@@ -573,10 +582,12 @@ class WorkRecordTest {
         // 12:00-22:00 = 10시간 (주간), 22:00-00:00 = 2시간 (야간)
         assertThat(work.getRegularHours()).isEqualByComparingTo(BigDecimal.valueOf(10.0));
         assertThat(work.getNightHours()).isEqualByComparingTo(BigDecimal.valueOf(2.0));
-        // 주간 8시간: 1.0배 = 80000, 주간 초과 2시간: 1.5배 = 30000
-        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(110000));
-        // 야간 2시간 (모두 초과): 2.0배 (연장 + 야간) = 40000
-        assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(40000));
+        // baseSalary = 12 × 10000 × 1.0 = 120000
+        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(120000));
+        // nightSalary = 2 × 10000 × 0.5 = 10000 (야간 가산분)
+        assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(10000));
+        // overtimeSalary = 4 × 10000 × 0.5 = 20000 (연장 가산분)
+        assertThat(work.getOvertimeSalary()).isEqualByComparingTo(BigDecimal.valueOf(20000));
         assertThat(work.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(150000));
     }
 
@@ -600,10 +611,12 @@ class WorkRecordTest {
         // 20:00-22:00 = 2시간 (주간), 22:00-06:00 = 8시간 (야간)
         assertThat(work.getRegularHours()).isEqualByComparingTo(BigDecimal.valueOf(2.0));
         assertThat(work.getNightHours()).isEqualByComparingTo(BigDecimal.valueOf(8.0));
-        // 주간 2시간 (8시간 이내): 1.0배 = 20000
-        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(20000));
-        // 야간 8시간 중 6시간(8시간 이내): 1.5배 = 90000, 2시간(초과): 2.0배 = 40000
-        assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(130000));
+        // baseSalary = 10 × 10000 × 1.0 = 100000
+        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(100000));
+        // nightSalary = 8 × 10000 × 0.5 = 40000 (야간 가산분)
+        assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(40000));
+        // overtimeSalary = 2 × 10000 × 0.5 = 10000 (연장 가산분)
+        assertThat(work.getOvertimeSalary()).isEqualByComparingTo(BigDecimal.valueOf(10000));
         assertThat(work.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(150000));
     }
 
@@ -627,10 +640,12 @@ class WorkRecordTest {
         // 22:00-06:00 = 8시간 (야간), 06:00-08:00 = 2시간 (주간)
         assertThat(work.getRegularHours()).isEqualByComparingTo(BigDecimal.valueOf(2.0));
         assertThat(work.getNightHours()).isEqualByComparingTo(BigDecimal.valueOf(8.0));
-        // 주간 2시간 (8시간 이내): 1.0배 = 20000
-        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(20000));
-        // 야간 8시간 중 6시간(8시간 이내): 1.5배 = 90000, 2시간(초과): 2.0배 = 40000
-        assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(130000));
+        // baseSalary = 10 × 10000 × 1.0 = 100000
+        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(100000));
+        // nightSalary = 8 × 10000 × 0.5 = 40000 (야간 가산분)
+        assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(40000));
+        // overtimeSalary = 2 × 10000 × 0.5 = 10000 (연장 가산분)
+        assertThat(work.getOvertimeSalary()).isEqualByComparingTo(BigDecimal.valueOf(10000));
         assertThat(work.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(150000));
     }
 
@@ -655,9 +670,10 @@ class WorkRecordTest {
         // then
         assertThat(work.getHolidayHours()).isEqualByComparingTo(BigDecimal.valueOf(8.0));
         assertThat(work.getNightHours()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.ZERO);
-        // 휴일 주간 8시간: 1.5배 = 120000
-        assertThat(work.getHolidaySalary()).isEqualByComparingTo(BigDecimal.valueOf(120000));
+        // baseSalary = 8 × 10000 × 1.0 = 80000
+        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(80000));
+        // holidaySalary = 8 × 10000 × 0.5 = 40000 (휴일 가산분)
+        assertThat(work.getHolidaySalary()).isEqualByComparingTo(BigDecimal.valueOf(40000));
         assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(work.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(120000));
     }
@@ -682,11 +698,12 @@ class WorkRecordTest {
         // 전체 8시간 휴일, 그 중 야간 4시간
         assertThat(work.getHolidayHours()).isEqualByComparingTo(BigDecimal.valueOf(8.0));
         assertThat(work.getNightHours()).isEqualByComparingTo(BigDecimal.valueOf(4.0));
-        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.ZERO);
-        // 주간 4시간 (휴일): 1.5배 = 60000
-        assertThat(work.getHolidaySalary()).isEqualByComparingTo(BigDecimal.valueOf(60000));
-        // 야간 4시간 (휴일 + 야간, 8시간 이내): 2.0배 = 80000
-        assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(80000));
+        // baseSalary = 8 × 10000 × 1.0 = 80000
+        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(80000));
+        // holidaySalary = 8 × 10000 × 0.5 = 40000 (휴일 가산분)
+        assertThat(work.getHolidaySalary()).isEqualByComparingTo(BigDecimal.valueOf(40000));
+        // nightSalary = 4 × 10000 × 0.5 = 20000 (야간 가산분)
+        assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(20000));
         assertThat(work.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(140000));
     }
 
@@ -709,10 +726,13 @@ class WorkRecordTest {
         // then
         assertThat(work.getHolidayHours()).isEqualByComparingTo(BigDecimal.valueOf(10.0));
         assertThat(work.getNightHours()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.ZERO);
-        // 주간 8시간: 1.5배 = 120000, 주간 초과 2시간: 2.0배 = 40000
-        assertThat(work.getHolidaySalary()).isEqualByComparingTo(BigDecimal.valueOf(160000));
+        // baseSalary = 10 × 10000 × 1.0 = 100000
+        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(100000));
+        // holidaySalary = 10 × 10000 × 0.5 = 50000 (휴일 가산분)
+        assertThat(work.getHolidaySalary()).isEqualByComparingTo(BigDecimal.valueOf(50000));
         assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.ZERO);
+        // overtimeSalary = 2 × 10000 × 0.5 = 10000 (연장 가산분)
+        assertThat(work.getOvertimeSalary()).isEqualByComparingTo(BigDecimal.valueOf(10000));
         assertThat(work.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(160000));
     }
 
@@ -736,11 +756,14 @@ class WorkRecordTest {
         // 전체 12시간 휴일, 그 중 야간 2시간
         assertThat(work.getHolidayHours()).isEqualByComparingTo(BigDecimal.valueOf(12.0));
         assertThat(work.getNightHours()).isEqualByComparingTo(BigDecimal.valueOf(2.0));
-        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.ZERO);
-        // 주간 10시간: 8시간 1.5배 + 2시간 2.0배 = 120000 + 40000 = 160000
-        assertThat(work.getHolidaySalary()).isEqualByComparingTo(BigDecimal.valueOf(160000));
-        // 야간 2시간 (모두 초과, 휴일+연장+야간): 2.5배 = 50000
-        assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(50000));
+        // baseSalary = 12 × 10000 × 1.0 = 120000
+        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(120000));
+        // holidaySalary = 12 × 10000 × 0.5 = 60000 (휴일 가산분)
+        assertThat(work.getHolidaySalary()).isEqualByComparingTo(BigDecimal.valueOf(60000));
+        // nightSalary = 2 × 10000 × 0.5 = 10000 (야간 가산분)
+        assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(10000));
+        // overtimeSalary = 4 × 10000 × 0.5 = 20000 (연장 가산분)
+        assertThat(work.getOvertimeSalary()).isEqualByComparingTo(BigDecimal.valueOf(20000));
         assertThat(work.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(210000));
     }
 
@@ -765,11 +788,14 @@ class WorkRecordTest {
         // 18:00-22:00 = 4시간 (주간), 22:00-04:00 = 6시간 (야간)
         assertThat(work.getHolidayHours()).isEqualByComparingTo(BigDecimal.valueOf(10.0));
         assertThat(work.getNightHours()).isEqualByComparingTo(BigDecimal.valueOf(6.0));
-        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.ZERO);
-        // 주간 4시간 (8시간 이내): 1.5배 = 60000
-        assertThat(work.getHolidaySalary()).isEqualByComparingTo(BigDecimal.valueOf(60000));
-        // 야간 6시간 중 4시간(8시간 이내): 2.0배 = 80000, 2시간(초과): 2.5배 = 50000
-        assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(130000));
+        // baseSalary = 10 × 10000 × 1.0 = 100000
+        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(100000));
+        // holidaySalary = 10 × 10000 × 0.5 = 50000 (휴일 가산분)
+        assertThat(work.getHolidaySalary()).isEqualByComparingTo(BigDecimal.valueOf(50000));
+        // nightSalary = 6 × 10000 × 0.5 = 30000 (야간 가산분)
+        assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(30000));
+        // overtimeSalary = 2 × 10000 × 0.5 = 10000 (연장 가산분)
+        assertThat(work.getOvertimeSalary()).isEqualByComparingTo(BigDecimal.valueOf(10000));
         assertThat(work.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(190000));
     }
 
@@ -794,11 +820,14 @@ class WorkRecordTest {
         // 22:00-06:00 = 8시간 (야간), 06:00-08:00 = 2시간 (주간)
         assertThat(work.getHolidayHours()).isEqualByComparingTo(BigDecimal.valueOf(10.0));
         assertThat(work.getNightHours()).isEqualByComparingTo(BigDecimal.valueOf(8.0));
-        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.ZERO);
-        // 주간 2시간 (8시간 이내): 1.5배 = 30000
-        assertThat(work.getHolidaySalary()).isEqualByComparingTo(BigDecimal.valueOf(30000));
-        // 야간 8시간 중 6시간(8시간 이내): 2.0배 = 120000, 2시간(초과): 2.5배 = 50000
-        assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(170000));
+        // baseSalary = 10 × 10000 × 1.0 = 100000
+        assertThat(work.getBaseSalary()).isEqualByComparingTo(BigDecimal.valueOf(100000));
+        // holidaySalary = 10 × 10000 × 0.5 = 50000 (휴일 가산분)
+        assertThat(work.getHolidaySalary()).isEqualByComparingTo(BigDecimal.valueOf(50000));
+        // nightSalary = 8 × 10000 × 0.5 = 40000 (야간 가산분)
+        assertThat(work.getNightSalary()).isEqualByComparingTo(BigDecimal.valueOf(40000));
+        // overtimeSalary = 2 × 10000 × 0.5 = 10000 (연장 가산분)
+        assertThat(work.getOvertimeSalary()).isEqualByComparingTo(BigDecimal.valueOf(10000));
         assertThat(work.getTotalSalary()).isEqualByComparingTo(BigDecimal.valueOf(200000));
     }
 
@@ -859,8 +888,12 @@ class WorkRecordTest {
         assertThat(work.getTotalHours()).isEqualByComparingTo(new BigDecimal("10.02"));
         assertThat(work.getRegularHours()).isEqualByComparingTo(new BigDecimal("2.02"));
         assertThat(work.getNightHours()).isEqualByComparingTo(new BigDecimal("8.00"));
-        assertThat(work.getBaseSalary()).isEqualByComparingTo(new BigDecimal("20206.06"));
-        assertThat(work.getNightSalary()).isEqualByComparingTo(new BigDecimal("130139.03"));
+        // baseSalary = 10.02 × 10003 × 1.0 = 100230.06
+        assertThat(work.getBaseSalary()).isEqualByComparingTo(new BigDecimal("100230.06"));
+        // nightSalary = 8.00 × 10003 × 0.5 = 40012.00 (야간 가산분)
+        assertThat(work.getNightSalary()).isEqualByComparingTo(new BigDecimal("40012.00"));
+        // overtimeSalary = 2.02 × 10003 × 0.5 = 10103.03 (연장 가산분)
+        assertThat(work.getOvertimeSalary()).isEqualByComparingTo(new BigDecimal("10103.03"));
         assertThat(work.getTotalSalary()).isEqualByComparingTo(new BigDecimal("150345.09"));
     }
 }

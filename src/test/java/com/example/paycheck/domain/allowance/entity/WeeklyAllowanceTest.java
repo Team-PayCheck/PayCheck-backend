@@ -200,8 +200,8 @@ class WeeklyAllowanceTest {
         // then
         // 초과 시간: 5시간
         assertThat(weeklyAllowance.getOvertimeHours()).isEqualTo(BigDecimal.valueOf(5));
-        // 연장수당: 5 × 10000 × 1.5 = 75000
-        assertThat(weeklyAllowance.getOvertimeAmount()).isEqualByComparingTo(new BigDecimal("75000"));
+        // 연장수당: 5 × 10000 × 0.5 = 25000
+        assertThat(weeklyAllowance.getOvertimeAmount()).isEqualByComparingTo(new BigDecimal("25000"));
     }
 
     @Test
@@ -239,7 +239,7 @@ class WeeklyAllowanceTest {
 
         // then
         assertThat(weeklyAllowance.getOvertimeHours()).isEqualByComparingTo(new BigDecimal("0.01"));
-        assertThat(weeklyAllowance.getOvertimeAmount()).isEqualByComparingTo(new BigDecimal("150.0"));
+        assertThat(weeklyAllowance.getOvertimeAmount()).isEqualByComparingTo(new BigDecimal("50.0"));
     }
 
     @Test
@@ -406,10 +406,12 @@ class WeeklyAllowanceTest {
         WorkRecord record1 = mock(WorkRecord.class);
         when(record1.getStatus()).thenReturn(WorkRecordStatus.COMPLETED);
         when(record1.getTotalHours()).thenReturn(BigDecimal.valueOf(25));
+        when(record1.getOvertimeHours()).thenReturn(BigDecimal.ZERO);
 
         WorkRecord record2 = mock(WorkRecord.class);
         when(record2.getStatus()).thenReturn(WorkRecordStatus.COMPLETED);
         when(record2.getTotalHours()).thenReturn(BigDecimal.valueOf(20));
+        when(record2.getOvertimeHours()).thenReturn(BigDecimal.ZERO);
 
         weeklyAllowance.getWorkRecords().addAll(Arrays.asList(record1, record2));
 
@@ -422,6 +424,6 @@ class WeeklyAllowanceTest {
         assertThat(weeklyAllowance.getTotalWorkHours()).isEqualTo(BigDecimal.valueOf(45));
         assertThat(weeklyAllowance.getWeeklyPaidLeaveAmount()).isGreaterThan(BigDecimal.ZERO);
         assertThat(weeklyAllowance.getOvertimeHours()).isEqualTo(BigDecimal.valueOf(5));
-        assertThat(weeklyAllowance.getOvertimeAmount()).isEqualByComparingTo(new BigDecimal("75000"));
+        assertThat(weeklyAllowance.getOvertimeAmount()).isEqualByComparingTo(new BigDecimal("25000"));
     }
 }
