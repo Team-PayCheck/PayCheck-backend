@@ -19,22 +19,39 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @Operation(summary = "카카오 로그인", description = "카카오 액세스 토큰을 검증하고 자체 JWT를 발급합니다.")
+    @Operation(
+            summary = "카카오 로그인",
+            description = "카카오 액세스 토큰을 검증하고 자체 JWT를 발급합니다. " +
+                    "탈퇴 상태 계정인 경우 status=WITHDRAWN_PENDING으로 응답하여 " +
+                    "클라이언트가 복구(/kakao/restore) 또는 완전 삭제 후 재가입(/kakao/purge-and-register)을 안내할 수 있습니다."
+    )
     @PostMapping("/kakao/login")
-    public ApiResponse<AuthDto.LoginResponse> kakaoLogin(
+    public ApiResponse<AuthDto.KakaoLoginResult> kakaoLogin(
             @Valid @RequestBody AuthDto.KakaoLoginRequest request) {
-        AuthService.LoginResult loginResult = authService.loginWithKakao(request.getKakaoAccessToken());
+        return ApiResponse.success(authService.loginWithKakao(request.getKakaoAccessToken()));
+    }
 
-        // Refresh Token을 응답에 포함 (body 방식)
-        AuthDto.LoginResponse response = AuthDto.LoginResponse.builder()
-                .accessToken(loginResult.getLoginResponse().getAccessToken())
-                .userId(loginResult.getLoginResponse().getUserId())
-                .name(loginResult.getLoginResponse().getName())
-                .userType(loginResult.getLoginResponse().getUserType())
-                .refreshToken(loginResult.getRefreshToken())
-                .build();
+    @Operation(
+            summary = "탈퇴 계정 복구",
+            description = "30일 hard-delete 전 탈퇴 계정을 다시 활성화합니다. " +
+                    "User.deletedAt이 null로 되돌아가며, 탈퇴 시 보존된 UserSettings는 그대로 유지됩니다. " +
+                    "비활성화된 사업장/계약/근무기록은 자동 복구되지 않습니다."
+    )
+    @PostMapping("/kakao/restore")
+    public ApiResponse<AuthDto.LoginResponse> kakaoRestore(
+            @Valid @RequestBody AuthDto.KakaoLoginRequest request) {
+        return ApiResponse.success(authService.restoreWithKakao(request.getKakaoAccessToken()));
+    }
 
-        return ApiResponse.success(response);
+    @Operation(
+            summary = "탈퇴 계정 완전 삭제 후 재가입",
+            description = "기존 탈퇴 계정과 모든 산하 데이터를 영구 삭제(30일 스케줄러와 동일 경로)한 뒤 " +
+                    "신규 사용자로 회원가입합니다. 정상 계정에 호출 시 차단됩니다."
+    )
+    @PostMapping("/kakao/purge-and-register")
+    public ApiResponse<AuthDto.LoginResponse> kakaoPurgeAndRegister(
+            @Valid @RequestBody AuthDto.KakaoRegisterRequest request) {
+        return ApiResponse.success(authService.purgeAndRegisterWithKakao(request));
     }
 
     @Operation(summary = "카카오 회원가입", description = "카카오 프로필 정보를 기반으로 사용자를 등록하고 JWT를 발급합니다.")

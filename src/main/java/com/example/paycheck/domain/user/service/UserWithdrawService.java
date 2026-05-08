@@ -12,7 +12,6 @@ import com.example.paycheck.domain.employer.entity.Employer;
 import com.example.paycheck.domain.employer.repository.EmployerRepository;
 import com.example.paycheck.domain.fcm.repository.FcmTokenRepository;
 import com.example.paycheck.domain.notification.repository.NotificationRepository;
-import com.example.paycheck.domain.settings.repository.UserSettingsRepository;
 import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.enums.UserType;
 import com.example.paycheck.domain.user.repository.UserRepository;
@@ -48,7 +47,6 @@ public class UserWithdrawService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final FcmTokenRepository fcmTokenRepository;
     private final NotificationRepository notificationRepository;
-    private final UserSettingsRepository userSettingsRepository;
     private final UserRepository userRepository;
 
     /**
@@ -143,11 +141,12 @@ public class UserWithdrawService {
 
     /**
      * 공통 데이터 정리
+     * UserSettings는 30일 이내 복구 시 사용자가 이전에 설정한 알림 옵션을 그대로 살리기 위해
+     * 탈퇴 시점에는 보존하며, 30일 후 hard delete 시 UserHardDeleteService에서 함께 정리된다.
      */
     private void cleanupCommonData(User user) {
         refreshTokenRepository.deleteByUserId(user.getId());
         fcmTokenRepository.deleteByUserId(user.getId());
         notificationRepository.deleteAllByUser(user);
-        userSettingsRepository.deleteByUserId(user.getId());
     }
 }

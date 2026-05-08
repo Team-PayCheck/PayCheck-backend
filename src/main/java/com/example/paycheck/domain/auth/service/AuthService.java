@@ -10,6 +10,7 @@ import com.example.paycheck.domain.user.dto.UserDto;
 import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.enums.UserType;
 import com.example.paycheck.domain.user.repository.UserRepository;
+import com.example.paycheck.domain.user.service.UserHardDeleteService;
 import com.example.paycheck.domain.user.service.UserService;
 import com.example.paycheck.domain.user.service.UserWithdrawService;
 import com.example.paycheck.domain.worker.entity.Worker;
@@ -41,6 +42,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final UserService userService;
     private final UserWithdrawService userWithdrawService;
+    private final UserHardDeleteService userHardDeleteService;
     private final EmployerRepository employerRepository;
     private final WorkerRepository workerRepository;
 
@@ -68,13 +70,15 @@ public class AuthService {
 
     /**
      * 카카오 계정으로 로그인
+     * 탈퇴 상태 사용자는 예외 대신 status="WITHDRAWN_PENDING"으로 응답하여
+     * 클라이언트가 복구/재가입을 안내할 수 있게 한다.
      *
      * @param kakaoAccessToken 카카오 액세스 토큰
-     * @return 로그인 결과 (응답 DTO + Refresh Token)
+     * @return 로그인 결과 (LOGGED_IN 또는 WITHDRAWN_PENDING)
      * @throws NotFoundException 등록되지 않은 카카오 계정인 경우
      */
     @Transactional
-    public LoginResult loginWithKakao(String kakaoAccessToken) {
+    public AuthDto.KakaoLoginResult loginWithKakao(String kakaoAccessToken) {
         // 카카오 사용자 정보 조회 및 검증
         KakaoUserInfo userInfo = oAuthService.getKakaoUserInfo(kakaoAccessToken);
 
@@ -85,26 +89,91 @@ public class AuthService {
                         "등록되지 않은 카카오 계정입니다. 회원가입을 진행해주세요."
                 ));
 
-        // 탈퇴한 사용자 로그인 차단
+        // 탈퇴한 사용자: 복구/재가입 선택지를 안내하기 위한 정보 반환
         if (user.isDeleted()) {
-            throw new BadRequestException(ErrorCode.USER_ALREADY_DELETED, "탈퇴한 계정입니다. 다시 가입해주세요.");
+            return AuthDto.KakaoLoginResult.withdrawnPending(
+                    AuthDto.WithdrawnAccountInfo.builder()
+                            .name(user.getName())
+                            .userType(user.getUserType().name())
+                            .withdrawnAt(user.getDeletedAt())
+                            .profileImageUrl(user.getProfileImageUrl())
+                            .build()
+            );
         }
 
-        // 토큰 생성
-        TokenService.TokenPair tokenPair = tokenService.generateTokenPair(user.getId());
+        // 정상 로그인
+        return AuthDto.KakaoLoginResult.loggedIn(buildLoginResponse(user));
+    }
 
-        // 응답 DTO 생성
-        AuthDto.LoginResponse loginResponse = AuthDto.LoginResponse.builder()
+    /**
+     * 사용자 + 새로 발급한 토큰으로 LoginResponse 생성 (refreshToken 포함)
+     */
+    private AuthDto.LoginResponse buildLoginResponse(User user) {
+        TokenService.TokenPair tokenPair = tokenService.generateTokenPair(user.getId());
+        return AuthDto.LoginResponse.builder()
                 .accessToken(tokenPair.getAccessToken())
+                .refreshToken(tokenPair.getRefreshToken())
                 .userId(user.getId())
                 .name(user.getName())
                 .userType(user.getUserType().name())
                 .build();
+    }
 
-        return LoginResult.builder()
-                .loginResponse(loginResponse)
-                .refreshToken(tokenPair.getRefreshToken())
-                .build();
+    /**
+     * 탈퇴한 카카오 계정 복구 (탈퇴 취소)
+     * - User.deletedAt = null로 되돌림
+     * - UserSettings는 탈퇴 시 보존되었으므로 그대로 사용 (이전 알림 설정 유지)
+     * - 사업장/계약/근무기록은 자동 복구하지 않음 (다른 사용자 데이터 일관성 보호)
+     *
+     * @param kakaoAccessToken 카카오 액세스 토큰
+     * @return 로그인 응답 (refreshToken 포함)
+     */
+    @Transactional
+    public AuthDto.LoginResponse restoreWithKakao(String kakaoAccessToken) {
+        KakaoUserInfo userInfo = oAuthService.getKakaoUserInfo(kakaoAccessToken);
+
+        User user = userRepository.findByKakaoId(userInfo.kakaoId())
+                .orElseThrow(() -> new NotFoundException(
+                        ErrorCode.USER_NOT_FOUND,
+                        "등록되지 않은 카카오 계정입니다."
+                ));
+
+        if (!user.isDeleted()) {
+            throw new BadRequestException(
+                    ErrorCode.USER_NOT_WITHDRAWN,
+                    "탈퇴 상태가 아닌 계정입니다."
+            );
+        }
+
+        user.restore();
+
+        return buildLoginResponse(user);
+    }
+
+    /**
+     * 탈퇴한 카카오 계정을 영구 삭제 후 신규 가입
+     * - 기존 사용자 hard delete (30일 스케줄러와 동일 경로 재사용)
+     * - 신규 회원가입 진행
+     *
+     * @param request 회원가입 요청 (기존 KakaoRegisterRequest 그대로 재사용)
+     * @return 로그인 응답 (refreshToken 포함)
+     */
+    public AuthDto.LoginResponse purgeAndRegisterWithKakao(AuthDto.KakaoRegisterRequest request) {
+        KakaoUserInfo userInfo = oAuthService.getKakaoUserInfo(request.getKakaoAccessToken());
+
+        // 기존 사용자가 탈퇴 상태이면 hard delete, 정상 계정이면 차단
+        userRepository.findByKakaoId(userInfo.kakaoId())
+                .ifPresent(existing -> {
+                    if (!existing.isDeleted()) {
+                        throw new BadRequestException(
+                                ErrorCode.DUPLICATE_KAKAO_ACCOUNT,
+                                "이미 가입된 카카오 계정입니다."
+                        );
+                    }
+                    userHardDeleteService.hardDeleteUser(existing.getId());
+                });
+
+        return registerWithKakaoInternal(request, userInfo);
     }
 
     /**
@@ -171,6 +240,29 @@ public class AuthService {
             throw new BadRequestException(ErrorCode.DUPLICATE_KAKAO_ACCOUNT, "이미 가입된 카카오 계정입니다.");
         }
 
+        AuthDto.LoginResponse loginResponse = registerWithKakaoInternal(request, userInfo);
+
+        return LoginResult.builder()
+                .loginResponse(AuthDto.LoginResponse.builder()
+                        .accessToken(loginResponse.getAccessToken())
+                        .userId(loginResponse.getUserId())
+                        .name(loginResponse.getName())
+                        .userType(loginResponse.getUserType())
+                        .build())
+                .refreshToken(loginResponse.getRefreshToken())
+                .build();
+    }
+
+    /**
+     * 카카오 회원가입 내부 로직 (OAuth 검증과 중복 확인은 호출자가 담당)
+     * registerWithKakao와 purgeAndRegisterWithKakao에서 공유.
+     *
+     * @return refreshToken을 포함한 LoginResponse
+     */
+    @Transactional
+    public AuthDto.LoginResponse registerWithKakaoInternal(
+            AuthDto.KakaoRegisterRequest request,
+            KakaoUserInfo userInfo) {
         // 사용자 타입 파싱
         UserType userType = parseUserType(request.getUserType());
 
@@ -205,17 +297,13 @@ public class AuthService {
         // 토큰 생성
         TokenService.TokenPair tokenPair = tokenService.generateTokenPair(registerResponse.getUserId());
 
-        // 응답 DTO 생성
-        AuthDto.LoginResponse loginResponse = AuthDto.LoginResponse.builder()
+        // 응답 DTO (refreshToken 포함)
+        return AuthDto.LoginResponse.builder()
                 .accessToken(tokenPair.getAccessToken())
+                .refreshToken(tokenPair.getRefreshToken())
                 .userId(registerResponse.getUserId())
                 .name(registerResponse.getName())
                 .userType(registerResponse.getUserType().name())
-                .build();
-
-        return LoginResult.builder()
-                .loginResponse(loginResponse)
-                .refreshToken(tokenPair.getRefreshToken())
                 .build();
     }
 
