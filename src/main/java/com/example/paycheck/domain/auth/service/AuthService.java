@@ -10,6 +10,7 @@ import com.example.paycheck.domain.user.dto.UserDto;
 import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.enums.UserType;
 import com.example.paycheck.domain.user.repository.UserRepository;
+import com.example.paycheck.domain.user.scheduler.UserHardDeleteScheduler;
 import com.example.paycheck.domain.user.service.UserHardDeleteService;
 import com.example.paycheck.domain.user.service.UserService;
 import com.example.paycheck.domain.user.service.UserWithdrawService;
@@ -26,6 +27,7 @@ import org.springframework.util.StringUtils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.LocalDateTime;
 
 /**
  * 인증 플로우를 조율하는 서비스
@@ -120,6 +122,21 @@ public class AuthService {
     }
 
     /**
+     * 탈퇴 후 복구 가능 기간(30일) 이내인지 검증한다.
+     * Hard-delete 스케줄러 지연/장애로 30일을 초과한 계정이 남아있어도 복구/재가입을 차단한다.
+     */
+    private void assertWithinRecoveryPeriod(User user) {
+        LocalDateTime cutoff = LocalDateTime.now()
+                .minusDays(UserHardDeleteScheduler.RETENTION_DAYS);
+        if (user.getDeletedAt().isBefore(cutoff)) {
+            throw new BadRequestException(
+                    ErrorCode.RECOVERY_PERIOD_EXPIRED,
+                    "복구 가능 기간(30일)이 지난 계정입니다."
+            );
+        }
+    }
+
+    /**
      * 탈퇴한 카카오 계정 복구 (탈퇴 취소)
      * - User.deletedAt = null로 되돌림
      * - UserSettings는 탈퇴 시 보존되었으므로 그대로 사용 (이전 알림 설정 유지)
@@ -144,6 +161,7 @@ public class AuthService {
                     "탈퇴 상태가 아닌 계정입니다."
             );
         }
+        assertWithinRecoveryPeriod(user);
 
         user.restore();
 
@@ -174,6 +192,7 @@ public class AuthService {
                                 "이미 가입된 카카오 계정입니다."
                         );
                     }
+                    assertWithinRecoveryPeriod(existing);
                     userHardDeleteService.hardDeleteUser(existing.getId());
                     // JPA 기본 flush 순서(INSERT → DELETE)로 인해 같은 트랜잭션에서
                     // 신규 가입(INSERT)이 기존 사용자 DELETE보다 먼저 실행되면

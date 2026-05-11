@@ -9,6 +9,7 @@ public class ErrorCode {
     public static final String USER_NOT_FOUND = "USER_NOT_FOUND";
     public static final String USER_ALREADY_DELETED = "USER_ALREADY_DELETED";
     public static final String USER_NOT_WITHDRAWN = "USER_NOT_WITHDRAWN";
+    public static final String RECOVERY_PERIOD_EXPIRED = "RECOVERY_PERIOD_EXPIRED";
 
     // Worker domain
     public static final String WORKER_NOT_FOUND = "WORKER_NOT_FOUND";

@@ -19,7 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserHardDeleteScheduler {
 
-    private static final int RETENTION_DAYS = 30;
+    public static final int RETENTION_DAYS = 30;
 
     private final UserRepository userRepository;
     private final UserHardDeleteService userHardDeleteService;
