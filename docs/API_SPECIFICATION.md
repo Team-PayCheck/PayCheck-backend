@@ -5,10 +5,12 @@
 | 인덱스 | 기능 | Method | API Path | 설명 | FE 개발 현황 | BE 개발 현황 | 수정일 | JSON Example |
 |--------|------|--------|----------|------|--------------|--------------|--------|--------------|
 | **1. 인증 API** |  |  |  |  |  |  |  |  |
-| 1.1 | 카카오 로그인 | POST | `/api/auth/kakao/login` | 카카오 소셜 로그인 (신규 사용자 자동 등록) | 대기 | 대기 | - | [링크](#11-카카오-로그인) |
+| 1.1 | 카카오 로그인 | POST | `/api/auth/kakao/login` | 카카오 소셜 로그인 (탈퇴 계정 시 status=WITHDRAWN_PENDING 반환) | 대기 | 완료 | 2026-05-11 | [링크](#11-카카오-로그인) |
 | 1.2 | 로그아웃 | POST | `/api/auth/logout` | 로그아웃 및 토큰 무효화 | 대기 | 대기 | - | [링크](#12-로그아웃) |
 | 1.3 | 토큰 갱신 | POST | `/api/auth/refresh` | Access Token 갱신 | 대기 | 대기 | - | [링크](#13-토큰-갱신) |
 | 1.4 | 회원 탈퇴 | DELETE | `/api/auth/withdraw` | 회원 탈퇴 및 카카오 연결 해제 | 대기 | 완료 | 2026-03-11 | [링크](#14-회원-탈퇴) |
+| 1.5 | 탈퇴 계정 복구 | POST | `/api/auth/kakao/restore` | 30일 hard-delete 전 탈퇴 계정 활성화 (탈퇴 취소) | 대기 | 완료 | 2026-05-11 | [링크](#15-탈퇴-계정-복구) |
+| 1.6 | 탈퇴 계정 완전삭제 후 재가입 | POST | `/api/auth/kakao/purge-and-register` | 기존 탈퇴 계정 영구 삭제 후 신규 가입 | 대기 | 완료 | 2026-05-11 | [링크](#16-탈퇴-계정-완전삭제-후-재가입) |
 | **2. 사용자 API** |  |  |  |  |  |  |  |  |
 | 2.1 | 내 정보 조회 | GET | `/api/users/me` | 로그인한 사용자 정보 | 대기 | 대기 | - | [링크](#21-내-정보-조회) |
 | 2.2 | 내 정보 수정 | PUT | `/api/users/me` | 사용자 정보 수정 | 대기 | 대기 | - | [링크](#22-내-정보-수정) |
@@ -79,6 +81,8 @@
 
 ### 1.1 카카오 로그인
 
+탈퇴 상태 사용자가 동일 카카오 계정으로 재로그인하면 예외 대신 `status: "WITHDRAWN_PENDING"`이 반환되어 클라이언트가 [1.5 복구](#15-탈퇴-계정-복구) 또는 [1.6 완전삭제 후 재가입](#16-탈퇴-계정-완전삭제-후-재가입)을 사용자에게 안내할 수 있다.
+
 **Request:**
 ```json
 {
@@ -86,34 +90,59 @@
 }
 ```
 
-**Response (고용주):**
+**Response (정상 로그인 - 고용주):**
 ```json
 {
   "success": true,
   "data": {
-    "id": 1001,
-    "kakaoId": "123456789",
-    "name": "김철수",
-    "userType": "EMPLOYER",
+    "status": "LOGGED_IN",
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "createdAt": "2025-12-10T14:30:00"
+    "userId": 1001,
+    "name": "김철수",
+    "userType": "EMPLOYER"
   }
 }
 ```
 
-**Response (근로자):**
+**Response (정상 로그인 - 근로자):**
 ```json
 {
   "success": true,
   "data": {
-    "id": 2001,
-    "kakaoId": "987654321",
-    "name": "이영희",
-    "userType": "WORKER",
+    "status": "LOGGED_IN",
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "createdAt": "2025-12-10T14:30:00"
+    "userId": 2001,
+    "name": "이영희",
+    "userType": "WORKER"
+  }
+}
+```
+
+**Response (탈퇴 계정 발견 - 30일 hard-delete 전):**
+```json
+{
+  "success": true,
+  "data": {
+    "status": "WITHDRAWN_PENDING",
+    "withdrawnAccount": {
+      "name": "김철수",
+      "userType": "EMPLOYER",
+      "withdrawnAt": "2026-05-07T17:02:00",
+      "profileImageUrl": "https://..."
+    }
+  }
+}
+```
+
+**Error (등록되지 않은 사용자):**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "USER_NOT_FOUND",
+    "message": "등록되지 않은 카카오 계정입니다. 회원가입을 진행해주세요."
   }
 }
 ```
@@ -186,6 +215,94 @@
   "error": {
     "code": "USER_ALREADY_DELETED",
     "message": "이미 탈퇴한 사용자입니다."
+  }
+}
+```
+
+---
+
+### 1.5 탈퇴 계정 복구
+
+탈퇴 후 30일 hard-delete 스케줄러가 돌기 전에 동일 카카오 계정으로 재로그인 시 [1.1 카카오 로그인](#11-카카오-로그인) 응답이 `status: "WITHDRAWN_PENDING"`이 되며, 사용자가 "기존 계정 복구"를 선택하면 이 엔드포인트를 호출한다.
+
+`User.deletedAt = null`로 되돌리고 `UserSettings`(탈퇴 시 보존됨)는 이전 값 그대로 유지된다. 비활성화된 사업장/계약/근무기록은 자동 복구하지 않는다 (다른 사용자 데이터 일관성 보호).
+
+**Request:**
+```json
+{
+  "kakaoAccessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response (성공):**
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "userId": 1001,
+    "name": "김철수",
+    "userType": "EMPLOYER"
+  }
+}
+```
+
+**Error (탈퇴 상태가 아닌 계정에 호출):**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "USER_NOT_WITHDRAWN",
+    "message": "탈퇴 상태가 아닌 계정입니다."
+  }
+}
+```
+
+---
+
+### 1.6 탈퇴 계정 완전삭제 후 재가입
+
+사용자가 탈퇴 후 재로그인 시점에 "기존 데이터를 모두 삭제하고 새 계정으로 가입"을 선택하면 호출한다. 기존 사용자와 모든 산하 데이터(사업장/계약/근무기록/급여/결제/정정요청 등)를 30일 스케줄러와 동일한 경로로 영구 삭제한 뒤 신규 회원가입을 진행한다.
+
+`hardDelete + register`가 하나의 트랜잭션으로 묶여 있어 register 단계에서 실패하면 hard delete도 함께 롤백된다 (데이터 영구 손실 방지).
+
+**Request:**
+```json
+{
+  "kakaoAccessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "name": "김철수",
+  "userType": "WORKER",
+  "phone": "010-1234-5678",
+  "bankName": "카카오뱅크",
+  "accountNumber": "3333123456789",
+  "profileImageUrl": "https://..."
+}
+```
+
+> `bankName` / `accountNumber`는 `userType=WORKER`일 때 필수.
+
+**Response (성공):**
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "userId": 1042,
+    "name": "김철수",
+    "userType": "WORKER"
+  }
+}
+```
+
+**Error (정상 계정에 호출):**
+```json
+{
+  "success": false,
+  "error": {
+    "code": "DUPLICATE_KAKAO_ACCOUNT",
+    "message": "이미 가입된 카카오 계정입니다."
   }
 }
 ```

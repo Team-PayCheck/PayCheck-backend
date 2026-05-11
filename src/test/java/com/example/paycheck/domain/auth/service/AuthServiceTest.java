@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -88,7 +89,7 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("카카오 로그인 성공 - status=LOGGED_IN")
+    @DisplayName("카카오 로그인 성공 - status=LOGGED_IN, 응답 평탄 구조 (클라이언트 호환)")
     void loginWithKakao_Success() {
         // given
         String kakaoAccessToken = "kakao_access_token";
@@ -103,12 +104,12 @@ class AuthServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.getStatus()).isEqualTo("LOGGED_IN");
         assertThat(result.getWithdrawnAccount()).isNull();
-        assertThat(result.getLogin()).isNotNull();
-        assertThat(result.getLogin().getAccessToken()).isEqualTo("test_access_token");
-        assertThat(result.getLogin().getRefreshToken()).isEqualTo("test_refresh_token");
-        assertThat(result.getLogin().getUserId()).isEqualTo(1L);
-        assertThat(result.getLogin().getName()).isEqualTo("테스트 사용자");
-        assertThat(result.getLogin().getUserType()).isEqualTo("WORKER");
+        // 평탄 구조: top-level 필드에서 직접 접근 가능 (기존 클라이언트 호환)
+        assertThat(result.getAccessToken()).isEqualTo("test_access_token");
+        assertThat(result.getRefreshToken()).isEqualTo("test_refresh_token");
+        assertThat(result.getUserId()).isEqualTo(1L);
+        assertThat(result.getName()).isEqualTo("테스트 사용자");
+        assertThat(result.getUserType()).isEqualTo("WORKER");
 
         verify(oAuthService).getKakaoUserInfo(kakaoAccessToken);
         verify(userRepository).findByKakaoId(kakaoUserInfo.kakaoId());
@@ -529,7 +530,10 @@ class AuthServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getStatus()).isEqualTo("WITHDRAWN_PENDING");
-        assertThat(result.getLogin()).isNull();
+        // 평탄 구조: 정상 로그인용 필드는 모두 null
+        assertThat(result.getAccessToken()).isNull();
+        assertThat(result.getRefreshToken()).isNull();
+        assertThat(result.getUserId()).isNull();
         assertThat(result.getWithdrawnAccount()).isNotNull();
         assertThat(result.getWithdrawnAccount().getName()).isEqualTo("탈퇴한 사용자");
         assertThat(result.getWithdrawnAccount().getUserType()).isEqualTo("WORKER");
@@ -585,7 +589,7 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("탈퇴 계정 완전 삭제 후 재가입 성공")
+    @DisplayName("탈퇴 계정 완전 삭제 후 재가입 성공 - hardDelete 직후 flush 호출로 unique 제약 회피")
     void purgeAndRegisterWithKakao_Success() {
         // given
         AuthDto.KakaoRegisterRequest request = AuthDto.KakaoRegisterRequest.builder()
@@ -620,12 +624,51 @@ class AuthServiceTest {
         // when
         AuthDto.LoginResponse response = authService.purgeAndRegisterWithKakao(request);
 
-        // then
-        verify(userHardDeleteService).hardDeleteUser(deletedUser.getId());
-        verify(userService).register(any(UserDto.RegisterRequest.class));
+        // then: hardDelete → flush → register 순서 검증 (JPA flush 순서 이슈 방지)
+        InOrder inOrder = inOrder(userHardDeleteService, userRepository, userService);
+        inOrder.verify(userHardDeleteService).hardDeleteUser(deletedUser.getId());
+        inOrder.verify(userRepository).flush();
+        inOrder.verify(userService).register(any(UserDto.RegisterRequest.class));
+
         assertThat(response.getAccessToken()).isEqualTo("test_access_token");
         assertThat(response.getRefreshToken()).isEqualTo("test_refresh_token");
         assertThat(response.getUserId()).isEqualTo(3L);
+    }
+
+    @Test
+    @DisplayName("탈퇴 계정 완전 삭제 후 재가입 - register 실패 시 호출자에게 예외 전파 (트랜잭션 롤백 트리거)")
+    void purgeAndRegisterWithKakao_RegisterFails_PropagatesException() {
+        // given
+        AuthDto.KakaoRegisterRequest request = AuthDto.KakaoRegisterRequest.builder()
+                .kakaoAccessToken("kakao_access_token")
+                .name("새이름")
+                .phone("010-1234-5678")
+                .userType("WORKER")
+                .bankName("카카오뱅크")
+                .accountNumber("3333123456789")
+                .build();
+
+        User deletedUser = User.builder()
+                .id(2L)
+                .kakaoId("test_kakao_id")
+                .name("탈퇴한 사용자")
+                .userType(UserType.WORKER)
+                .build();
+        deletedUser.withdraw();
+
+        when(oAuthService.getKakaoUserInfo(request.getKakaoAccessToken())).thenReturn(kakaoUserInfo);
+        when(userRepository.findByKakaoId(kakaoUserInfo.kakaoId())).thenReturn(Optional.of(deletedUser));
+        when(userService.register(any(UserDto.RegisterRequest.class)))
+                .thenThrow(new RuntimeException("DB 오류"));
+
+        // when & then: 예외 전파 → @Transactional이 롤백을 트리거함 (실제 롤백은 통합 테스트로 검증)
+        assertThatThrownBy(() -> authService.purgeAndRegisterWithKakao(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("DB 오류");
+
+        verify(userHardDeleteService).hardDeleteUser(deletedUser.getId());
+        verify(userRepository).flush();
+        verify(userService).register(any(UserDto.RegisterRequest.class));
     }
 
     @Test

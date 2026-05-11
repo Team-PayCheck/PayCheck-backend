@@ -95,7 +95,9 @@ public class AuthDto {
 
     /**
      * 카카오 로그인 결과 (정상 로그인 또는 탈퇴 계정 발견)
-     * status="LOGGED_IN"이면 login 필드, status="WITHDRAWN_PENDING"이면 withdrawnAccount 필드를 채운다.
+     * 정상 로그인 필드는 기존 클라이언트 호환을 위해 top-level에 평탄하게 둔다.
+     * - status="LOGGED_IN": accessToken/refreshToken/userId/name/userType 채움
+     * - status="WITHDRAWN_PENDING": withdrawnAccount만 채움
      */
     @Getter
     @NoArgsConstructor
@@ -107,8 +109,12 @@ public class AuthDto {
         @Schema(description = "로그인 결과 상태", allowableValues = {"LOGGED_IN", "WITHDRAWN_PENDING"})
         private String status;
 
-        @Schema(description = "정상 로그인 시 사용자/토큰 정보")
-        private LoginResponse login;
+        // 정상 로그인(LOGGED_IN) 시 채워지는 필드 — 기존 LoginResponse와 동일 경로 유지
+        private String accessToken;
+        private String refreshToken;
+        private Long userId;
+        private String name;
+        private String userType;
 
         @Schema(description = "탈퇴 계정 발견 시 안내 정보")
         private WithdrawnAccountInfo withdrawnAccount;
@@ -116,7 +122,11 @@ public class AuthDto {
         public static KakaoLoginResult loggedIn(LoginResponse login) {
             return KakaoLoginResult.builder()
                     .status("LOGGED_IN")
-                    .login(login)
+                    .accessToken(login.getAccessToken())
+                    .refreshToken(login.getRefreshToken())
+                    .userId(login.getUserId())
+                    .name(login.getName())
+                    .userType(login.getUserType())
                     .build();
         }
 

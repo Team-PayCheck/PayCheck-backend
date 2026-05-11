@@ -155,9 +155,13 @@ public class AuthService {
      * - 기존 사용자 hard delete (30일 스케줄러와 동일 경로 재사용)
      * - 신규 회원가입 진행
      *
+     * 트랜잭션: 메서드 전체를 하나의 트랜잭션으로 묶어 hard delete + register 원자성 보장.
+     * register 단계에서 실패하면 hard delete도 함께 롤백되어 데이터 영구 손실을 방지한다.
+     *
      * @param request 회원가입 요청 (기존 KakaoRegisterRequest 그대로 재사용)
      * @return 로그인 응답 (refreshToken 포함)
      */
+    @Transactional
     public AuthDto.LoginResponse purgeAndRegisterWithKakao(AuthDto.KakaoRegisterRequest request) {
         KakaoUserInfo userInfo = oAuthService.getKakaoUserInfo(request.getKakaoAccessToken());
 
@@ -171,6 +175,10 @@ public class AuthService {
                         );
                     }
                     userHardDeleteService.hardDeleteUser(existing.getId());
+                    // JPA 기본 flush 순서(INSERT → DELETE)로 인해 같은 트랜잭션에서
+                    // 신규 가입(INSERT)이 기존 사용자 DELETE보다 먼저 실행되면
+                    // unique kakao_id 제약 충돌이 발생한다. 명시적 flush로 DELETE를 먼저 반영한다.
+                    userRepository.flush();
                 });
 
         return registerWithKakaoInternal(request, userInfo);
