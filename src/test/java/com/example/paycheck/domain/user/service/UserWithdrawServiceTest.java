@@ -11,7 +11,6 @@ import com.example.paycheck.domain.fcm.repository.FcmTokenRepository;
 import com.example.paycheck.domain.notification.repository.NotificationRepository;
 import com.example.paycheck.domain.allowance.repository.WeeklyAllowanceRepository;
 import com.example.paycheck.domain.allowance.service.WeeklyAllowanceService;
-import com.example.paycheck.domain.settings.repository.UserSettingsRepository;
 import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.repository.UserRepository;
 import com.example.paycheck.domain.user.enums.UserType;
@@ -59,8 +58,6 @@ class UserWithdrawServiceTest {
     private FcmTokenRepository fcmTokenRepository;
     @Mock
     private NotificationRepository notificationRepository;
-    @Mock
-    private UserSettingsRepository userSettingsRepository;
     @Mock
     private WeeklyAllowanceService weeklyAllowanceService;
     @Mock
@@ -137,7 +134,6 @@ class UserWithdrawServiceTest {
         verify(refreshTokenRepository).deleteByUserId(employer.getId());
         verify(fcmTokenRepository).deleteByUserId(employer.getId());
         verify(notificationRepository).deleteAllByUser(employer);
-        verify(userSettingsRepository).deleteByUserId(employer.getId());
     }
 
     @Test
@@ -201,7 +197,7 @@ class UserWithdrawServiceTest {
     }
 
     @Test
-    @DisplayName("토큰, 알림, 설정 삭제 확인")
+    @DisplayName("탈퇴 시 토큰/알림 정리, UserSettings는 보존 (30일 hard delete 시점에 정리됨)")
     void withdraw_cleanupsCommonData() {
         // given
         when(workerRepository.findByUserId(worker.getId())).thenReturn(Optional.empty());
@@ -214,7 +210,7 @@ class UserWithdrawServiceTest {
         verify(refreshTokenRepository).deleteByUserId(worker.getId());
         verify(fcmTokenRepository).deleteByUserId(worker.getId());
         verify(notificationRepository).deleteAllByUser(worker);
-        verify(userSettingsRepository).deleteByUserId(worker.getId());
+        // UserSettings는 탈퇴 시점에 보존 (복구 시 사용자 알림 설정 유지)
     }
 
     @Test

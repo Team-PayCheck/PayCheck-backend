@@ -7,6 +7,7 @@ import com.example.paycheck.domain.user.dto.UserDto;
 import com.example.paycheck.domain.user.entity.User;
 import com.example.paycheck.domain.user.enums.UserType;
 import com.example.paycheck.domain.user.repository.UserRepository;
+import com.example.paycheck.domain.user.service.UserHardDeleteService;
 import com.example.paycheck.domain.user.service.UserService;
 import com.example.paycheck.domain.user.service.UserWithdrawService;
 import com.example.paycheck.domain.employer.repository.EmployerRepository;
@@ -18,11 +19,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -50,6 +51,9 @@ class AuthServiceTest {
 
     @Mock
     private UserWithdrawService userWithdrawService;
+
+    @Mock
+    private UserHardDeleteService userHardDeleteService;
 
     @Mock
     private WorkerRepository workerRepository;
@@ -85,7 +89,7 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("카카오 로그인 성공")
+    @DisplayName("카카오 로그인 성공 - status=LOGGED_IN, 응답 평탄 구조 (클라이언트 호환)")
     void loginWithKakao_Success() {
         // given
         String kakaoAccessToken = "kakao_access_token";
@@ -94,15 +98,18 @@ class AuthServiceTest {
         when(tokenService.generateTokenPair(testUser.getId())).thenReturn(tokenPair);
 
         // when
-        AuthService.LoginResult result = authService.loginWithKakao(kakaoAccessToken);
+        AuthDto.KakaoLoginResult result = authService.loginWithKakao(kakaoAccessToken);
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.getLoginResponse().getAccessToken()).isEqualTo("test_access_token");
+        assertThat(result.getStatus()).isEqualTo("LOGGED_IN");
+        assertThat(result.getWithdrawnAccount()).isNull();
+        // 평탄 구조: top-level 필드에서 직접 접근 가능 (기존 클라이언트 호환)
+        assertThat(result.getAccessToken()).isEqualTo("test_access_token");
         assertThat(result.getRefreshToken()).isEqualTo("test_refresh_token");
-        assertThat(result.getLoginResponse().getUserId()).isEqualTo(1L);
-        assertThat(result.getLoginResponse().getName()).isEqualTo("테스트 사용자");
-        assertThat(result.getLoginResponse().getUserType()).isEqualTo("WORKER");
+        assertThat(result.getUserId()).isEqualTo(1L);
+        assertThat(result.getName()).isEqualTo("테스트 사용자");
+        assertThat(result.getUserType()).isEqualTo("WORKER");
 
         verify(oAuthService).getKakaoUserInfo(kakaoAccessToken);
         verify(userRepository).findByKakaoId(kakaoUserInfo.kakaoId());
@@ -501,8 +508,44 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("카카오 로그인 실패 - 탈퇴한 사용자")
-    void loginWithKakao_DeletedUser_ThrowsException() {
+    @DisplayName("카카오 로그인 - 탈퇴한 사용자는 status=WITHDRAWN_PENDING 반환")
+    void loginWithKakao_DeletedUser_ReturnsWithdrawnPending() {
+        // given
+        String kakaoAccessToken = "kakao_access_token";
+        User deletedUser = User.builder()
+                .id(2L)
+                .kakaoId("test_kakao_id")
+                .name("탈퇴한 사용자")
+                .userType(UserType.WORKER)
+                .profileImageUrl("https://example.com/profile.jpg")
+                .build();
+        deletedUser.withdraw();
+
+        when(oAuthService.getKakaoUserInfo(kakaoAccessToken)).thenReturn(kakaoUserInfo);
+        when(userRepository.findByKakaoId(kakaoUserInfo.kakaoId())).thenReturn(Optional.of(deletedUser));
+
+        // when
+        AuthDto.KakaoLoginResult result = authService.loginWithKakao(kakaoAccessToken);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getStatus()).isEqualTo("WITHDRAWN_PENDING");
+        // 평탄 구조: 정상 로그인용 필드는 모두 null
+        assertThat(result.getAccessToken()).isNull();
+        assertThat(result.getRefreshToken()).isNull();
+        assertThat(result.getUserId()).isNull();
+        assertThat(result.getWithdrawnAccount()).isNotNull();
+        assertThat(result.getWithdrawnAccount().getName()).isEqualTo("탈퇴한 사용자");
+        assertThat(result.getWithdrawnAccount().getUserType()).isEqualTo("WORKER");
+        assertThat(result.getWithdrawnAccount().getWithdrawnAt()).isNotNull();
+        assertThat(result.getWithdrawnAccount().getProfileImageUrl()).isEqualTo("https://example.com/profile.jpg");
+
+        verify(tokenService, never()).generateTokenPair(anyLong());
+    }
+
+    @Test
+    @DisplayName("탈퇴 계정 복구 성공 - User.deletedAt이 null로 되돌아감")
+    void restoreWithKakao_Success() {
         // given
         String kakaoAccessToken = "kakao_access_token";
         User deletedUser = User.builder()
@@ -515,13 +558,142 @@ class AuthServiceTest {
 
         when(oAuthService.getKakaoUserInfo(kakaoAccessToken)).thenReturn(kakaoUserInfo);
         when(userRepository.findByKakaoId(kakaoUserInfo.kakaoId())).thenReturn(Optional.of(deletedUser));
+        when(tokenService.generateTokenPair(deletedUser.getId())).thenReturn(tokenPair);
+
+        // when
+        AuthDto.LoginResponse response = authService.restoreWithKakao(kakaoAccessToken);
+
+        // then
+        assertThat(deletedUser.isDeleted()).isFalse();
+        assertThat(response.getAccessToken()).isEqualTo("test_access_token");
+        assertThat(response.getRefreshToken()).isEqualTo("test_refresh_token");
+        assertThat(response.getUserId()).isEqualTo(2L);
+        assertThat(response.getName()).isEqualTo("탈퇴한 사용자");
+        assertThat(response.getUserType()).isEqualTo("WORKER");
+    }
+
+    @Test
+    @DisplayName("탈퇴 계정 복구 실패 - 정상 계정에 호출 시 USER_NOT_WITHDRAWN 예외")
+    void restoreWithKakao_NotWithdrawn_ThrowsException() {
+        // given
+        String kakaoAccessToken = "kakao_access_token";
+        when(oAuthService.getKakaoUserInfo(kakaoAccessToken)).thenReturn(kakaoUserInfo);
+        when(userRepository.findByKakaoId(kakaoUserInfo.kakaoId())).thenReturn(Optional.of(testUser));
 
         // when & then
-        assertThatThrownBy(() -> authService.loginWithKakao(kakaoAccessToken))
+        assertThatThrownBy(() -> authService.restoreWithKakao(kakaoAccessToken))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("탈퇴한 계정입니다");
+                .hasMessageContaining("탈퇴 상태가 아닌 계정입니다");
 
         verify(tokenService, never()).generateTokenPair(anyLong());
+    }
+
+    @Test
+    @DisplayName("탈퇴 계정 완전 삭제 후 재가입 성공 - hardDelete 직후 flush 호출로 unique 제약 회피")
+    void purgeAndRegisterWithKakao_Success() {
+        // given
+        AuthDto.KakaoRegisterRequest request = AuthDto.KakaoRegisterRequest.builder()
+                .kakaoAccessToken("kakao_access_token")
+                .name("새이름")
+                .phone("010-1234-5678")
+                .userType("WORKER")
+                .bankName("카카오뱅크")
+                .accountNumber("3333123456789")
+                .build();
+
+        User deletedUser = User.builder()
+                .id(2L)
+                .kakaoId("test_kakao_id")
+                .name("탈퇴한 사용자")
+                .userType(UserType.WORKER)
+                .build();
+        deletedUser.withdraw();
+
+        UserDto.RegisterResponse registerResponse = UserDto.RegisterResponse.builder()
+                .userId(3L)
+                .name("새이름")
+                .userType(UserType.WORKER)
+                .workerCode("WORKER002")
+                .build();
+
+        when(oAuthService.getKakaoUserInfo(request.getKakaoAccessToken())).thenReturn(kakaoUserInfo);
+        when(userRepository.findByKakaoId(kakaoUserInfo.kakaoId())).thenReturn(Optional.of(deletedUser));
+        when(userService.register(any(UserDto.RegisterRequest.class))).thenReturn(registerResponse);
+        when(tokenService.generateTokenPair(3L)).thenReturn(tokenPair);
+
+        // when
+        AuthDto.LoginResponse response = authService.purgeAndRegisterWithKakao(request);
+
+        // then: hardDelete → flush → register 순서 검증 (JPA flush 순서 이슈 방지)
+        InOrder inOrder = inOrder(userHardDeleteService, userRepository, userService);
+        inOrder.verify(userHardDeleteService).hardDeleteUser(deletedUser.getId());
+        inOrder.verify(userRepository).flush();
+        inOrder.verify(userService).register(any(UserDto.RegisterRequest.class));
+
+        assertThat(response.getAccessToken()).isEqualTo("test_access_token");
+        assertThat(response.getRefreshToken()).isEqualTo("test_refresh_token");
+        assertThat(response.getUserId()).isEqualTo(3L);
+    }
+
+    @Test
+    @DisplayName("탈퇴 계정 완전 삭제 후 재가입 - register 실패 시 호출자에게 예외 전파 (트랜잭션 롤백 트리거)")
+    void purgeAndRegisterWithKakao_RegisterFails_PropagatesException() {
+        // given
+        AuthDto.KakaoRegisterRequest request = AuthDto.KakaoRegisterRequest.builder()
+                .kakaoAccessToken("kakao_access_token")
+                .name("새이름")
+                .phone("010-1234-5678")
+                .userType("WORKER")
+                .bankName("카카오뱅크")
+                .accountNumber("3333123456789")
+                .build();
+
+        User deletedUser = User.builder()
+                .id(2L)
+                .kakaoId("test_kakao_id")
+                .name("탈퇴한 사용자")
+                .userType(UserType.WORKER)
+                .build();
+        deletedUser.withdraw();
+
+        when(oAuthService.getKakaoUserInfo(request.getKakaoAccessToken())).thenReturn(kakaoUserInfo);
+        when(userRepository.findByKakaoId(kakaoUserInfo.kakaoId())).thenReturn(Optional.of(deletedUser));
+        when(userService.register(any(UserDto.RegisterRequest.class)))
+                .thenThrow(new RuntimeException("DB 오류"));
+
+        // when & then: 예외 전파 → @Transactional이 롤백을 트리거함 (실제 롤백은 통합 테스트로 검증)
+        assertThatThrownBy(() -> authService.purgeAndRegisterWithKakao(request))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("DB 오류");
+
+        verify(userHardDeleteService).hardDeleteUser(deletedUser.getId());
+        verify(userRepository).flush();
+        verify(userService).register(any(UserDto.RegisterRequest.class));
+    }
+
+    @Test
+    @DisplayName("탈퇴 계정 완전 삭제 후 재가입 실패 - 정상 계정 차단")
+    void purgeAndRegisterWithKakao_ActiveUser_ThrowsException() {
+        // given
+        AuthDto.KakaoRegisterRequest request = AuthDto.KakaoRegisterRequest.builder()
+                .kakaoAccessToken("kakao_access_token")
+                .name("이름")
+                .phone("010-1234-5678")
+                .userType("WORKER")
+                .bankName("카카오뱅크")
+                .accountNumber("3333123456789")
+                .build();
+
+        when(oAuthService.getKakaoUserInfo(request.getKakaoAccessToken())).thenReturn(kakaoUserInfo);
+        when(userRepository.findByKakaoId(kakaoUserInfo.kakaoId())).thenReturn(Optional.of(testUser));
+
+        // when & then
+        assertThatThrownBy(() -> authService.purgeAndRegisterWithKakao(request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("이미 가입된 카카오 계정입니다");
+
+        verify(userHardDeleteService, never()).hardDeleteUser(anyLong());
+        verify(userService, never()).register(any());
     }
 
     @Test
