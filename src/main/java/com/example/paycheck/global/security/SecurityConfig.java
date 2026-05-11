@@ -38,7 +38,14 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/health", "/h2-console/**").permitAll()
-                .requestMatchers("/api/auth/kakao/login", "/api/auth/kakao/register", "/api/auth/refresh", "/api/auth/dev/login").permitAll()
+                .requestMatchers(
+                    "/api/auth/kakao/login",
+                    "/api/auth/kakao/register",
+                    "/api/auth/kakao/restore",
+                    "/api/auth/kakao/purge-and-register",
+                    "/api/auth/refresh",
+                    "/api/auth/dev/login"
+                ).permitAll()
                 .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                 .anyRequest().authenticated()
             )
