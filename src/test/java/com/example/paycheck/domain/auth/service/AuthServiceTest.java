@@ -573,6 +573,30 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("탈퇴 계정 복구 성공 - EMPLOYER 타입은 사업장 재활성화 호출")
+    void restoreWithKakao_Employer_ActivatesWorkplaces() {
+        // given
+        String kakaoAccessToken = "kakao_access_token";
+        User deletedEmployer = User.builder()
+                .id(3L)
+                .kakaoId("test_kakao_id")
+                .name("탈퇴한 고용주")
+                .userType(UserType.EMPLOYER)
+                .build();
+        deletedEmployer.withdraw();
+
+        when(oAuthService.getKakaoUserInfo(kakaoAccessToken)).thenReturn(kakaoUserInfo);
+        when(userRepository.findByKakaoId(kakaoUserInfo.kakaoId())).thenReturn(Optional.of(deletedEmployer));
+        when(tokenService.generateTokenPair(deletedEmployer.getId())).thenReturn(tokenPair);
+
+        // when
+        authService.restoreWithKakao(kakaoAccessToken);
+
+        // then
+        verify(userWithdrawService).restoreEmployerWorkplaces(deletedEmployer);
+    }
+
+    @Test
     @DisplayName("탈퇴 계정 복구 실패 - 정상 계정에 호출 시 USER_NOT_WITHDRAWN 예외")
     void restoreWithKakao_NotWithdrawn_ThrowsException() {
         // given

@@ -261,6 +261,46 @@ class UserWithdrawServiceTest {
     }
 
     @Test
+    @DisplayName("고용주 복구 시 비활성화된 사업장 재활성화")
+    void restoreEmployerWorkplaces_success() {
+        // given
+        Employer employerEntity = Employer.builder()
+                .id(10L)
+                .user(employer)
+                .phone("010-1234-5678")
+                .build();
+
+        Workplace deactivatedWorkplace = Workplace.builder()
+                .id(100L)
+                .employer(employerEntity)
+                .name("테스트 사업장")
+                .businessNumber("166-12-01262")
+                .isActive(false)
+                .build();
+
+        when(employerRepository.findByUserId(employer.getId())).thenReturn(Optional.of(employerEntity));
+        when(workplaceRepository.findByEmployerIdAndIsActive(employerEntity.getId(), false))
+                .thenReturn(List.of(deactivatedWorkplace));
+
+        // when
+        userWithdrawService.restoreEmployerWorkplaces(employer);
+
+        // then
+        assertThat(deactivatedWorkplace.getIsActive()).isTrue();
+    }
+
+    @Test
+    @DisplayName("WORKER 타입 사용자 복구 시 repository 접근 없이 즉시 return")
+    void restoreEmployerWorkplaces_workerUser_doesNothing() {
+        // when
+        userWithdrawService.restoreEmployerWorkplaces(worker);
+
+        // then
+        verify(employerRepository, never()).findByUserId(any());
+        verify(workplaceRepository, never()).findByEmployerIdAndIsActive(any(), any());
+    }
+
+    @Test
     @DisplayName("findById 결과가 비어있을 때 NotFoundException 발생")
     void withdraw_userNotFound_throwsNotFoundException() {
         // given

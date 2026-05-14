@@ -140,6 +140,23 @@ public class UserWithdrawService {
     }
 
     /**
+     * 고용주 계정 복구 시 탈퇴 과정에서 비활성화된 사업장 재활성화
+     * Worker 타입이거나 Employer 프로필이 없으면 아무것도 하지 않는다.
+     */
+    public void restoreEmployerWorkplaces(User user) {
+        if (user.getUserType() != UserType.EMPLOYER) {
+            return;
+        }
+        Employer employer = employerRepository.findByUserId(user.getId()).orElse(null);
+        if (employer == null) {
+            return;
+        }
+        List<Workplace> deactivatedWorkplaces =
+                workplaceRepository.findByEmployerIdAndIsActive(employer.getId(), false);
+        deactivatedWorkplaces.forEach(Workplace::activate);
+    }
+
+    /**
      * 공통 데이터 정리
      * UserSettings는 30일 이내 복구 시 사용자가 이전에 설정한 알림 옵션을 그대로 살리기 위해
      * 탈퇴 시점에는 보존하며, 30일 후 hard delete 시 UserHardDeleteService에서 함께 정리된다.

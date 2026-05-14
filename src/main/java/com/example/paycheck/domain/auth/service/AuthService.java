@@ -139,8 +139,9 @@ public class AuthService {
     /**
      * 탈퇴한 카카오 계정 복구 (탈퇴 취소)
      * - User.deletedAt = null로 되돌림
+     * - 고용주의 경우 탈퇴 시 비활성화된 사업장을 함께 복원 (사업자번호 재등록 가능)
      * - UserSettings는 탈퇴 시 보존되었으므로 그대로 사용 (이전 알림 설정 유지)
-     * - 사업장/계약/근무기록은 자동 복구하지 않음 (다른 사용자 데이터 일관성 보호)
+     * - 계약/근무기록은 자동 복구하지 않음 (다른 사용자 데이터 일관성 보호)
      *
      * @param kakaoAccessToken 카카오 액세스 토큰
      * @return 로그인 응답 (refreshToken 포함)
@@ -164,6 +165,7 @@ public class AuthService {
         assertWithinRecoveryPeriod(user);
 
         user.restore();
+        userWithdrawService.restoreEmployerWorkplaces(user);
 
         return buildLoginResponse(user);
     }
